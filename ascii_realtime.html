@@ -218,7 +218,7 @@
     </div>
     
     <div id="controls-container" style="display:none;">
-        <button id="btn-home" onclick="returnToMenu()" style="background:#FF0000; color:#FFF; border-color:#FF0000;">✕ HOME</button>
+        <button id="btn-home" onclick="returnToMenu()">← BACK</button>
         <button id="webcam-toggle" onclick="toggleWebcam()">⚡ HAND CONTROL: OFF</button>
         <button id="record-btn" onclick="toggleRecording()">⏺ REC VIDEO</button>
     </div>
@@ -728,13 +728,13 @@ WE ARE COSMIC</textarea>
 
                 let luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
                 
-                // 마스크에서 잘려나간 배경(순수 흰색) 판별
-                let isBackground = (r === 255 && g === 255 && b === 255);
+                // 마스크에서 잘려나간 배경 및 안티앨리어싱 경계를 부드럽게 감별 (안전하게 허공으로 날림)
+                let isBackground = (isCamera && luma > 0.98);
 
-                // 캠에서는 얼굴 피부 전체가 파랗게 타오르는 현상을 방지하기 위해 
-                // 하이라이트는 보존하고 그림자(안경, 헤어) 부분만 완전한 블랙으로 떨어지게 베이스를 조정합니다.
+                // 캠 화면 전용 보정: 피부(밝은 영역)는 날려서 미니멀한 캔버스로 만들고,
+                // 안경테, 머리카락, 수염 같은 질감만 남기기 위해 대비를 강하게 날림(Blow out)
                 if (isCamera && !isBackground) {
-                    luma = luma - 0.12; 
+                    luma = (luma - 0.35) * 1.4 + 0.35; 
                     luma = Math.max(0.001, Math.min(0.999, luma));
                 }
                 
@@ -761,9 +761,8 @@ WE ARE COSMIC</textarea>
                 let cy = y + CELL_SIZE / 2;
                 let vy = cy + CELL_SIZE * 0.045; // Optical vertical center adjustment
 
-                // 캠에서는 배경을 강제 흰색(#FFFFFF, luma=1.0)으로 만들었으므로 임계점을 극단적으로 낮춤
-                // 이렇게 해야 피부 밝은 영역(빈박스)이 들쭉날쭉 증발하거나 튀는 현상(Flickering)을 막을 수 있음
-                let currentThreshold = isCamera ? 0.0 : darknessThreshold;
+                // 지정된 밝기(Threshold)보다 밝은 픽셀은 렌더링 무시 (피부 허공 증발)
+                let currentThreshold = darknessThreshold; // 0.12
                 if (darkness <= currentThreshold) continue;
 
                 let v = (darkness - currentThreshold) / (1.0 - currentThreshold);
