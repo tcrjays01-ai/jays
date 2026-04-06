@@ -505,13 +505,13 @@ WE ARE COSMIC</textarea>
         selfieSegmentation = new SelfieSegmentation({
             locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${f}`
         });
-        selfieSegmentation.setOptions({ modelSelection: 1 }); // 1 = landscape (higher quality)
+        selfieSegmentation.setOptions({ modelSelection: 0 }); // 0 = general (Google Meet portrait style)
         selfieSegmentation.onResults((results) => { 
             if (results.segmentationMask) {
-                segCanvas.width = cols;
-                segCanvas.height = rows;
-                segCtx.clearRect(0, 0, cols, rows);
-                segCtx.drawImage(results.segmentationMask, 0, 0, cols, rows);
+                segCanvas.width = results.segmentationMask.width;
+                segCanvas.height = results.segmentationMask.height;
+                segCtx.clearRect(0, 0, segCanvas.width, segCanvas.height);
+                segCtx.drawImage(results.segmentationMask, 0, 0);
                 segMask = true;
             }
             isSegmenting = false; // Release lock
@@ -636,9 +636,9 @@ WE ARE COSMIC</textarea>
                     // CPU 픽셀 연산 대신, 하드웨어 가속 Canvas 블렌딩을 사용하여
                     // 경계선을 아주 부드럽고 깔끔하게 안티앨리어싱(Anti-Aliasing) 처리합니다.
                     
-                    // 1. 거푸집(Mask) 적용: 사람 영역만 남기고 나머지는 투명하게 만듦
+                    // 1. 거푸집(Mask) 적용: 사람 영역만 남기고 나머지는 투명하게 만듦. (영상과 동일한 위치/비율로 매핑)
                     offCtx.globalCompositeOperation = 'destination-in';
-                    offCtx.drawImage(segCanvas, 0, 0, cols, rows);
+                    offCtx.drawImage(segCanvas, dX, dY, dW, dH);
                     
                     // 2. 투명해진 배경을 완전히 강제 흰색(#FFFFFF)으로 채워서 ASCII 구역을 지움
                     offCtx.globalCompositeOperation = 'destination-over';
