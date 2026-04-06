@@ -632,12 +632,16 @@ WE ARE COSMIC</textarea>
     }
 
     function updatePhaseUI(val) {
-        basePhase = parseFloat(val);
-        bluePhase = basePhase;
+        let v = parseFloat(val);
+        basePhase = v;
+        bluePhase = v;
+        window.bluePhase = v; // Force global scope for reliability
+        console.log("🎨 Phase Updated:", v);
+        
         let slider = document.getElementById('ctrl-contrast');
         if (slider) slider.value = val;
         let valDisp = document.getElementById('contrast-val');
-        if (valDisp) valDisp.innerText = Math.round(val * 100) + '%';
+        if (valDisp) valDisp.innerText = Math.round(v * 100) + '%';
     }
 
     function initSegmentation() {
@@ -914,9 +918,10 @@ WE ARE COSMIC</textarea>
                 }
                 // --------------------------
 
-                let v = (darkness - currentThreshold) / (1.0 - currentThreshold);
-                v = Math.min(1.0, Math.max(0.0, v));
-                v = Math.pow(v, contrastPow);
+                let vLinear = (darkness - currentThreshold) / (1.0 - currentThreshold);
+                vLinear = Math.min(1.0, Math.max(0.0, vLinear));
+
+                let v = Math.pow(vLinear, contrastPow);
                 
                 ctx.strokeStyle = '#000000';
                 ctx.lineWidth = CELL_SIZE >= 30 ? 2 : 1;
@@ -924,8 +929,10 @@ WE ARE COSMIC</textarea>
                 const fx = Math.floor(x), fy = Math.floor(y);
                 const fw = Math.ceil(CELL_SIZE), fh = Math.ceil(CELL_SIZE);
 
-                // Calculate distance to phase core for soft glow
-                let dist = Math.abs(v - bluePhase);
+                // --- 🎯 NEW: High Performance Phase Comparison (Linear) ---
+                // Compare with vLinear BEFORE contrastPow to ensure consistent responsiveness
+                let dist = Math.abs(vLinear - bluePhase);
+                let z1Limit = 0.08; // Narrower limit for sharper outlines vs surfaces
 
                 // 1순위: 가장 어두운 섀도우는 블루 오라를 무시하고 무조건 딥 블랙 박스로 유지 (머리카락 등)
                 if (v >= 0.88) {
@@ -933,9 +940,9 @@ WE ARE COSMIC</textarea>
                     ctx.fillRect(fx, fy, fw, fh);
                 }
                 // 2순위: ZONE 1 Key Color Point — glowing soft blend (안경테, 윤곽선 등)
-                else if (dist < zone1Limit) {
-                    let intensity = 1.0 - (dist / zone1Limit); // 1.0 at center, 0.0 at edge
-                    intensity = Math.pow(intensity, 1.5); // Smoother falloff curve
+                else if (dist < z1Limit) {
+                    let intensity = 1.0 - (dist / z1Limit); // 1.0 at center, 0.0 at edge
+                    intensity = Math.pow(intensity, 2.0); // Sharper falloff curve
                     
                     let baseR, baseG, baseB;
                     if (gradientMode) {
