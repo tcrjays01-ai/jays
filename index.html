@@ -946,7 +946,7 @@ WE ARE COSMIC</textarea>
             document.getElementById('controls-container').style.display = 'flex';
             if (window.innerWidth > 767) {
                 document.getElementById('settings-panel').classList.add('open');
-                let dToggle = document.getElementById('settings-toggle-desktop'); if(dToggle) dToggle.style.display='block'; document.getElementById('settings-toggle').style.setProperty('display', 'none', 'important');
+                document.getElementById('settings-toggle').style.setProperty('display', 'none', 'important');
             } else {
                 let mobileBar = document.getElementById('mobile-top-btns'); if (mobileBar) mobileBar.style.display = 'flex'; let _mb = document.getElementById('mobile-top-btns'); if(_mb) _mb.style.display='flex';
             }
@@ -1220,7 +1220,7 @@ WE ARE COSMIC</textarea>
                         ctx.save();
                         ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
                         ctx.fillStyle = `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${intensity})`; 
-                        let symIdx = (i * 3 + j * 7 + Math.floor(globalFrame/90)) % activeSymbols.length;
+                        let symIdx = ((Math.floor(i) * 6271 + Math.floor(j) * 3181 + Math.floor(globalFrame/90) * 7919) % activeSymbols.length + activeSymbols.length) % activeSymbols.length;
                         ctx.fillText(activeSymbols[symIdx], cx, vy);
                         ctx.restore();
                     } else {
@@ -1268,7 +1268,7 @@ WE ARE COSMIC</textarea>
                     ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
                     ctx.fillStyle = colorSymbol; // Symbols always use SYMBOL color here
                     // Frame-based symbol index - doesn't flicker with video motion
-                    let charIdx = (i * 5 + j * 11 + Math.floor(globalFrame/90)) % activeSymbols.length;
+                    let charIdx = ((Math.floor(i) * 5381 + Math.floor(j) * 2749 + Math.floor(globalFrame/90) * 7919) % activeSymbols.length + activeSymbols.length) % activeSymbols.length;
                     let char = activeSymbols[charIdx];
                     ctx.fillText(char, cx, vy);
                     ctx.restore();
