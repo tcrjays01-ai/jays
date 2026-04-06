@@ -601,22 +601,26 @@ WE ARE COSMIC</textarea>
             if (dX > 0) { offCtx.fillRect(0, 0, dX, rows); offCtx.fillRect(cols - dX, 0, dX, rows); }
             offCtx.drawImage(video, dX, dY, dW, dH);
 
-            // Segmentation: 카메라 모드일 때 배경 픽셀을 흰색으로 교체
+            // Segmentation: 카메라 모드일 때 사람과 배경 분리
             if (isCamera && selfieSegmentation) {
-                // 매 2프레임마다 segmentation 요청 (비동기)
+                // 프레임 전송 (너무 잦은 호출 방지를 위해 2프레임당 1번)
                 if (globalFrame % 2 === 0) selfieSegmentation.send({ image: video });
 
                 if (segMask) {
-                    if (!segCanvas) { segCanvas = document.createElement('canvas'); segCtx = segCanvas.getContext('2d'); }
-                    segCanvas.width = cols; segCanvas.height = rows;
-                    segCtx.drawImage(segMask, 0, 0, cols, rows);
-                    let maskData = segCtx.getImageData(0, 0, cols, rows).data;
-                    let vidData = offCtx.getImageData(0, 0, cols, rows);
-                    let vd = vidData.data;
-                    for (let pi = 0; pi < maskData.length; pi += 4) {
-                        if (maskData[pi] < 128) { vd[pi] = 255; vd[pi+1] = 255; vd[pi+2] = 255; }
-                    }
-                    offCtx.putImageData(vidData, 0, 0);
+                    // CPU 픽셀 연산 대신, 하드웨어 가속 Canvas 블렌딩을 사용하여
+                    // 경계선을 아주 부드럽고 깔끔하게 안티앨리어싱(Anti-Aliasing) 처리합니다.
+                    
+                    // 1. 거푸집(Mask) 적용: 사람 영역만 남기고 나머지는 투명하게 만듦
+                    offCtx.globalCompositeOperation = 'destination-in';
+                    offCtx.drawImage(segMask, 0, 0, cols, rows);
+                    
+                    // 2. 투명해진 배경을 완전히 강제 흰색(#FFFFFF)으로 채워서 ASCII 구역을 지움
+                    offCtx.globalCompositeOperation = 'destination-over';
+                    offCtx.fillStyle = '#FFFFFF';
+                    offCtx.fillRect(0, 0, cols, rows);
+                    
+                    // 3. 합성 모드 초기화
+                    offCtx.globalCompositeOperation = 'source-over';
                 }
             }
         }
