@@ -485,6 +485,7 @@ WE ARE COSMIC</textarea>
                 <option value="matrix">MATRIX (CODE / BINARY)</option>
                 <option value="geometric">GEOMETRIC (SHAPES)</option>
                 <option value="chaos">CHAOS (GLITCH SYMBOLS)</option>
+                    <option value="mosaic">MOSAIC (NON-TYPO)</option>
             </select>
         </div>
 
@@ -794,8 +795,12 @@ WE ARE COSMIC</textarea>
                 video.addEventListener('canplay', () => {
                     document.getElementById('ui-layer').style.display = 'none';
                     document.getElementById('controls-container').style.display = 'flex';
-                    document.getElementById('settings-panel').classList.add('open');
-                    document.getElementById('settings-toggle').style.setProperty('display', 'none', 'important');
+                    if (window.innerWidth > 767) {
+                        document.getElementById('settings-panel').classList.add('open');
+                        document.getElementById('settings-toggle').style.setProperty('display', 'none', 'important');
+                    } else {
+                        document.getElementById('settings-toggle').style.setProperty('display', 'flex', 'important');
+                    }
                     isCamera = true;
                     initSegmentation();
                     video.play();
@@ -899,8 +904,12 @@ WE ARE COSMIC</textarea>
         video.addEventListener('canplay', () => {
             document.getElementById('ui-layer').style.display = 'none';
             document.getElementById('controls-container').style.display = 'flex';
-            document.getElementById('settings-panel').classList.add('open');
-            document.getElementById('settings-toggle').style.setProperty('display', 'none', 'important');
+            if (window.innerWidth > 767) {
+                document.getElementById('settings-panel').classList.add('open');
+                document.getElementById('settings-toggle').style.setProperty('display', 'none', 'important');
+            } else {
+                document.getElementById('settings-toggle').style.setProperty('display', 'flex', 'important');
+            }
 
             if (!hasPlayedIntro) {
                 hasPlayedIntro = true;
