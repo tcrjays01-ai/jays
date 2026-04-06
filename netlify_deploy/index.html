@@ -232,7 +232,7 @@
             COSMIC ENGINE
             <button id="settings-close" onclick="toggleSettings()">✕</button>
         </div>
-        <button id="btn-invert" onclick="toggleInvert()" style="width:100%; margin-bottom:15px; padding:8px; font-weight:800; cursor:pointer; background:#FFF; color:#000; border:1px solid #000; transition:0.2s;">THEME : WHITE (기본)</button>
+        <button id="btn-invert" onclick="toggleInvert()" style="width:100%; margin-bottom:15px; padding:8px; font-weight:800; cursor:pointer; background:#FFF; color:#000; border:1px solid #000; transition:0.2s;">WHITE</button>
 
         <span class="ctrl-label">TEXT</span>
         <div class="ctrl-section">
@@ -430,11 +430,11 @@ WE ARE COSMIC</textarea>
         isInverted = !isInverted;
         let btn = document.getElementById('btn-invert');
         if (isInverted) {
-            btn.textContent = 'THEME : BLACK (반전)';
+            btn.textContent = 'BLACK';
             btn.style.background = '#000'; btn.style.color = '#FFF';
             bgColor = '#000000'; colorZ2 = '#000000'; colorZ3 = '#303030'; colorZ4 = '#FFFFFF'; colorText = '#FFFFFF';
         } else {
-            btn.textContent = 'THEME : WHITE (기본)';
+            btn.textContent = 'WHITE';
             btn.style.background = '#FFF'; btn.style.color = '#000';
             bgColor = baseTheme.bgColor; colorZ2 = baseTheme.z2; colorZ3 = baseTheme.z3; colorZ4 = baseTheme.z4; colorText = baseTheme.txt;
         }
@@ -795,9 +795,16 @@ WE ARE COSMIC</textarea>
 
                 // 지정된 밝기(Threshold)보다 밝은 픽셀은 렌더링 무시 (피부 허공 증발)
                 let currentThreshold = darknessThreshold; // 0.12
+                const DOT_ZONE = 0.07; // Transition zone just below threshold
+                if (darkness <= currentThreshold - DOT_ZONE) {
+                    continue; // Completely empty/white
+                }
                 if (darkness <= currentThreshold) {
-                    ctx.fillStyle = colorZ3; // 조금 더 흐릿한 색으로 사용
+                    // Transition zone: tiny dot briefly visible
+                    ctx.font = `${Math.round(CELL_SIZE * 0.25)}px JetBrains Mono`;
+                    ctx.fillStyle = colorZ3;
                     ctx.fillText('·', cx, vy);
+                    ctx.font = `${Math.round(CELL_SIZE * 0.85)}px ${currentFont}`;
                     continue;
                 }
 
