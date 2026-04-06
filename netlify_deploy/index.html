@@ -1046,10 +1046,18 @@ WE ARE COSMIC</textarea>
                         ctx.save();
                         ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
                         // Text uses user's selected text color, fading opacity towards core
-                        ctx.fillStyle = `rgba(${rgbText[0]}, ${rgbText[1]}, ${rgbText[2]}, ${1.0 - intensity * 0.85})`; 
                         let rowOffset = Math.floor(j) * 17;
                         let charIdx = (Math.floor(i) + rowOffset) % TEXT_FLOW.length;
-                        ctx.fillText(TEXT_FLOW[charIdx % TEXT_FLOW.length], cx, vy);
+                        let char = TEXT_FLOW[charIdx % TEXT_FLOW.length];
+
+                        // --- 🎯 Color Logic: Letters vs Symbols ---
+                        let isLetter = /[a-zA-Z]/.test(char);
+                        if (isLetter) {
+                            ctx.fillStyle = `rgba(${rgbText[0]}, ${rgbText[1]}, ${rgbText[2]}, ${1.0 - intensity * 0.85})`;
+                        } else {
+                            ctx.fillStyle = `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${1.0 - intensity * 0.85})`;
+                        }
+                        ctx.fillText(char, cx, vy);
                         ctx.restore();
                     }
                 }
@@ -1060,10 +1068,13 @@ WE ARE COSMIC</textarea>
                     ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
                     ctx.save();
                     ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
-                    ctx.fillStyle = colorText;
                     let rowOffset = Math.floor(j) * 17;
                     let charIdx = (Math.floor(i) + rowOffset) % TEXT_FLOW.length;
-                    ctx.fillText(TEXT_FLOW[charIdx % TEXT_FLOW.length], cx, vy);
+                    let char = TEXT_FLOW[charIdx % TEXT_FLOW.length];
+
+                    // --- 🎯 Color Logic: Letters vs Symbols ---
+                    ctx.fillStyle = /[a-zA-Z]/.test(char) ? colorText : colorSymbol;
+                    ctx.fillText(char, cx, vy);
                     ctx.restore();
                 }
                 // 4순위: 중간 밝기 (음영) - 그레이 박스 + ASCII
@@ -1073,7 +1084,7 @@ WE ARE COSMIC</textarea>
                     ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
                     ctx.save();
                     ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
-                    ctx.fillStyle = colorText;
+                    ctx.fillStyle = colorSymbol; // Symbols always use SYMBOL color here
                     let t = (v - 0.72) / 0.16; // mapped to remaining span
                     let block = t < 0.2 ? '.' : t < 0.4 ? ':' : t < 0.6 ? '░' : t < 0.8 ? '▒' : '▓';
                     ctx.fillText(block, cx, vy);
