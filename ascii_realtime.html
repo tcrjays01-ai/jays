@@ -305,6 +305,29 @@ WE ARE COSMIC</textarea>
             </div>
         </div>
 
+        <div class="ctrl-section">
+            <span class="ctrl-label">Detailed Palette</span>
+            <div class="ctrl-inline" style="flex-wrap:wrap; gap:8px;">
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                    <input type="color" id="ctrl-col-z2" value="#ffffff" oninput="applyPalette('z2', this.value)">
+                    <span style="font-size:8px; letter-spacing:1px; opacity:0.5;">LIGHT</span>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                    <input type="color" id="ctrl-col-z3" value="#808080" oninput="applyPalette('z3', this.value)">
+                    <span style="font-size:8px; letter-spacing:1px; opacity:0.5;">MID</span>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                    <input type="color" id="ctrl-col-z4" value="#000000" oninput="applyPalette('z4', this.value)">
+                    <span style="font-size:8px; letter-spacing:1px; opacity:0.5;">DEEP</span>
+                </div>
+                <div style="flex:1;"></div>
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                    <input type="color" id="ctrl-col-txt" value="#000000" oninput="applyPalette('txt', this.value)">
+                    <span style="font-size:8px; letter-spacing:1px; opacity:0.5;">TEXT</span>
+                </div>
+            </div>
+        </div>
+
         <hr class="ctrl-divider">
 
         <div class="ctrl-section">
@@ -344,6 +367,12 @@ WE ARE COSMIC</textarea>
     let gradientFrom = [0, 0, 255];
     let gradientTo = [255, 0, 255];
     let bgColor = '#FFFFFF';
+
+    // Detailed Palette
+    let colorZ2 = '#FFFFFF'; let rgbZ2 = [255, 255, 255];
+    let colorZ3 = '#808080';
+    let colorZ4 = '#000000';
+    let colorText = '#000000'; let rgbText = [0, 0, 0];
 
     function hexToRgb(hex) {
         let r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
@@ -677,10 +706,10 @@ WE ARE COSMIC</textarea>
                         baseR = rgb[0]; baseG = rgb[1]; baseB = rgb[2];
                     }
                     
-                    // Blend block from White (ambient) to Pure Color (core)
-                    let fillR = Math.round(baseR * intensity + 255 * (1 - intensity));
-                    let fillG = Math.round(baseG * intensity + 255 * (1 - intensity));
-                    let fillB = Math.round(baseB * intensity + 255 * (1 - intensity));
+                    // Blend block from Light Zone (ambient) to Pure Color (core)
+                    let fillR = Math.round(baseR * intensity + rgbZ2[0] * (1 - intensity));
+                    let fillG = Math.round(baseG * intensity + rgbZ2[1] * (1 - intensity));
+                    let fillB = Math.round(baseB * intensity + rgbZ2[2] * (1 - intensity));
                     
                     ctx.fillStyle = `rgb(${fillR}, ${fillG}, ${fillB})`;
                     ctx.fillRect(fx, fy, fw, fh);
@@ -689,7 +718,7 @@ WE ARE COSMIC</textarea>
                     if (intensity > 0.4 && (i * 11 + j * 17 + Math.floor(globalFrame/5)) % 10 < 2) {
                         ctx.save();
                         ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
-                        ctx.fillStyle = `rgba(255, 255, 255, ${intensity})`; // Fade symbol in
+                        ctx.fillStyle = `rgba(${rgbZ2[0]}, ${rgbZ2[1]}, ${rgbZ2[2]}, ${intensity})`; // Fade symbol in
                         let symIdx = (i * 3 + j * 7 + Math.floor(globalFrame/15)) % MATH_SYMBOLS.length;
                         ctx.fillText(MATH_SYMBOLS[symIdx], cx, vy);
                         ctx.restore();
@@ -697,36 +726,35 @@ WE ARE COSMIC</textarea>
                         // Standard typography fading away as it gets close to core
                         ctx.save();
                         ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
-                        // Text goes from Black to White, and fades out towards the core
-                        let textLuma = Math.round(255 * intensity);
-                        ctx.fillStyle = `rgba(${textLuma}, ${textLuma}, ${textLuma}, ${1.0 - intensity * 0.85})`; 
+                        // Text uses user's selected text color, fading opacity towards core
+                        ctx.fillStyle = `rgba(${rgbText[0]}, ${rgbText[1]}, ${rgbText[2]}, ${1.0 - intensity * 0.85})`; 
                         let rowOffset = Math.floor(j) * 17;
                         let charIdx = (Math.floor(i) + rowOffset) % TEXT_FLOW.length;
                         ctx.fillText(TEXT_FLOW[charIdx % TEXT_FLOW.length], cx, vy);
                         ctx.restore();
                     }
                 }
-                // ZONE 2: Typography
+                // ZONE 2: Typography (Light)
                 else if (v < 0.80) {
-                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillStyle = colorZ2;
                     ctx.fillRect(fx, fy, fw, fh);
                     ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
                     ctx.save();
                     ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
-                    ctx.fillStyle = '#000000';
+                    ctx.fillStyle = colorText;
                     let rowOffset = Math.floor(j) * 17;
                     let charIdx = (Math.floor(i) + rowOffset) % TEXT_FLOW.length;
                     ctx.fillText(TEXT_FLOW[charIdx % TEXT_FLOW.length], cx, vy);
                     ctx.restore();
                 }
-                // ZONE 3: Grey + ASCII
+                // ZONE 3: Grey + ASCII (Mid)
                 else if (v < 0.92) {
-                    ctx.fillStyle = '#808080';
+                    ctx.fillStyle = colorZ3;
                     ctx.fillRect(fx, fy, fw, fh);
                     ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
                     ctx.save();
                     ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
-                    ctx.fillStyle = '#000000';
+                    ctx.fillStyle = colorText;
                     let t = (v - 0.80) / 0.12;
                     let block = t < 0.2 ? '.' : t < 0.4 ? ':' : t < 0.6 ? '░' : t < 0.8 ? '▒' : '▓';
                     ctx.fillText(block, cx, vy);
@@ -734,7 +762,7 @@ WE ARE COSMIC</textarea>
                 }
                 // ZONE 4: Deep Shadow
                 else {
-                    ctx.fillStyle = '#000000';
+                    ctx.fillStyle = colorZ4;
                     ctx.fillRect(fx, fy, fw, fh);
                 }
             }
@@ -1006,6 +1034,13 @@ WE ARE COSMIC</textarea>
         bgColor = val;
         document.getElementById('bg-hex').textContent = val.toUpperCase();
         document.getElementById('ctrl-bg').value = val;
+    }
+    
+    function applyPalette(target, val) {
+        if (target === 'z2') { colorZ2 = val; rgbZ2 = hexToRgb(val); }
+        else if (target === 'z3') { colorZ3 = val; }
+        else if (target === 'z4') { colorZ4 = val; }
+        else if (target === 'txt') { colorText = val; rgbText = hexToRgb(val); }
     }
 
     function rgbToHsl(r, g, b) {
