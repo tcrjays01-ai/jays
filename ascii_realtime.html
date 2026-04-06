@@ -463,7 +463,7 @@ WE ARE COSMIC</textarea>
                     <span style="font-size:6.5px; letter-spacing:3px; opacity:0.8; font-weight:700; color:var(--accent-primary); text-transform:uppercase;">Char</span>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:center;">
-                    <input type="color" id="ctrl-col-sym" value="#000000" oninput="applyPalette('sym', this.value)">
+                    <input type="color" id="ctrl-col-sym" value="#0000ff" oninput="applyPalette('sym', this.value)">
                     <span style="font-size:6px; letter-spacing:3px; opacity:0.3; text-transform:uppercase;">Symbol</span>
                 </div>
             </div>
@@ -527,7 +527,7 @@ WE ARE COSMIC</textarea>
     let colorZ3 = '#808080';
     let colorZ4 = '#000000';
     let colorText = '#000000'; let rgbText = [0, 0, 0];
-    let colorSymbol = '#000000'; let rgbSymbol = [0, 0, 0];
+    let colorSymbol = '#0000FF'; let rgbSymbol = [0, 0, 255]; // Standard Symbol Default
     let CELL_SIZE = 150;
     let targetCellSize = 150;
     let frameCounter = 0, globalFrame = 0;
@@ -1044,7 +1044,8 @@ WE ARE COSMIC</textarea>
                     if (intensity > 0.4 && (i * 11 + j * 17 + Math.floor(globalFrame/5)) % 10 < 2) {
                         ctx.save();
                         ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
-                        ctx.fillStyle = `rgba(${rgbZ2[0]}, ${rgbZ2[1]}, ${rgbZ2[2]}, ${intensity})`; // Fade symbol in
+                        // --- 🎯 FIX: Structural symbols MUST use rgbSymbol ---
+                        ctx.fillStyle = `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${intensity})`; 
                         let symIdx = (i * 3 + j * 7 + Math.floor(globalFrame/15)) % MATH_SYMBOLS.length;
                         ctx.fillText(MATH_SYMBOLS[symIdx], cx, vy);
                         ctx.restore();
