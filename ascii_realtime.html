@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>COSMIC - ASCII Realtime Engine</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Mono:wght@400;700&family=IBM+Plex+Mono:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;500;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Silkscreen:wght@400;700&family=VT323&family=Space+Mono:wght@400;700&family=IBM+Plex+Mono:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap');
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         body, html {
             width: 100%; height: 100%;
@@ -241,6 +241,13 @@ WE ARE COSMIC</textarea>
         <div class="ctrl-section">
             <span class="ctrl-label">FONT</span>
             <select id="ctrl-font" onchange="applyFont(this.value)">
+                <!-- 신규 아트 컨셉 폰트 -->
+                <option value="Anton">Anton (Brutalist Block)</option>
+                <option value="Playfair Display">Playfair Display (Editorial Chic)</option>
+                <option value="VT323">VT323 (Terminal Retro)</option>
+                <option value="Silkscreen">Silkscreen (Pixel Art)</option>
+                
+                <!-- 기존 코딩용 모노스페이스 -->
                 <option value="JetBrains Mono">JetBrains Mono</option>
                 <option value="Space Mono">Space Mono</option>
                 <option value="IBM Plex Mono">IBM Plex Mono</option>
@@ -260,7 +267,7 @@ WE ARE COSMIC</textarea>
         </div>
 
         <div class="ctrl-section">
-            <span class="ctrl-label">Blue Tone</span>
+            <span class="ctrl-label">Color Phase (Depth)</span>
             <div class="ctrl-inline">
                 <input type="range" id="ctrl-contrast" min="0" max="0.85" step="0.01" value="0" oninput="applyContrast(this.value)">
                 <span class="ctrl-val" id="contrast-val">↑ Hi</span>
