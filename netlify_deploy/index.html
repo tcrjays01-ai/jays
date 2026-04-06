@@ -232,7 +232,10 @@
             COSMIC ENGINE
             <button id="settings-close" onclick="toggleSettings()">✕</button>
         </div>
-        <button id="btn-invert" onclick="toggleInvert()" style="width:100%; margin-bottom:15px; padding:8px; font-weight:800; cursor:pointer; background:#FFF; color:#000; border:1px solid #000; transition:0.2s;">WHITE</button>
+        <div style="display:flex; gap:6px; margin-bottom:15px;">
+            <button id="btn-white" onclick="setTheme('white')" style="flex:1; padding:8px; font-weight:800; cursor:pointer; background:#000; color:#FFF; border:1px solid #000; transition:0.2s;">WHITE</button>
+            <button id="btn-black" onclick="setTheme('black')" style="flex:1; padding:8px; font-weight:800; cursor:pointer; background:#FFF; color:#000; border:1px solid #000; transition:0.2s;">BLACK</button>
+        </div>
 
         <span class="ctrl-label">TEXT</span>
         <div class="ctrl-section">
@@ -271,7 +274,7 @@ WE ARE COSMIC</textarea>
         <div class="ctrl-section">
             <span class="ctrl-label">Color Phase (Depth)</span>
             <div class="ctrl-inline">
-                <input type="range" id="ctrl-contrast" min="0" max="1.0" step="0.01" value="0.82" oninput="applyContrast(this.value)">
+                <input type="range" id="ctrl-contrast" min="0" max="1.0" step="0.01" value="0" oninput="applyContrast(this.value)">
                 <label style="display:flex;align-items:center;gap:4px;font-size:9px;font-weight:800;cursor:pointer;">
                     <input type="checkbox" id="ctrl-auto-phase" onchange="applyAutoPhase(this.checked)"> WAVES
                 </label>
@@ -423,32 +426,28 @@ WE ARE COSMIC</textarea>
     let isInverted = false;
     let baseTheme = null;
 
-    function toggleInvert() {
-        if (!baseTheme) {
-            baseTheme = { bgColor: bgColor, z2: colorZ2, z3: colorZ3, z4: colorZ4, txt: colorText };
-        }
-        isInverted = !isInverted;
-        let btn = document.getElementById('btn-invert');
-        if (isInverted) {
-            btn.textContent = 'BLACK';
-            btn.style.background = '#000'; btn.style.color = '#FFF';
-            bgColor = '#000000'; colorZ2 = '#000000'; colorZ3 = '#303030'; colorZ4 = '#FFFFFF'; colorText = '#FFFFFF';
+    function setTheme(mode) {
+        let btnW = document.getElementById('btn-white');
+        let btnB = document.getElementById('btn-black');
+        if (mode === 'black') {
+            btnB.style.background = '#000'; btnB.style.color = '#FFF';
+            btnW.style.background = '#FFF'; btnW.style.color = '#000';
+            bgColor = '#000000'; colorZ2 = '#000000'; colorZ3 = '#606060'; colorZ4 = '#FFFFFF'; colorText = '#FFFFFF';
         } else {
-            btn.textContent = 'WHITE';
-            btn.style.background = '#FFF'; btn.style.color = '#000';
-            bgColor = baseTheme.bgColor; colorZ2 = baseTheme.z2; colorZ3 = baseTheme.z3; colorZ4 = baseTheme.z4; colorText = baseTheme.txt;
+            btnW.style.background = '#000'; btnW.style.color = '#FFF';
+            btnB.style.background = '#FFF'; btnB.style.color = '#000';
+            bgColor = '#FFFFFF'; colorZ2 = '#FFFFFF'; colorZ3 = '#808080'; colorZ4 = '#000000'; colorText = '#000000';
         }
         document.getElementById('ctrl-bg').value = bgColor;
         document.getElementById('bg-hex').textContent = bgColor.toUpperCase();
-        
         document.getElementById('ctrl-col-z2').value = colorZ2;
         document.getElementById('ctrl-col-z3').value = colorZ3;
         document.getElementById('ctrl-col-z4').value = colorZ4;
         document.getElementById('ctrl-col-txt').value = colorText;
-        
-        ctx.fillStyle = bgColor;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (ctx) { ctx.fillStyle = bgColor; ctx.fillRect(0, 0, canvas.width, canvas.height); }
     }
+
+    function toggleInvert() { setTheme(bgColor === '#FFFFFF' ? 'black' : 'white'); }
 
     // ==========================================================
     function init() {
