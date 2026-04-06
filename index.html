@@ -1468,22 +1468,10 @@ WE ARE COSMIC</textarea>
         init(); 
         updateBgSwatches(); 
         
-        // --- 🚀 Premium UI Intro Reveal Sequence ---
-        const settings = document.getElementById('settings-panel');
-        if (settings) {
-            // Show for 3 seconds to guide the user
-            settings.classList.add('open');
-            // Mock show bottom menu too
-            document.body.classList.add('touch-show');
-            
-            setTimeout(() => {
-                settings.classList.remove('open');
-                document.body.classList.remove('touch-show');
-                // Ensure the settings toggle is visible after intro
-                let toggle = document.getElementById('settings-toggle');
-                if (toggle) toggle.style.display = 'flex';
-            }, 3000);
-        }
+        // --- 🚀 Premium UI Intro (HUD/Buttons) ---
+        // Ensure buttons and HUD are setup, but avoid auto-opening menus until video loads
+        let toggle = document.getElementById('settings-toggle');
+        if (toggle) toggle.style.display = 'flex';
     });
     </script>
 
