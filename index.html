@@ -44,43 +44,55 @@
         #ui-layer {
             position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            z-index: 1000; color: #000; text-align: center;
-            /* Premium Blue-Tinted Glassmorphism */
-            background: rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(40px) saturate(180%);
-            -webkit-backdrop-filter: blur(40px) saturate(180%);
-            padding: 60px 80px; border: 1px solid rgba(255, 255, 255, 0.5);
+            z-index: 1000; color: var(--on-accent-container); text-align: center;
+            /* Material 3 Elevated Surface + Premium Bevel & Shadow */
+            background: rgba(255, 255, 255, 0.48);
+            backdrop-filter: blur(50px) saturate(210%);
+            -webkit-backdrop-filter: blur(50px) saturate(210%);
+            padding: 64px 84px; 
+            border: 1px solid rgba(255, 255, 255, 0.7);
             box-shadow: 
-                0 40px 100px -20px rgba(0, 0, 0, 0.15),
-                inset 0 0 40px rgba(0, 0, 255, 0.05); /* Subtle blue glow */
-            border-radius: 4px;
+                0 4px 6px -1px rgba(0, 0, 0, 0.05), /* Tiny core shadow */
+                0 30px 60px -12px rgba(0, 0, 0, 0.18), /* Ambient shadow */
+                inset 1px 1.5px 0px rgba(255, 255, 255, 0.9), /* Sharp Bevel Highlight */
+                inset -0.5px -1px 0px rgba(0, 0, 0, 0.04);     /* Subtle bottom shade */
+            border-radius: 36px;
         }
         #ui-layer::before {
             content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(0,0,255,0.02) 100%);
-            pointer-events: none;
+            background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, var(--accent-container) 100%);
+            pointer-events: none; opacity: 0.28;
+            border-radius: 36px;
         }
         #ui-layer h2 { 
-            font-size: 1.0em; letter-spacing: 6px; margin-bottom: 14px; 
-            font-weight: 500; text-transform: uppercase; color: #000;
+            font-size: 1.1em; letter-spacing: 7px; margin-bottom: 16px; 
+            font-weight: 500; text-transform: uppercase;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); /* Typo Depth */
         }
         #ui-layer p { 
-            font-size: 0.6em; opacity: 0.4; margin-bottom: 40px; letter-spacing: 4px; 
-            font-weight: 400; text-transform: uppercase; color: #000;
+            font-size: 0.6em; opacity: 0.55; margin-bottom: 45px; letter-spacing: 4px; 
+            font-weight: 400; text-transform: uppercase;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
         }
         #ui-layer button {
-            background: rgba(0,0,0,0.03); color: #000;
-            border: 1px solid rgba(0,0,0,0.08); padding: 14px 36px;
+            background: var(--accent-container); color: var(--on-accent-container);
+            border: 1px solid rgba(255,255,255,0.5); padding: 18px 44px;
             font-family: inherit; font-size: 10px; font-weight: 500;
-            cursor: pointer; letter-spacing: 3px; transition: all 0.4s cubic-bezier(0.16,1,0.3,1); 
-            margin: 8px;
+            cursor: pointer; letter-spacing: 4px; transition: all 0.5s cubic-bezier(0.16,1,0.3,1); 
+            margin: 10px;
             text-transform: uppercase;
-            border-radius: 2px;
+            border-radius: 50px; /* Perfect Pill */
+            box-shadow: 
+                0 6px 16px rgba(0,0,0,0.1),
+                inset 1px 1.5px 1px rgba(255,255,255,0.8),
+                inset -1px -1.5px 1px rgba(0,0,0,0.03);
+            text-shadow: 0 0.5px 1px rgba(0,0,0,0.02);
         }
         #ui-layer button:hover { 
-            background: #000; color: #FFF; border-color: #000;
-            transform: translateY(-4px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+            background: var(--accent-primary); color: #FFF;
+            transform: translateY(-6px) scale(1.06);
+            box-shadow: 0 16px 36px rgba(0,0,0,0.18);
+            border-color: rgba(255,255,255,0.8);
         }
         #ui-layer input[type="file"] { display: none; }
         #hud {
