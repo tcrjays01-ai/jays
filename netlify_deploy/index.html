@@ -807,11 +807,12 @@ WE ARE COSMIC</textarea>
 
                 if (darkness <= currentThreshold) {
                     // Only draw dot if it was recently part of a surface (decaying)
-                    if (dotLife[cellIdx] > 0.05) {
+                    if (dotLife[cellIdx] > 0.01) {
                         ctx.save();
-                        ctx.globalAlpha = dotLife[cellIdx];
-                        ctx.font = `${Math.round(CELL_SIZE * 0.22 * dotLife[cellIdx])}px JetBrains Mono`;
-                        ctx.fillStyle = colorZ3;
+                        ctx.globalAlpha = dotLife[cellIdx] * 0.9;
+                        // 점의 크기를 키우고 더 굵게 보이도록 조정
+                        ctx.font = `bold ${Math.round(CELL_SIZE * 0.45 * dotLife[cellIdx])}px JetBrains Mono`;
+                        ctx.fillStyle = colorText; // 선명한 대비 색상 사용
                         ctx.fillText('·', cx, vy);
                         ctx.restore();
                     }
