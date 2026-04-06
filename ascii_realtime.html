@@ -270,7 +270,9 @@ WE ARE COSMIC</textarea>
             <span class="ctrl-label">Color Phase (Depth)</span>
             <div class="ctrl-inline">
                 <input type="range" id="ctrl-contrast" min="0" max="0.85" step="0.01" value="0" oninput="applyContrast(this.value)">
-                <span class="ctrl-val" id="contrast-val">↑ Hi</span>
+                <label style="display:flex;align-items:center;gap:4px;font-size:9px;font-weight:800;cursor:pointer;">
+                    <input type="checkbox" id="ctrl-auto-phase" onchange="applyAutoPhase(this.checked)"> WAVES
+                </label>
             </div>
         </div>
 
@@ -334,6 +336,8 @@ WE ARE COSMIC</textarea>
     let contrastPow = 2.0;
     let zone1Limit = 0.15;
     let bluePhase = 0.0;   // 0 = highlights, 0.85 = shadows
+    let autoPhase = false;
+    let basePhase = 0.0;
     let gradientMode = false;
     let gradientT = 0;
     let gradientDir = 1;
@@ -605,6 +609,15 @@ WE ARE COSMIC</textarea>
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
+        // Auto Phase wave breathing over time
+        if (autoPhase) {
+            bluePhase = (Math.sin(globalFrame * 0.04) * 0.5 + 0.5) * 0.85;
+            let slider = document.getElementById('ctrl-contrast');
+            if (slider && Math.abs(parseFloat(slider.value) - bluePhase) > 0.02) {
+                slider.value = bluePhase;
+            }
+        }
+
         // Grid-aligned Rhythmic Offset (Wave)
         let glitchCycle = globalFrame % 120;
         let isGlitchActive = glitchCycle < 20;
@@ -646,22 +659,50 @@ WE ARE COSMIC</textarea>
                 const fx = Math.floor(x), fy = Math.floor(y);
                 const fw = Math.ceil(CELL_SIZE), fh = Math.ceil(CELL_SIZE);
 
-                // ZONE 1: Key Color Point — position shifts with bluePhase
-                if (v >= bluePhase && v < bluePhase + zone1Limit) {
+                // Calculate distance to phase core for soft glow
+                let dist = Math.abs(v - bluePhase);
+
+                // ZONE 1: Key Color Point — glowing soft blend
+                if (dist < zone1Limit) {
+                    let intensity = 1.0 - (dist / zone1Limit); // 1.0 at center, 0.0 at edge
+                    intensity = Math.pow(intensity, 1.5); // Smoother falloff curve
+                    
+                    let baseR, baseG, baseB;
                     if (gradientMode) {
-                        ctx.fillStyle = lerpColor(gradientFrom, gradientTo, gradientT);
+                        let c = lerpColor(gradientFrom, gradientTo, gradientT);
+                        let m = c.match(/\d+/g);
+                        baseR = parseInt(m[0]); baseG = parseInt(m[1]); baseB = parseInt(m[2]);
                     } else {
-                        ctx.fillStyle = keyColor;
+                        let rgb = hexToRgb(keyColor);
+                        baseR = rgb[0]; baseG = rgb[1]; baseB = rgb[2];
                     }
+                    
+                    // Blend block from White (ambient) to Pure Color (core)
+                    let fillR = Math.round(baseR * intensity + 255 * (1 - intensity));
+                    let fillG = Math.round(baseG * intensity + 255 * (1 - intensity));
+                    let fillB = Math.round(baseB * intensity + 255 * (1 - intensity));
+                    
+                    ctx.fillStyle = `rgb(${fillR}, ${fillG}, ${fillB})`;
                     ctx.fillRect(fx, fy, fw, fh);
 
                     // Inject Structural Symbols (20% ratio)
-                    if ((i * 11 + j * 17 + Math.floor(globalFrame/5)) % 10 < 2) {
+                    if (intensity > 0.4 && (i * 11 + j * 17 + Math.floor(globalFrame/5)) % 10 < 2) {
                         ctx.save();
                         ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
-                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillStyle = `rgba(255, 255, 255, ${intensity})`; // Fade symbol in
                         let symIdx = (i * 3 + j * 7 + Math.floor(globalFrame/15)) % MATH_SYMBOLS.length;
                         ctx.fillText(MATH_SYMBOLS[symIdx], cx, vy);
+                        ctx.restore();
+                    } else {
+                        // Standard typography fading away as it gets close to core
+                        ctx.save();
+                        ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
+                        // Text goes from Black to White, and fades out towards the core
+                        let textLuma = Math.round(255 * intensity);
+                        ctx.fillStyle = `rgba(${textLuma}, ${textLuma}, ${textLuma}, ${1.0 - intensity * 0.85})`; 
+                        let rowOffset = Math.floor(j) * 17;
+                        let charIdx = (Math.floor(i) + rowOffset) % TEXT_FLOW.length;
+                        ctx.fillText(TEXT_FLOW[charIdx % TEXT_FLOW.length], cx, vy);
                         ctx.restore();
                     }
                 }
@@ -934,10 +975,19 @@ WE ARE COSMIC</textarea>
         document.getElementById('zone1-val').textContent = Math.round(val * 100) + '%';
     }
     function applyContrast(val) {
-        bluePhase = parseFloat(val);
-        let t = parseFloat(val);
-        let label = t < 0.15 ? '↑ Hi' : t < 0.45 ? '— Mid' : '↓ Lo';
-        document.getElementById('contrast-val').textContent = label;
+        basePhase = parseFloat(val);
+        bluePhase = basePhase;
+        if (autoPhase) {
+            document.getElementById('ctrl-auto-phase').checked = false;
+            autoPhase = false;
+        }
+    }
+    function applyAutoPhase(checked) {
+        autoPhase = checked;
+        if (!checked) {
+            bluePhase = basePhase; // Restore position when unchecked
+            document.getElementById('ctrl-contrast').value = basePhase;
+        }
     }
     function applyGradient(checked) {
         gradientMode = checked;
