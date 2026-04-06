@@ -394,6 +394,7 @@ WE ARE COSMIC</textarea>
     let isSegmenting = false;
     let segCanvas = null, segCtx = null;
     let cellHistory = new Float32Array(0); // For video noise temporal smoothing
+    let dotLife = new Float32Array(0);     // Temporal decay for transit dots
 
     let CELL_SIZE = 150;
     let targetCellSize = 150;
@@ -488,6 +489,8 @@ WE ARE COSMIC</textarea>
             offCanvas.height = rows;
             cellHistory = new Float32Array(cols * rows);
             cellHistory.fill(-1); // Mark as uninitialized
+            dotLife = new Float32Array(cols * rows);
+            dotLife.fill(0);
         }
     }
 
@@ -794,18 +797,27 @@ WE ARE COSMIC</textarea>
 
                 // 지정된 밝기(Threshold)보다 밝은 픽셀은 렌더링 무시 (피부 허공 증발)
                 let currentThreshold = darknessThreshold; // 0.12
-                const DOT_ZONE = 0.07; // Transition zone just below threshold
-                if (darkness <= currentThreshold - DOT_ZONE) {
-                    continue; // Completely empty/white
+                
+                // --- Temporal Dot Logic ---
+                if (darkness > currentThreshold) {
+                    dotLife[cellIdx] = 1.0; // Surface is present, keep dot energy full
+                } else {
+                    dotLife[cellIdx] *= 0.85; // Rapid decay when surface disappears
                 }
+
                 if (darkness <= currentThreshold) {
-                    // Transition zone: tiny dot briefly visible
-                    ctx.font = `${Math.round(CELL_SIZE * 0.25)}px JetBrains Mono`;
-                    ctx.fillStyle = colorZ3;
-                    ctx.fillText('·', cx, vy);
-                    ctx.font = `${Math.round(CELL_SIZE * 0.85)}px ${currentFont}`;
+                    // Only draw dot if it was recently part of a surface (decaying)
+                    if (dotLife[cellIdx] > 0.05) {
+                        ctx.save();
+                        ctx.globalAlpha = dotLife[cellIdx];
+                        ctx.font = `${Math.round(CELL_SIZE * 0.22 * dotLife[cellIdx])}px JetBrains Mono`;
+                        ctx.fillStyle = colorZ3;
+                        ctx.fillText('·', cx, vy);
+                        ctx.restore();
+                    }
                     continue;
                 }
+                // --------------------------
 
                 let v = (darkness - currentThreshold) / (1.0 - currentThreshold);
                 v = Math.min(1.0, Math.max(0.0, v));
