@@ -103,28 +103,35 @@
         #ui-layer input[type="file"] { display: none; }
         #ui-layer .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
-        /* M3 Filled Tonal Button */
+        /* Glass Pill Button */
         #ui-layer button {
-            background: var(--md-surface-variant);
+            background: rgba(255, 255, 255, 0.45);
             color: var(--md-on-surface);
-            border: 1px solid var(--md-outline);
-            padding: 14px 28px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            padding: 16px 32px;
             font-family: inherit;
             font-size: 11px;
             font-weight: 600;
-            letter-spacing: 1.25px;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
             cursor: pointer;
             border-radius: var(--md-shape-full);
-            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-            box-shadow: var(--md-elevation-1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow:
+                0 6px 20px rgba(0,0,0,0.08),
+                inset 1px 1.5px 0 rgba(255,255,255,0.9),
+                inset -0.5px -1px 0 rgba(0,0,0,0.04);
         }
         #ui-layer button:hover {
-            background: var(--md-primary-container);
+            background: rgba(0, 0, 255, 0.08);
             color: var(--md-primary);
-            border-color: rgba(0,0,255,0.18);
-            transform: translateY(-3px);
-            box-shadow: var(--md-elevation-2);
+            border-color: rgba(0, 0, 255, 0.2);
+            transform: translateY(-5px) scale(1.04);
+            box-shadow:
+                0 16px 40px rgba(0,0,0,0.12),
+                inset 1px 1.5px 0 rgba(255,255,255,0.9);
         }
         #ui-layer button:active { transform: scale(0.97); }
 
@@ -1541,12 +1548,5 @@ WE ARE COSMIC</textarea>
         // Ensure buttons and HUD are setup, but avoid auto-opening menus until video loads
     });
     </script>
-
-    <div id="bottom-hover-trigger"></div>
-    <div id="controls-container">
-        <button id="back-btn" class="premium-ctrl-btn" onclick="location.reload()">← BACK</button>
-        <button id="webcam-toggle" onclick="startCameraSource()">⚡ HAND CONTROL: OFF</button>
-        <button id="record-btn" onclick="startRecording()">⏺ REC VIDEO</button>
-    </div>
 </body>
 </html>
