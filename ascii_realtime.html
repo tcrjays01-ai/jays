@@ -385,7 +385,8 @@ WE ARE COSMIC</textarea>
     // Segmentation
     let isCamera = false;
     let selfieSegmentation = null;
-    let segMask = null;
+    let segMask = false;
+    let isSegmenting = false;
     let segCanvas = null, segCtx = null;
 
     let CELL_SIZE = 150;
@@ -497,13 +498,24 @@ WE ARE COSMIC</textarea>
     }
 
     function initSegmentation() {
-        segCanvas = document.createElement('canvas');
-        segCtx = segCanvas.getContext('2d');
+        if (!segCanvas) {
+            segCanvas = document.createElement('canvas');
+            segCtx = segCanvas.getContext('2d', { willReadFrequently: true });
+        }
         selfieSegmentation = new SelfieSegmentation({
             locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${f}`
         });
         selfieSegmentation.setOptions({ modelSelection: 1 }); // 1 = landscape (higher quality)
-        selfieSegmentation.onResults((results) => { segMask = results.segmentationMask; });
+        selfieSegmentation.onResults((results) => { 
+            if (results.segmentationMask) {
+                segCanvas.width = cols;
+                segCanvas.height = rows;
+                segCtx.clearRect(0, 0, cols, rows);
+                segCtx.drawImage(results.segmentationMask, 0, 0, cols, rows);
+                segMask = true;
+            }
+            isSegmenting = false; // Release lock
+        });
     }
 
     function loadVideo(src) {
@@ -611,8 +623,14 @@ WE ARE COSMIC</textarea>
 
             // Segmentation: 카메라 모드일 때 사람과 배경 분리
             if (isCamera && selfieSegmentation) {
-                // 프레임 전송 (너무 잦은 호출 방지를 위해 2프레임당 1번)
-                if (globalFrame % 2 === 0) selfieSegmentation.send({ image: video });
+                // 비동기 메모리 교착상태(Deadlock) 방지 및 프레임 속도 일치
+                if (!isSegmenting && video.readyState >= 2) {
+                    isSegmenting = true;
+                    selfieSegmentation.send({ image: video }).catch(err => {
+                        console.error('Segmentation error:', err);
+                        isSegmenting = false;
+                    });
+                }
 
                 if (segMask) {
                     // CPU 픽셀 연산 대신, 하드웨어 가속 Canvas 블렌딩을 사용하여
@@ -620,7 +638,7 @@ WE ARE COSMIC</textarea>
                     
                     // 1. 거푸집(Mask) 적용: 사람 영역만 남기고 나머지는 투명하게 만듦
                     offCtx.globalCompositeOperation = 'destination-in';
-                    offCtx.drawImage(segMask, 0, 0, cols, rows);
+                    offCtx.drawImage(segCanvas, 0, 0, cols, rows);
                     
                     // 2. 투명해진 배경을 완전히 강제 흰색(#FFFFFF)으로 채워서 ASCII 구역을 지움
                     offCtx.globalCompositeOperation = 'destination-over';
