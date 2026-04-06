@@ -994,50 +994,19 @@ WE ARE COSMIC</textarea>
                 let t = elapsed / INTRO_LEN;
                 let ease = 1 - Math.pow(1 - t, 3); // easeOutCubic
                 CELL_SIZE = 150 + (12 - 150) * ease;
-                targetFrameDelay = 125 + (42 - 125) * t; // 8fps ??24fps
-    function onHandResults(results) {
-        let badge = document.getElementById('hand-status-badge');
-        let pinchDisp = document.getElementById('pinch-display');
-        let ov = document.getElementById('cam-overlay-canvas');
-        let ovCtx = ov ? ov.getContext('2d') : null;
-        if (ovCtx) { ov.width = ov.offsetWidth; ov.height = ov.offsetHeight; ovCtx.clearRect(0, 0, ov.width, ov.height); }
-        if (!results.multiHandLandmarks || !results.multiHandLandmarks.length) {
-            pinchDistance = -1;
-            if (badge) badge.textContent = 'NO HAND';
-            if (pinchDisp) pinchDisp.textContent = '—';
-            return;
-        }
-        let lm = results.multiHandLandmarks[0];
-        let dx = (lm[4].x - lm[8].x) * 320, dy = (lm[4].y - lm[8].y) * 240;
-        pinchDistance = Math.sqrt(dx * dx + dy * dy);
-        targetCellSize = Math.round(lerp(12, 150, clamp((pinchDistance - 15) / 140, 0, 1)));
-        if (badge) badge.textContent = 'HAND ✓';
-        if (pinchDisp) pinchDisp.textContent = Math.round(pinchDistance) + 'px';
-        if (ovCtx && ov.width > 0) {
-            let w = ov.width, h = ov.height;
-            // Draw skeleton lines
-            let connections = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20]];
-            ovCtx.strokeStyle = 'rgba(255,255,255,0.4)'; ovCtx.lineWidth = 1.5;
-            connections.forEach(([a,b]) => {
-                ovCtx.beginPath();
-                ovCtx.moveTo((1-lm[a].x)*w, lm[a].y*h);
-                ovCtx.lineTo((1-lm[b].x)*w, lm[b].y*h);
-                ovCtx.stroke();
-            });
-            // Pinch line
-            ovCtx.strokeStyle = 'rgba(0,0,255,0.9)'; ovCtx.lineWidth = 2;
-            ovCtx.beginPath();
-            ovCtx.moveTo((1-lm[4].x)*w, lm[4].y*h);
-            ovCtx.lineTo((1-lm[8].x)*w, lm[8].y*h);
-            ovCtx.stroke();
-            // Key points
-            lm.forEach((pt, i) => {
-                let px = (1-pt.x)*w, py = pt.y*h;
-                ovCtx.fillStyle = (i===4||i===8) ? '#0000FF' : 'rgba(255,255,255,0.7)';
-                ovCtx.beginPath(); ovCtx.arc(px, py, i===4||i===8 ? 6 : 2.5, 0, Math.PI*2); ovCtx.fill();
-            });
-        }
-    }ect Structural Symbols (20% ratio)
+                targetFrameDelay = 125 + (42 - 125) * t; // 8fps→24fps
+            } else {
+                // Spring physics for elastic zoom feel
+                cellVelocity += (targetCellSize - CELL_SIZE) * 0.14;
+                cellVelocity *= 0.74;
+                CELL_SIZE += cellVelocity;
+                if (Math.abs(CELL_SIZE - targetCellSize) < 0.15 && Math.abs(cellVelocity) < 0.1) {
+                    CELL_SIZE = targetCellSize; cellVelocity = 0;
+                }
+                targetFrameDelay = 16;
+                isIntro = false;
+            }
+                    // Inject Structural Symbols (20% ratio)
                     if (intensity > 0.4 && (i * 11 + j * 17 + Math.floor(globalFrame/60)) % 10 < 2) {
                         ctx.save();
                         ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
