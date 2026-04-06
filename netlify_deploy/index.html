@@ -421,7 +421,14 @@
         }
         #ui-layer button { padding: 13px 20px; font-size: 10px; }
         }
-    </style>
+    
+        @media (min-width: 768px) {
+            #mobile-top-btns { display: none !important; }
+        }
+        @media (max-width: 767px) {
+            #settings-toggle { display: none !important; }
+        }
+        </style>
 </head>
 <body>
 
@@ -447,9 +454,9 @@
     <div id="tutorial-toast">🖱️ SCROLL TO ZOOM GRID</div>
     <div id="hud"><span id="hud-grid"></span> | <span id="hud-fps"></span> | <span id="hud-hand"></span></div>
 
-    <div id="mobile-top-btns" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:100; gap:8px; flex-direction:row;">
-        <button id="mobile-home-btn" onclick="returnToMenu()" style="background:rgba(255,255,255,0.7);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.6);padding:10px 16px;border-radius:20px;font-family:inherit;font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;color:#3C3C4E;">⌂ HOME</button>
-        <button id="settings-toggle" onclick="toggleSettings()" style="background:rgba(255,255,255,0.7);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.6);padding:10px 24px;border-radius:20px;font-family:inherit;font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;color:#3C3C4E;">SETTINGS</button>
+    <div id="mobile-top-btns" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:200; gap:8px; flex-direction:row; align-items:center;">
+        <button onclick="returnToMenu()" style="background:rgba(255,255,255,0.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.7);padding:10px 16px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;color:#3C3C4E;font-family:inherit;box-shadow:0 4px 12px rgba(0,0,0,0.08);">⌂</button>
+        <button onclick="toggleSettings()" style="background:rgba(255,255,255,0.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.7);padding:10px 20px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;color:#3C3C4E;font-family:inherit;box-shadow:0 4px 12px rgba(0,0,0,0.08);">SETTINGS</button>
     </div>
     <!-- Desktop settings toggle -->
     <button id="settings-toggle-desktop" onclick="toggleSettings()" style="display:none;">SETTINGS</button>
