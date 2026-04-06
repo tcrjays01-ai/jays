@@ -386,19 +386,20 @@
     </div>
     
     <div id="controls-container" style="display:none;">
-        <button id="btn-home" class="premium-ctrl-btn" onclick="returnToMenu()"><span>??/span> BACK</button>
-        <button id="webcam-toggle" class="premium-ctrl-btn" onclick="toggleWebcam()"><span>??/span> HAND CONTROL: OFF</button>
-        <button id="record-btn" class="premium-ctrl-btn" onclick="toggleRecording()"><span>??/span> REC VIDEO</button>
+        <button id="btn-home" class="premium-ctrl-btn" onclick="returnToMenu()"><span>←</span> BACK</button>
+        <button id="webcam-toggle" class="premium-ctrl-btn" onclick="toggleWebcam()"><span>⚡</span> HAND CONTROL: OFF</button>
+        <button id="record-btn" class="premium-ctrl-btn" onclick="toggleRecording()"><span>⏺</span> REC VIDEO</button>
     </div>
 
-    <div id="tutorial-toast">?뼮截?SCROLL TO ZOOM GRID</div>
+    <div id="tutorial-toast">🖱️ SCROLL TO ZOOM GRID</div>
     <div id="hud"><span id="hud-grid"></span> | <span id="hud-fps"></span> | <span id="hud-hand"></span></div>
 
-    <div id="settings-panel">
     <button id="settings-toggle" onclick="toggleSettings()" style="display:none;">SETTINGS</button>
+
+    <div id="settings-panel">
         <div id="settings-title">
             COSMIC ENGINE
-            <button id="settings-close" onclick="toggleSettings()">??/button>
+            <button id="settings-close" onclick="toggleSettings()">✕</button>
         </div>
         <div style="display:flex; gap:10px; margin-bottom:20px;">
             <button id="btn-white" onclick="setTheme('white')" style="
@@ -756,7 +757,7 @@ WE ARE COSMIC</textarea>
                     document.getElementById('ui-layer').style.display = 'none';
                     document.getElementById('controls-container').style.display = 'flex';
                     document.getElementById('settings-panel').classList.add('open');
-                    document.getElementById('settings-toggle').style.display = 'flex';
+                    document.getElementById('settings-toggle').style.setProperty('display', 'none', 'important');
                     isCamera = true;
                     initSegmentation();
                     video.play();
@@ -861,7 +862,7 @@ WE ARE COSMIC</textarea>
             document.getElementById('ui-layer').style.display = 'none';
             document.getElementById('controls-container').style.display = 'flex';
             document.getElementById('settings-panel').classList.add('open');
-            document.getElementById('settings-toggle').style.display = 'flex';
+            document.getElementById('settings-toggle').style.setProperty('display', 'none', 'important');
 
             if (!hasPlayedIntro) {
                 hasPlayedIntro = true;
@@ -1076,7 +1077,7 @@ WE ARE COSMIC</textarea>
                         // ?먯쓽 ?ш린瑜??ㅼ슦怨???援듦쾶 蹂댁씠?꾨줉 議곗젙
                         ctx.font = `400 ${Math.round(CELL_SIZE * 0.45 * dotLife[cellIdx])}px JetBrains Mono`;
                         ctx.fillStyle = colorSymbol; // Use dedicated symbol color
-                        ctx.fillText('쨌', cx, vy);
+                        ctx.fillText('·', cx, vy);
                         ctx.restore();
                     }
                     continue;
@@ -1131,10 +1132,9 @@ WE ARE COSMIC</textarea>
                     if (intensity > 0.4 && (i * 11 + j * 17 + Math.floor(globalFrame/5)) % 10 < 2) {
                         ctx.save();
                         ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
-                        // --- ?렞 FIX: Structural symbols MUST use rgbSymbol ---
                         ctx.fillStyle = `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${intensity})`; 
-                        let symIdx = (i * 3 + j * 7 + Math.floor(globalFrame/15)) % MATH_SYMBOLS.length;
-                        ctx.fillText(MATH_SYMBOLS[symIdx], cx, vy);
+                        let symIdx = (i * 3 + j * 7 + Math.floor(globalFrame/15)) % activeSymbols.length;
+                        ctx.fillText(activeSymbols[symIdx], cx, vy);
                         ctx.restore();
                     } else {
                         // Standard typography fading away as it gets close to core
@@ -1221,9 +1221,9 @@ WE ARE COSMIC</textarea>
     function toggleWebcam() {
         let btn = document.getElementById('webcam-toggle');
         if (webcamActive) {
-            stopWebcam(); btn.textContent = '??HAND CONTROL: OFF'; btn.classList.remove('active');
+            stopWebcam(); btn.innerHTML = '<span>⚡</span> HAND CONTROL: OFF'; btn.classList.remove('active');
         } else {
-            startWebcam(); btn.textContent = '??HAND CONTROL: ON'; btn.classList.add('active');
+            startWebcam(); btn.innerHTML = '<span>⚡</span> HAND CONTROL: ON'; btn.classList.add('active');
         }
     }
     function startWebcam() {
