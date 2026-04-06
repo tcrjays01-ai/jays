@@ -232,6 +232,7 @@
             COSMIC ENGINE
             <button id="settings-close" onclick="toggleSettings()">✕</button>
         </div>
+        <button id="btn-invert" onclick="toggleInvert()" style="width:100%; margin-bottom:15px; padding:8px; font-weight:800; cursor:pointer; background:#FFF; color:#000; border:1px solid #000; transition:0.2s;">THEME : WHITE (기본)</button>
 
         <span class="ctrl-label">TEXT</span>
         <div class="ctrl-section">
@@ -357,7 +358,7 @@ WE ARE COSMIC</textarea>
     let currentFont = 'JetBrains Mono';
     let keyColor = '#0000FF';
     let darknessThreshold = 0.12;
-    let contrastPow = 2.0;
+    let contrastPow = isCamera ? 2.0 : 1.2;
     let zone1Limit = 0.15;
     let bluePhase = 0.82;   // 0.82 = shadows (glasses/contours)
     let autoPhase = false;
@@ -417,6 +418,37 @@ WE ARE COSMIC</textarea>
     let isIntro = false;
     let introStartTime = 0;
     let hasPlayedIntro = false;
+
+    // Invert Logic
+    let isInverted = false;
+    let baseTheme = null;
+
+    function toggleInvert() {
+        if (!baseTheme) {
+            baseTheme = { bgColor: bgColor, z2: colorZ2, z3: colorZ3, z4: colorZ4, txt: colorText };
+        }
+        isInverted = !isInverted;
+        let btn = document.getElementById('btn-invert');
+        if (isInverted) {
+            btn.textContent = 'THEME : BLACK (반전)';
+            btn.style.background = '#000'; btn.style.color = '#FFF';
+            bgColor = '#000000'; colorZ2 = '#000000'; colorZ3 = '#303030'; colorZ4 = '#FFFFFF'; colorText = '#FFFFFF';
+        } else {
+            btn.textContent = 'THEME : WHITE (기본)';
+            btn.style.background = '#FFF'; btn.style.color = '#000';
+            bgColor = baseTheme.bgColor; colorZ2 = baseTheme.z2; colorZ3 = baseTheme.z3; colorZ4 = baseTheme.z4; colorText = baseTheme.txt;
+        }
+        document.getElementById('ctrl-bg').value = bgColor;
+        document.getElementById('bg-hex').textContent = bgColor.toUpperCase();
+        
+        document.getElementById('ctrl-col-z2').value = colorZ2;
+        document.getElementById('ctrl-col-z3').value = colorZ3;
+        document.getElementById('ctrl-col-z4').value = colorZ4;
+        document.getElementById('ctrl-col-txt').value = colorText;
+        
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
     // ==========================================================
     function init() {
@@ -491,7 +523,7 @@ WE ARE COSMIC</textarea>
 
                     isPlaying = true;
                     requestAnimationFrame(renderLoop);
-                });
+                }, {once: true});
             })
             .catch(err => {
                 btn.innerText = 'CAM';
@@ -574,7 +606,7 @@ WE ARE COSMIC</textarea>
             }
             isPlaying = true;
             requestAnimationFrame(renderLoop);
-        });
+        }, {once: true});
         video.addEventListener('error', () => {
             let ui = document.getElementById('ui-layer');
             ui.style.display = '';
@@ -763,7 +795,11 @@ WE ARE COSMIC</textarea>
 
                 // 지정된 밝기(Threshold)보다 밝은 픽셀은 렌더링 무시 (피부 허공 증발)
                 let currentThreshold = darknessThreshold; // 0.12
-                if (darkness <= currentThreshold) continue;
+                if (darkness <= currentThreshold) {
+                    ctx.fillStyle = colorZ3; // 조금 더 흐릿한 색으로 사용
+                    ctx.fillText('·', cx, vy);
+                    continue;
+                }
 
                 let v = (darkness - currentThreshold) / (1.0 - currentThreshold);
                 v = Math.min(1.0, Math.max(0.0, v));
