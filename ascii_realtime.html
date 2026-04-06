@@ -843,7 +843,7 @@ WE ARE COSMIC</textarea>
                     document.getElementById('controls-container').style.display = 'flex';
                     if (window.innerWidth > 767) {
                         document.getElementById('settings-panel').classList.add('open');
-                        document.getElementById('settings-toggle').style.setProperty('display', 'none', 'important');
+                        let _st=document.getElementById('settings-toggle'); if(_st) _st.style.setProperty('display','none','important');
                     } else {
                         let mobileBar = document.getElementById('mobile-top-btns'); if (mobileBar) mobileBar.style.display = 'flex'; let _mb = document.getElementById('mobile-top-btns'); if(_mb) _mb.style.display='flex';
                     }
@@ -953,7 +953,7 @@ WE ARE COSMIC</textarea>
             document.getElementById('controls-container').style.display = 'flex';
             if (window.innerWidth > 767) {
                 document.getElementById('settings-panel').classList.add('open');
-                document.getElementById('settings-toggle').style.setProperty('display', 'none', 'important');
+                let _st=document.getElementById('settings-toggle'); if(_st) _st.style.setProperty('display','none','important');
             } else {
                 let mobileBar = document.getElementById('mobile-top-btns'); if (mobileBar) mobileBar.style.display = 'flex'; let _mb = document.getElementById('mobile-top-btns'); if(_mb) _mb.style.display='flex';
             }
