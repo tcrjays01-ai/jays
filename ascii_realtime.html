@@ -388,6 +388,7 @@ WE ARE COSMIC</textarea>
     let segMask = false;
     let isSegmenting = false;
     let segCanvas = null, segCtx = null;
+    let cellHistory = new Float32Array(0); // For video noise temporal smoothing
 
     let CELL_SIZE = 150;
     let targetCellSize = 150;
@@ -453,6 +454,8 @@ WE ARE COSMIC</textarea>
             rows = newRows;
             offCanvas.width = cols;
             offCanvas.height = rows;
+            cellHistory = new Float32Array(cols * rows);
+            cellHistory.fill(-1); // Mark as uninitialized
         }
     }
 
@@ -698,7 +701,19 @@ WE ARE COSMIC</textarea>
                 let r = pixels[idx], g = pixels[idx+1], b = pixels[idx+2];
 
                 let luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
-                let darkness = 1.0 - luma;
+                let targetDarkness = 1.0 - luma;
+
+                // 플리커(Flickering) 방지를 위한 Temporal Smoothing (시계열 부드러움 연산)
+                let cellIdx = j * cols + i;
+                let smoothSpeed = isCamera ? 0.20 : 0.60; // 웹캠 노이즈 억제를 위해 웹캠일 때 더 강한 EMA 적용
+                
+                if (cellHistory[cellIdx] === -1) {
+                    cellHistory[cellIdx] = targetDarkness; // 최초 프레임은 즉시 적용
+                } else {
+                    cellHistory[cellIdx] = cellHistory[cellIdx] * (1 - smoothSpeed) + targetDarkness * smoothSpeed;
+                }
+                
+                let darkness = cellHistory[cellIdx];
 
                 let x = offsetX + i * CELL_SIZE + rowShift;
                 let y = offsetY + j * CELL_SIZE;
