@@ -479,6 +479,11 @@ WE ARE COSMIC</textarea>
                     isCamera = true;
                     initSegmentation();
                     video.play();
+                    
+                    // Trigger Intro Zoom Effect for Webcam
+                    isIntro = true;
+                    introStartTime = performance.now() + 500;
+
                     isPlaying = true;
                     requestAnimationFrame(renderLoop);
                 });
@@ -516,12 +521,15 @@ WE ARE COSMIC</textarea>
             if (!hasPlayedIntro) {
                 hasPlayedIntro = true;
                 let toast = document.getElementById('tutorial-toast');
-                toast.style.opacity = '1';
-                setTimeout(() => { toast.style.opacity = '0'; }, 8000);
-                
-                isIntro = true;
-                introStartTime = performance.now() + 500;
+                if (toast) {
+                    toast.style.opacity = '1';
+                    setTimeout(() => { toast.style.opacity = '0'; }, 8000);
+                }
             }
+
+            // Always trigger Intro Zoom Effect for newly selected videos
+            isIntro = true;
+            introStartTime = performance.now() + 500;
 
             let playPromise = video.play();
             if (playPromise !== undefined) {
