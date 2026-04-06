@@ -223,6 +223,7 @@
 
         /* SETTINGS PANEL — M3 Side Sheet */
         #settings-panel {
+            color: #4A4A5A;
             position: fixed; top: 12px; left: 12px; z-index: 29;
             background: rgba(255, 255, 255, 0.48);
             backdrop-filter: blur(50px) saturate(180%);
@@ -366,8 +367,8 @@
         }
 
         @media (max-width: 767px) {
-            /* Mobile: settings panel as bottom sheet, hidden by default */
             #settings-panel {
+            color: #4A4A5A;
                 width: 100%;
                 left: 0; top: auto; bottom: 0; right: 0;
                 max-height: 78vh;
@@ -379,14 +380,11 @@
                 border-left: none; border-right: none; border-bottom: none;
                 padding: 20px 20px 40px;
                 transform: translateY(110%);
-                /* Softer text for focus on canvas */
                 color: #3C3C4E;
             }
             #settings-panel.open { transform: translateY(0); }
-
-            /* Mobile: settings toggle at top-center */
             #settings-toggle {
-                top: 12px;
+                top: 12px !important;
                 left: 50% !important;
                 transform: translateX(-50%) !important;
                 bottom: auto !important;
@@ -395,25 +393,15 @@
                 padding: 10px 24px;
                 border-radius: 20px;
                 color: #3C3C4E;
-                background: rgba(255,255,255,0.6);
+                background: rgba(255,255,255,0.7);
             }
-            /* Mobile settings title softer */
             #settings-title { color: #3C3C4E; }
             .ctrl-label { color: rgba(60,60,78,0.5); font-size: 10px; }
-
-            /* Mobile: toast at center */
-            #tutorial-toast {
-                top: 50% !important;
-                transform: translate(-50%, -50%) !important;
-            }
-
+            #tutorial-toast { top: 50% !important; transform: translate(-50%, -50%) !important; }
             #controls-container { bottom: 16px; gap: 6px; padding: 8px 14px; }
             .premium-ctrl-btn { padding: 10px 14px; min-width: 90px; font-size: 9px; }
-            .ctrl-section select,
-            .ctrl-section textarea { font-size: 14px; min-height: 44px; }
+            .ctrl-section select, .ctrl-section textarea { font-size: 14px; min-height: 44px; }
             .ctrl-section textarea { min-height: 72px; }
-
-            /* Landing UI on mobile */
             #ui-layer { padding: 40px 28px 36px; min-width: unset; width: 88vw; }
             #ui-layer h2 { font-size: 20px; }
             #ui-layer p { font-size: 10px; margin-bottom: 28px; }
@@ -445,8 +433,6 @@
     <button id="settings-toggle" onclick="toggleSettings()" style="display:none;">SETTINGS</button>
 
     <div id="settings-panel">
-        <!-- Mobile drag handle -->
-        <div style="width:40px; height:4px; background:rgba(0,0,0,0.15); border-radius:2px; margin:0 auto 16px; display:block;" id="drag-handle"></div>
         <div id="settings-title">
             COSMIC ENGINE
             <button id="settings-close" onclick="toggleSettings()">✕</button>
@@ -592,27 +578,8 @@ WE ARE COSMIC</textarea>
             </div>
             <div id="bg-swatches" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
         </div>
-        <!-- HAND CAM PREVIEW SECTION -->
-        <hr class="ctrl-divider">
-        <div id="cam-section" style="display:none;">
-            <span class="ctrl-label">HAND CAM</span>
-            <div style="position:relative; border-radius:10px; overflow:hidden; background:#000; aspect-ratio:4/3; margin-bottom:8px;">
-                <video id="cam-preview-video" autoplay muted playsinline style="width:100%; height:100%; object-fit:cover; display:block; transform:scaleX(-1);"></video>
-                <canvas id="cam-overlay-canvas" style="position:absolute; top:0; left:0; width:100%; height:100%;"></canvas>
-                <div id="hand-status-badge" style="
-                    position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
-                    background:rgba(0,0,0,0.6); backdrop-filter:blur(8px);
-                    color:#fff; font-size:8px; letter-spacing:1.5px; font-weight:600;
-                    padding:4px 12px; border-radius:20px; text-transform:uppercase;
-                    white-space:nowrap;
-                ">NO HAND</div>
-            </div>
-            <div style="display:flex; justify-content:space-between; font-size:9px; letter-spacing:1px; color:var(--md-on-surface-dim);">
-                <span>PINCH DISTANCE</span>
-                <span id="pinch-display" style="font-weight:700; color:var(--md-primary);">—</span>
-            </div>
-        </div>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"></script>
@@ -656,7 +623,7 @@ WE ARE COSMIC</textarea>
     let colorText = '#000000'; let rgbText = [0, 0, 0];
     let colorSymbol = '#0000FF'; let rgbSymbol = [0, 0, 255]; // Standard Symbol Default
     let CELL_SIZE = 150;
-    let targetCellSize = 150, cellVelocity = 0;
+    let targetCellSize = 150;
     let frameCounter = 0, globalFrame = 0;
     let lastFpsTime = performance.now();
     let fpsDisplay = 0;
@@ -825,12 +792,8 @@ WE ARE COSMIC</textarea>
                 video.addEventListener('canplay', () => {
                     document.getElementById('ui-layer').style.display = 'none';
                     document.getElementById('controls-container').style.display = 'flex';
-                    if (window.innerWidth > 767) {
-                document.getElementById('settings-panel').classList.add('open');
-                document.getElementById('settings-toggle').style.setProperty('display', 'none', 'important');
-            } else {
-                document.getElementById('settings-toggle').style.setProperty('display', 'flex', 'important');
-            }
+                    document.getElementById('settings-panel').classList.add('open');
+                    document.getElementById('settings-toggle').style.setProperty('display', 'none', 'important');
                     isCamera = true;
                     initSegmentation();
                     video.play();
@@ -934,12 +897,8 @@ WE ARE COSMIC</textarea>
         video.addEventListener('canplay', () => {
             document.getElementById('ui-layer').style.display = 'none';
             document.getElementById('controls-container').style.display = 'flex';
-            if (window.innerWidth > 767) {
-                document.getElementById('settings-panel').classList.add('open');
-                document.getElementById('settings-toggle').style.setProperty('display', 'none', 'important');
-            } else {
-                document.getElementById('settings-toggle').style.setProperty('display', 'flex', 'important');
-            }
+            document.getElementById('settings-panel').classList.add('open');
+            document.getElementById('settings-toggle').style.setProperty('display', 'none', 'important');
 
             if (!hasPlayedIntro) {
                 hasPlayedIntro = true;
@@ -994,18 +953,217 @@ WE ARE COSMIC</textarea>
                 let t = elapsed / INTRO_LEN;
                 let ease = 1 - Math.pow(1 - t, 3); // easeOutCubic
                 CELL_SIZE = 150 + (12 - 150) * ease;
-                targetFrameDelay = 125 + (42 - 125) * t; // 8fps→24fps
+                targetFrameDelay = 125 + (42 - 125) * t; // 8fps ??24fps
             } else {
-                // Spring physics for elastic zoom feel
-                cellVelocity += (targetCellSize - CELL_SIZE) * 0.14;
-                cellVelocity *= 0.74;
-                CELL_SIZE += cellVelocity;
-                if (Math.abs(CELL_SIZE - targetCellSize) < 0.15 && Math.abs(cellVelocity) < 0.1) {
-                    CELL_SIZE = targetCellSize; cellVelocity = 0;
-                }
-                targetFrameDelay = 16;
                 isIntro = false;
+                targetCellSize = 12;
             }
+        } else {
+            if (Math.abs(CELL_SIZE - targetCellSize) > 0.1) {
+                CELL_SIZE = CELL_SIZE * 0.90 + targetCellSize * 0.10;
+            } else {
+                CELL_SIZE = targetCellSize;
+            }
+        }
+
+        // Frame Throttling
+        if (now - lastRenderTime < targetFrameDelay) {
+            requestAnimationFrame(renderLoop);
+            return;
+        }
+        lastRenderTime = now;
+
+        // Reset context completely each frame
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.filter = 'none';
+        ctx.globalCompositeOperation = 'source-over';
+
+        CELL_SIZE = Math.max(12, Math.min(150, CELL_SIZE));
+        calcGrid();
+
+        // Draw video to offscreen ??keep last frame during seek (prevents flash on loop)
+        if (video && video.readyState >= 2 && !video.seeking) {
+            let vR = video.videoWidth / video.videoHeight;
+            let cR = cols / rows;
+            let dW, dH, dX, dY;
+            if (cR > vR) {
+                dW = cols; dH = cols / vR; dX = 0; dY = (rows - dH) / 2;
+            } else {
+                dH = rows; dW = rows * vR; dY = 0; dX = (cols - dW) / 2;
+            }
+            // Clear ONLY the letterbox areas, not the full canvas
+            offCtx.fillStyle = '#FFF';
+            if (dY > 0) { offCtx.fillRect(0, 0, cols, dY); offCtx.fillRect(0, rows - dY, cols, dY); }
+            if (dX > 0) { offCtx.fillRect(0, 0, dX, rows); offCtx.fillRect(cols - dX, 0, dX, rows); }
+            offCtx.drawImage(video, dX, dY, dW, dH);
+
+            // Segmentation: 移대찓??紐⑤뱶?????щ엺怨?諛곌꼍 遺꾨━
+            if (isCamera && selfieSegmentation) {
+                // 鍮꾨룞湲?硫붾え由?援먯갑?곹깭(Deadlock) 諛⑹? 諛??꾨젅???띾룄 ?쇱튂
+                if (!isSegmenting && video.readyState >= 2) {
+                    isSegmenting = true;
+                    selfieSegmentation.send({ image: video }).catch(err => {
+                        console.error('Segmentation error:', err);
+                        isSegmenting = false;
+                    });
+                }
+
+                if (segMask) {
+                    // CPU ?쎌? ?곗궛 ??? ?섎뱶?⑥뼱 媛??Canvas 釉붾젋?⑹쓣 ?ъ슜?섏뿬
+                    // 寃쎄퀎?좎쓣 ?꾩＜ 遺?쒕읇怨?源붾걫?섍쾶 ?덊떚?⑤━?댁떛(Anti-Aliasing) 泥섎━?⑸땲??
+                    
+                    // 1. 嫄고뫖吏?Mask) ?곸슜: ?щ엺 ?곸뿭留??④린怨??섎㉧吏???щ챸?섍쾶 留뚮벀. (?곸긽怨??숈씪???꾩튂/鍮꾩쑉濡?留ㅽ븨)
+                    offCtx.globalCompositeOperation = 'destination-in';
+                    offCtx.filter = 'blur(6px)'; // ?ｌ? ?먭?嫄곕┝(Aliasing) ?꾨꼍 李⑤떒???꾪븳 ?먭볼??釉붾윭
+                    offCtx.drawImage(segCanvas, dX, dY, dW, dH);
+                    offCtx.filter = 'none'; // ?꾪꽣 ?먯긽蹂듦뎄
+                    
+                    // 2. ?щ챸?댁쭊 諛곌꼍???꾩쟾??媛뺤젣 ?곗깋(#FFFFFF)?쇰줈 梨꾩썙??ASCII 援ъ뿭??吏?
+                    offCtx.globalCompositeOperation = 'destination-over';
+                    offCtx.fillStyle = '#FFFFFF';
+                    offCtx.fillRect(0, 0, cols, rows);
+                    
+                    // 3. ?⑹꽦 紐⑤뱶 珥덇린??
+                    offCtx.globalCompositeOperation = 'source-over';
+                }
+            }
+        }
+
+        let imageData;
+        try { imageData = offCtx.getImageData(0, 0, cols, rows); }
+        catch(e) { requestAnimationFrame(renderLoop); return; }
+        let pixels = imageData.data;
+
+        // Clear background
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        let offsetX = (canvas.width - cols * CELL_SIZE) / 2;
+        let offsetY = (canvas.height - rows * CELL_SIZE) / 2;
+
+        let fontSize = Math.max(6, CELL_SIZE * 0.88);
+        ctx.font = `400 ${fontSize}px '${currentFont}', 'Consolas', monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Auto Phase wave breathing over time
+        if (autoPhase) {
+            bluePhase = (Math.sin(globalFrame * 0.04) * 0.5 + 0.5) * 0.85;
+            let slider = document.getElementById('ctrl-contrast');
+            if (slider && Math.abs(parseFloat(slider.value) - bluePhase) > 0.02) {
+                slider.value = bluePhase;
+            }
+        }
+
+        for (let j = 0; j < rows; j++) {
+            for (let i = 0; i < cols; i++) {
+                let idx = (j * cols + i) * 4;
+                let r = pixels[idx], g = pixels[idx+1], b = pixels[idx+2];
+
+                let luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
+                
+                // 留덉뒪?ъ뿉???섎젮?섍컙 諛곌꼍 諛??덊떚?⑤━?댁떛 寃쎄퀎瑜?遺?쒕읇寃?媛먮퀎 (?덉쟾?섍쾶 ?덇났?쇰줈 ?좊┝)
+                let isBackground = (isCamera && luma > 0.98);
+
+                // 罹??붾㈃ ?꾩슜 蹂댁젙: ?쇰?(諛앹? ?곸뿭)???좊젮??誘몃땲硫??罹붾쾭?ㅻ줈 留뚮뱾怨?
+                // ?덇꼍?? 癒몃━移대씫, ?섏뿼 媛숈? 吏덇컧留??④린湲??꾪빐 ?鍮꾨? 媛뺥븯寃??좊┝(Blow out)
+                if (isCamera && !isBackground) {
+                    luma = (luma - 0.35) * 1.4 + 0.35; 
+                    luma = Math.max(0.001, Math.min(0.999, luma));
+                }
+                
+                let targetDarkness = 1.0 - luma;
+
+                // ?뚮━而?Flickering) 諛⑹?瑜??꾪븳 Temporal Smoothing (?쒓퀎??遺?쒕윭? ?곗궛)
+                let cellIdx = j * cols + i;
+                let smoothSpeed = isCamera ? 0.20 : 0.60;
+                
+                if (targetDarkness === 0.0) {
+                    // 諛곌꼍? ?붿긽(Ghost)???④린吏 ?딄퀬 利됱떆 吏?
+                    cellHistory[cellIdx] = 0.0;
+                } else if (cellHistory[cellIdx] === -1) {
+                    cellHistory[cellIdx] = targetDarkness;
+                } else {
+                    cellHistory[cellIdx] = cellHistory[cellIdx] * (1 - smoothSpeed) + targetDarkness * smoothSpeed;
+                }
+                
+                let darkness = cellHistory[cellIdx];
+
+                let x = Math.floor(offsetX + i * CELL_SIZE);
+                let y = Math.floor(offsetY + j * CELL_SIZE);
+                let cx = x + CELL_SIZE / 2;
+                let cy = y + CELL_SIZE / 2;
+                let vy = cy; // Vertically centered
+
+                // 吏?뺣맂 諛앷린(Threshold)蹂대떎 諛앹? ?쎌?? ?뚮뜑留?臾댁떆 (?쇰? ?덇났 利앸컻)
+                let currentThreshold = darknessThreshold; // 0.12
+                
+                // --- Temporal Dot Logic ---
+                if (darkness > currentThreshold) {
+                    dotLife[cellIdx] = 1.0; // Surface is present, keep dot energy full
+                } else {
+                    dotLife[cellIdx] *= 0.85; // Rapid decay when surface disappears
+                }
+
+                if (darkness <= currentThreshold) {
+                    // Only draw dot if it was recently part of a surface (decaying)
+                    if (dotLife[cellIdx] > 0.01) {
+                        ctx.save();
+                        ctx.globalAlpha = dotLife[cellIdx] * 0.9;
+                        // ?먯쓽 ?ш린瑜??ㅼ슦怨???援듦쾶 蹂댁씠?꾨줉 議곗젙
+                        ctx.font = `400 ${Math.round(CELL_SIZE * 0.45 * dotLife[cellIdx])}px JetBrains Mono`;
+                        ctx.fillStyle = colorSymbol; // Use dedicated symbol color
+                        ctx.fillText('·', cx, vy);
+                        ctx.restore();
+                    }
+                    continue;
+                }
+                // --------------------------
+
+                let vLinear = (darkness - currentThreshold) / (1.0 - currentThreshold);
+                vLinear = Math.min(1.0, Math.max(0.0, vLinear));
+
+                let v = Math.pow(vLinear, contrastPow);
+                
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = CELL_SIZE >= 30 ? 2 : 1;
+                
+                const fx = Math.floor(x), fy = Math.floor(y);
+                const fw = Math.ceil(CELL_SIZE), fh = Math.ceil(CELL_SIZE);
+
+                // --- ?렞 NEW: High Performance Phase Comparison (Linear) ---
+                // Compare with vLinear BEFORE contrastPow to ensure consistent responsiveness
+                let dist = Math.abs(vLinear - bluePhase);
+                let z1Limit = zone1Limit; // Use the slider-controlled variable directly
+                
+                // 1?쒖쐞: 媛???대몢????꾩슦??釉붾（ ?ㅻ씪瑜?臾댁떆?섍퀬 臾댁“嫄???釉붾옓 諛뺤뒪濡??좎? (癒몃━移대씫 ??
+                if (v >= 0.88) {
+                    ctx.fillStyle = colorZ4;
+                    ctx.fillRect(fx, fy, fw, fh);
+                }
+                // 2?쒖쐞: ZONE 1 Key Color Point ??glowing soft blend (?덇꼍?? ?ㅺ낸????
+                else if (dist < z1Limit) {
+                    let intensity = 1.0 - (dist / z1Limit); // 1.0 at center, 0.0 at edge
+                    intensity = Math.pow(intensity, 2.0); // Sharper falloff curve
+                    
+                    let baseR, baseG, baseB;
+                    if (gradientMode) {
+                        let c = lerpColor(gradientFrom, gradientTo, gradientT);
+                        let m = c.match(/\d+/g);
+                        baseR = parseInt(m[0]); baseG = parseInt(m[1]); baseB = parseInt(m[2]);
+                    } else {
+                        let rgb = hexToRgb(keyColor);
+                        baseR = rgb[0]; baseG = rgb[1]; baseB = rgb[2];
+                    }
+                    
+                    // Blend block from Light Zone (ambient) to Pure Color (core)
+                    let fillR = Math.round(baseR * intensity + rgbZ2[0] * (1 - intensity));
+                    let fillG = Math.round(baseG * intensity + rgbZ2[1] * (1 - intensity));
+                    let fillB = Math.round(baseB * intensity + rgbZ2[2] * (1 - intensity));
+                    
+                    ctx.fillStyle = `rgb(${fillR}, ${fillG}, ${fillB})`;
+                    ctx.fillRect(fx, fy, fw, fh);
+
                     // Inject Structural Symbols (20% ratio)
                     if (intensity > 0.4 && (i * 11 + j * 17 + Math.floor(globalFrame/60)) % 10 < 2) {
                         ctx.save();
@@ -1113,7 +1271,6 @@ WE ARE COSMIC</textarea>
         webcamVideo.muted = true;
         webcamVideo.style.display = 'none';
         document.body.appendChild(webcamVideo);
-        document.getElementById('cam-section').style.display = 'block';
         mpHands = new Hands({
             locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/${f}`
         });
@@ -1124,20 +1281,13 @@ WE ARE COSMIC</textarea>
             facingMode: 'user',
             width: 320, height: 240
         });
-        mpCamera.start().then(() => {
-            // Connect stream to cam preview
-            let preview = document.getElementById('cam-preview-video');
-            if (preview && webcamVideo.srcObject) { preview.srcObject = webcamVideo.srcObject; }
-        }).catch(err => {
+        mpCamera.start().catch(err => {
             alert('移대찓??沅뚰븳???덉슜?댁＜?몄슂! (Camera start failed: ' + err + ')');
             toggleWebcam();
         });
     }
     function stopWebcam() {
         webcamActive = false; pinchDistance = -1; targetCellSize = 150;
-        document.getElementById('cam-section').style.display = 'none';
-        let preview = document.getElementById('cam-preview-video');
-        if (preview) { preview.srcObject = null; }
         if (mpCamera) { mpCamera.stop(); mpCamera = null; }
         if (webcamVideo) { webcamVideo.srcObject?.getTracks().forEach(t => t.stop()); webcamVideo.remove(); webcamVideo = null; }
     }
