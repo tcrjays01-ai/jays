@@ -749,6 +749,17 @@ WE ARE COSMIC</textarea>
                     initSegmentation();
                     video.play();
                     
+                    // --- 🚀 UX Reveal: Show Controls + Toast together ---
+                    document.body.classList.add('touch-show');
+                    let toast = document.getElementById('tutorial-toast');
+                    if (toast) {
+                        toast.style.opacity = '1';
+                        setTimeout(() => { 
+                            toast.style.opacity = '0'; 
+                            document.body.classList.remove('touch-show');
+                        }, 4000);
+                    }
+                    
                     // Trigger Intro Zoom Effect for Webcam
                     isIntro = true;
                     introStartTime = performance.now() + 500;
@@ -844,8 +855,12 @@ WE ARE COSMIC</textarea>
                 hasPlayedIntro = true;
                 let toast = document.getElementById('tutorial-toast');
                 if (toast) {
+                    document.body.classList.add('touch-show');
                     toast.style.opacity = '1';
-                    setTimeout(() => { toast.style.opacity = '0'; }, 4000); // Disappear faster (4s)
+                    setTimeout(() => { 
+                        toast.style.opacity = '0'; 
+                        document.body.classList.remove('touch-show');
+                    }, 4000); 
                 }
             }
 
