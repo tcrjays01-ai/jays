@@ -687,7 +687,22 @@ WE ARE COSMIC</textarea>
             }
         }
 
+        // Grid-aligned Rhythmic Offset (Wave)
+        let glitchCycle = globalFrame % 120;
+        let isGlitchActive = glitchCycle < 20;
+
         for (let j = 0; j < rows; j++) {
+            // Calculate Row Shift
+            let rowShift = 0;
+            if (isGlitchActive) {
+                if (j % 4 === 1) rowShift = CELL_SIZE;
+                else if (j % 4 === 3) rowShift = -CELL_SIZE;
+                
+                // Animate snap
+                let easeT = Math.sin((glitchCycle / 20) * Math.PI); // 0 -> 1 -> 0
+                if (easeT < 0.8) rowShift = 0; // Only pop at the peak
+            }
+
             for (let i = 0; i < cols; i++) {
                 let idx = (j * cols + i) * 4;
                 let r = pixels[idx], g = pixels[idx+1], b = pixels[idx+2];
@@ -716,16 +731,16 @@ WE ARE COSMIC</textarea>
                 
                 let darkness = cellHistory[cellIdx];
 
-                let x = offsetX + i * CELL_SIZE;
+                let x = offsetX + i * CELL_SIZE + rowShift;
                 let y = offsetY + j * CELL_SIZE;
                 let cx = x + CELL_SIZE / 2;
                 let cy = y + CELL_SIZE / 2;
                 let vy = cy + CELL_SIZE * 0.045; // Optical vertical center adjustment
 
                 // 캠에서는 배경을 강제 흰색(#FFFFFF, luma=1.0)으로 만들었으므로 임계점을 극단적으로 낮춤
-                // 이렇게 해야 밝은 피부 영역이 허공으로 증발해버리는 현상을 막고 화이트 박스(테두리)로 출력됨
-                let currentThreshold = isCamera ? 0.02 : darknessThreshold;
-                if (darkness < currentThreshold) continue;
+                // 이렇게 해야 피부 밝은 영역(빈박스)이 들쭉날쭉 증발하거나 튀는 현상(Flickering)을 막을 수 있음
+                let currentThreshold = isCamera ? 0.0 : darknessThreshold;
+                if (darkness <= currentThreshold) continue;
 
                 let v = (darkness - currentThreshold) / (1.0 - currentThreshold);
                 v = Math.min(1.0, Math.max(0.0, v));
@@ -815,6 +830,24 @@ WE ARE COSMIC</textarea>
                     ctx.fillRect(fx, fy, fw, fh);
                 }
             }
+        }
+
+        // Post-Processing: Grid-Aligned Glitch Displace
+        if (globalFrame % 150 > 135) { 
+            let glitchRow = Math.floor((globalFrame * 0.1) % rows);
+            let glitchH = CELL_SIZE * 2;
+            let glitchY = Math.floor(offsetY + glitchRow * CELL_SIZE);
+            let shiftX = (globalFrame % 2 === 0) ? Math.floor(CELL_SIZE * 0.5) : Math.floor(-CELL_SIZE * 0.5);
+            
+            // Draw a slice shifted on grid bounds
+            ctx.drawImage(canvas, 0, glitchY, canvas.width, glitchH, shiftX, glitchY, canvas.width, glitchH);
+            
+            // RGB Break
+            ctx.globalCompositeOperation = 'screen';
+            ctx.fillStyle = 'rgba(0, 0, 255, 0.4)'; // Cobalt Blue
+            ctx.fillRect(0, glitchY, canvas.width, glitchH);
+            ctx.drawImage(canvas, 0, glitchY, canvas.width, glitchH, shiftX * -0.5, glitchY, canvas.width, glitchH);
+            ctx.globalCompositeOperation = 'source-over';
         }
 
         // Gradient pingpong between from→to colors
