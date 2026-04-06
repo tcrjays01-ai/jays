@@ -511,8 +511,11 @@ WE ARE COSMIC</textarea>
         selfieSegmentation.setOptions({ modelSelection: 0 }); // 0 = general (Google Meet portrait style)
         selfieSegmentation.onResults((results) => { 
             if (results.segmentationMask) {
-                segCanvas.width = results.segmentationMask.width;
-                segCanvas.height = results.segmentationMask.height;
+                // 부하(Stutter) 방지: 마스크 해상도가 다를 때만 캔버스를 강제 리사이징(메모리 재할당 방지)
+                if (segCanvas.width !== results.segmentationMask.width) {
+                    segCanvas.width = results.segmentationMask.width;
+                    segCanvas.height = results.segmentationMask.height;
+                }
                 segCtx.clearRect(0, 0, segCanvas.width, segCanvas.height);
                 segCtx.drawImage(results.segmentationMask, 0, 0);
                 segMask = true;
@@ -590,6 +593,8 @@ WE ARE COSMIC</textarea>
         } else {
             if (Math.abs(CELL_SIZE - targetCellSize) > 0.1) {
                 CELL_SIZE = CELL_SIZE * 0.90 + targetCellSize * 0.10;
+            } else {
+                CELL_SIZE = targetCellSize;
             }
         }
 
