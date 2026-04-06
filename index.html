@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -8,18 +8,41 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;500;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Silkscreen:wght@400;700&family=VT323&family=Space+Mono:wght@400;700&family=IBM+Plex+Mono:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap');
         
+        /* M3 DESIGN TOKENS */
         :root {
+            --md-primary: #0000FF;
+            --md-on-primary: #FFFFFF;
+            --md-primary-container: rgba(0, 0, 255, 0.08);
+            --md-on-primary-container: #00008B;
+            --md-surface: rgba(255, 255, 255, 0.72);
+            --md-surface-variant: rgba(240, 240, 248, 0.6);
+            --md-on-surface: #1C1B1F;
+            --md-on-surface-dim: rgba(28, 27, 31, 0.45);
+            --md-outline: rgba(28, 27, 31, 0.12);
+            --md-outline-variant: rgba(28, 27, 31, 0.06);
+            --md-shape-xs: 4px;
+            --md-shape-sm: 8px;
+            --md-shape-md: 12px;
+            --md-shape-lg: 16px;
+            --md-shape-xl: 28px;
+            --md-shape-full: 9999px;
+            --md-elevation-1: 0 1px 2px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+            --md-elevation-2: 0 2px 4px rgba(0,0,0,0.06), 0 4px 20px rgba(0,0,0,0.07);
+            --md-elevation-3: 0 4px 8px rgba(0,0,0,0.07), 0 12px 40px rgba(0,0,0,0.1);
+            /* compat */
             --accent-primary: #0000FF;
-            --accent-container: rgba(0, 0, 255, 0.1);
+            --accent-container: rgba(0, 0, 255, 0.08);
             --on-accent-container: #0000FF;
         }
 
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
         body, html {
             width: 100%; height: 100%;
-            background: #FFF;
+            background: #F5F5FA;
+            background-image: repeating-linear-gradient(90deg, transparent, transparent 4px, rgba(0,0,80,0.018) 4px, rgba(0,0,80,0.018) 5px);
             overflow: auto;
-            font-family: 'Pretendard Variable', 'Pretendard', 'JetBrains Mono', sans-serif;
+            font-family: 'Pretendard Variable', 'Pretendard', sans-serif;
             font-weight: 400;
             display: flex;
             justify-content: center;
@@ -32,344 +55,332 @@
             object-fit: contain;
             touch-action: none;
             z-index: 1;
-            box-shadow: 0 0 40px rgba(0,0,0,0.08);
+            box-shadow: var(--md-elevation-3);
         }
+
+        /* LANDING — M3 Dialog Surface */
         #ui-layer {
             position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            z-index: 1000; color: var(--on-accent-container); text-align: center;
-            /* Material 3 Elevated Surface + Premium Bevel & Shadow */
-            background: rgba(255, 255, 255, 0.48);
-            backdrop-filter: blur(50px) saturate(210%);
-            -webkit-backdrop-filter: blur(50px) saturate(210%);
-            padding: 64px 84px; 
-            border: 1px solid rgba(255, 255, 255, 0.7);
-            box-shadow: 
-                0 4px 6px -1px rgba(0, 0, 0, 0.05), /* Tiny core shadow */
-                0 30px 60px -12px rgba(0, 0, 0, 0.18), /* Ambient shadow */
-                inset 1px 1.5px 0px rgba(255, 255, 255, 0.9), /* Sharp Bevel Highlight */
-                inset -0.5px -1px 0px rgba(0, 0, 0, 0.04);     /* Subtle bottom shade */
-            border-radius: 36px;
+            z-index: 1000;
+            text-align: center;
+            color: var(--md-on-surface);
+            background: var(--md-surface);
+            backdrop-filter: blur(48px) saturate(180%);
+            -webkit-backdrop-filter: blur(48px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.75);
+            border-radius: var(--md-shape-xl);
+            padding: 56px 72px 52px;
+            box-shadow: var(--md-elevation-3), inset 0 1px 0 rgba(255,255,255,0.85);
+            min-width: 400px;
+            position: fixed;
         }
         #ui-layer::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, var(--accent-container) 100%);
-            pointer-events: none; opacity: 0.28;
-            border-radius: 36px;
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(160deg, rgba(255,255,255,0.18) 0%, rgba(0,0,255,0.04) 100%);
+            border-radius: inherit;
+            pointer-events: none;
         }
-        #ui-layer h2 { 
-            font-size: 1.1em; letter-spacing: 7px; margin-bottom: 16px; 
-            font-weight: 500; text-transform: uppercase;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); /* Typo Depth */
+
+        /* M3 Display Small */
+        #ui-layer h2 {
+            font-size: 28px;
+            font-weight: 400;
+            letter-spacing: 0.25px;
+            margin-bottom: 8px;
+            color: var(--md-on-surface);
+            line-height: 1.25;
         }
-        #ui-layer p { 
-            font-size: 0.6em; opacity: 0.55; margin-bottom: 45px; letter-spacing: 4px; 
-            font-weight: 400; text-transform: uppercase;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-        }
-        #ui-layer button {
-            background: var(--accent-container); color: var(--on-accent-container);
-            border: 1px solid rgba(255,255,255,0.5); padding: 18px 44px;
-            font-family: inherit; font-size: 10px; font-weight: 500;
-            cursor: pointer; letter-spacing: 4px; transition: all 0.5s cubic-bezier(0.16,1,0.3,1); 
-            margin: 10px;
+        /* M3 Body Medium — label */
+        #ui-layer p {
+            font-size: 12px;
+            letter-spacing: 2px;
+            color: var(--md-on-surface-dim);
+            margin-bottom: 40px;
+            font-weight: 400;
             text-transform: uppercase;
-            border-radius: 50px; /* Perfect Pill */
-            box-shadow: 
-                0 6px 16px rgba(0,0,0,0.1),
-                inset 1px 1.5px 1px rgba(255,255,255,0.8),
-                inset -1px -1.5px 1px rgba(0,0,0,0.03);
-            text-shadow: 0 0.5px 1px rgba(0,0,0,0.02);
-        }
-        #ui-layer button:hover { 
-            background: var(--accent-primary); color: #FFF;
-            transform: translateY(-6px) scale(1.06);
-            box-shadow: 0 16px 36px rgba(0,0,0,0.18);
-            border-color: rgba(255,255,255,0.8);
         }
         #ui-layer input[type="file"] { display: none; }
+        #ui-layer .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+        /* M3 Filled Tonal Button */
+        #ui-layer button {
+            background: var(--md-surface-variant);
+            color: var(--md-on-surface);
+            border: 1px solid var(--md-outline);
+            padding: 14px 28px;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1.25px;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: var(--md-shape-full);
+            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+            box-shadow: var(--md-elevation-1);
+        }
+        #ui-layer button:hover {
+            background: var(--md-primary-container);
+            color: var(--md-primary);
+            border-color: rgba(0,0,255,0.18);
+            transform: translateY(-3px);
+            box-shadow: var(--md-elevation-2);
+        }
+        #ui-layer button:active { transform: scale(0.97); }
+
+        /* HUD */
         #hud {
             position: fixed; bottom: 16px; left: 16px; z-index: 10;
-            color: rgba(0,0,0,0.2); font-size: 9px; letter-spacing: 1px;
+            color: rgba(0,0,0,0.18); font-size: 9px; letter-spacing: 1px;
             pointer-events: none;
+            font-family: 'JetBrains Mono', monospace;
         }
+
+        /* BOTTOM CONTROLS */
         #controls-container {
-            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(120px);
-            display: flex; gap: 12px; z-index: 1000;
+            position: fixed; bottom: 36px; left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            display: flex; gap: 8px; z-index: 1000;
             opacity: 0;
-            transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
             pointer-events: none;
-            /* Apple-Style Glassmorphism */
-            padding: 12px 24px;
-            background: rgba(255, 255, 255, 0.45);
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            border-radius: 20px;
-            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.12);
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(32px) saturate(160%);
+            -webkit-backdrop-filter: blur(32px) saturate(160%);
+            border: 1px solid rgba(255,255,255,0.8);
+            border-radius: var(--md-shape-xl);
+            box-shadow: var(--md-elevation-2), inset 0 1px 0 rgba(255,255,255,0.9);
         }
         #bottom-hover-trigger {
             position: fixed; bottom: 0; left: 0; width: 100%; height: 120px;
             z-index: 999; pointer-events: auto;
         }
-        /* Reveal bottom menu ONLY on bottom hover trigger */
         #bottom-hover-trigger:hover + #controls-container,
         #controls-container:hover {
             opacity: 1;
             transform: translateX(-50%) translateY(0);
             pointer-events: auto;
         }
-        /* Mobile/Touch support visibility fallback */
         .touch-show #controls-container {
             opacity: 1;
             transform: translateX(-50%) translateY(0);
             pointer-events: auto;
         }
-        #webcam-toggle, #record-btn, #back-btn {
-            background: var(--accent-container);
-            padding: 12px 28px;
-            font-family: inherit; font-size: 11px;
-            font-weight: 500; cursor: pointer; letter-spacing: 2px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border-radius: 12px;
-            display: flex; align-items: center; gap: 8px;
+
+        /* M3 Outlined Button */
+        .premium-ctrl-btn {
+            background: transparent;
+            color: var(--md-on-surface);
+            border: 1.5px solid var(--md-outline);
+            padding: 12px 20px;
+            font-family: inherit;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1.25px;
             text-transform: uppercase;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: var(--on-accent-container);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            border-radius: var(--md-shape-full);
+            min-width: 120px;
         }
-        #webcam-toggle:hover { background: var(--accent-primary); color: #FFF; border-color: var(--accent-primary); transform: translateY(-2px); }
-        #webcam-toggle.active { background: #000; color: #FFF; border-color: #000; }
-        
-        #record-btn:hover { background: #FF0000; color: #FFF; border-color: #FF0000; transform: translateY(-2px); }
-        #record-btn.active { background: #FF0000; color: #FFF; border-color: #FF0000; }
-        
-        #back-btn { background: rgba(0, 0, 0, 0.05); color: #000; border-color: transparent; }
-        #back-btn:hover { background: #000; color: #FFF; transform: translateY(-2px); }
-        
+        .premium-ctrl-btn:hover {
+            background: var(--md-on-surface);
+            color: #FFF;
+            border-color: transparent;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.14);
+        }
+        .premium-ctrl-btn:active { transform: scale(0.96); }
+        .premium-ctrl-btn span { font-size: 14px; }
+        #record-btn:hover span { transform: scale(1.2); }
+        #webcam-toggle:hover span { transform: scale(1.1); }
+
+        /* TOAST — M3 Snackbar */
         #tutorial-toast {
-            position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
-            /* Blue-Tinted Premium Glassmorphism */
-            background: rgba(0, 0, 255, 0.45); /* Point Color - Blue */
-            backdrop-filter: blur(25px) saturate(200%);
-            -webkit-backdrop-filter: blur(25px) saturate(200%);
-            color: #FFF; padding: 14px 40px; font-family: inherit;
-            border: 1px solid rgba(255,255,255,0.4); border-radius: 40px;
-            font-size: 10px; font-weight: 500; letter-spacing: 4px; z-index: 2000;
-            opacity: 0; pointer-events: none; transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: fixed; top: 72px; left: 50%; transform: translateX(-50%);
+            background: rgba(28, 27, 31, 0.88);
+            backdrop-filter: blur(20px);
+            color: #FFF;
+            padding: 12px 28px;
+            font-family: inherit;
+            border-radius: var(--md-shape-full);
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 1.25px;
+            z-index: 2000;
+            opacity: 0; pointer-events: none;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
             text-transform: uppercase;
-            box-shadow: 0 15px 45px -10px rgba(0,0,255,0.25);
-            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            box-shadow: var(--md-elevation-2);
         }
 
-        /* ?? Settings Panel ?? */
+        /* SETTINGS PANEL — M3 Side Sheet */
         #settings-panel {
-            position: fixed; top: 16px; left: 16px; z-index: 29;
-            /* Premium Apple Glassmorphism */
-            background: rgba(255,255,255,0.45);
-            backdrop-filter: blur(25px) saturate(160%);
-            -webkit-backdrop-filter: blur(25px) saturate(160%);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            border-radius: 12px;
-            padding: 20px; width: 230px;
-            font-family: inherit; font-size: 10px; font-weight: 400; letter-spacing: 1px;
-            transform: translateX(-260px);
+            position: fixed; top: 12px; left: 12px; z-index: 29;
+            background: rgba(252, 252, 255, 0.9);
+            backdrop-filter: blur(32px) saturate(140%);
+            -webkit-backdrop-filter: blur(32px) saturate(140%);
+            border: 1px solid var(--md-outline);
+            border-radius: var(--md-shape-xl);
+            padding: 20px 18px 24px;
+            width: 252px;
+            font-family: inherit;
+            font-size: 13px;
+            transform: translateX(-280px);
             opacity: 0;
             pointer-events: none;
-            transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease;
-            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.35s cubic-bezier(0.34, 1.20, 0.64, 1), opacity 0.25s ease;
+            box-shadow: var(--md-elevation-3);
+            overflow-y: auto;
+            max-height: calc(100vh - 24px);
         }
         #settings-panel.open {
             transform: translateX(0);
             opacity: 1;
             pointer-events: auto;
         }
-        /* ?? ?렞 FIX: Hide toggle when panel is open to prevent overlap ?? */
-        #settings-panel.open ~ #settings-toggle,
-        #settings-panel.open + #settings-toggle {
-            display: none !important;
-        }
         #settings-title {
-            font-size: 11px; font-weight: 500; letter-spacing: 3px;
-            margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;
-            text-transform: uppercase;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.25px;
+            margin-bottom: 16px;
+            display: flex; justify-content: space-between; align-items: center;
+            color: var(--md-on-surface);
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--md-outline-variant);
         }
         #settings-close {
-            cursor: pointer; font-size: 18px; line-height: 1; opacity: 0.3;
-            background: none; border: none; font-family: inherit; font-weight: 400;
-            min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: flex-end;
-            transition: opacity 0.2s;
+            cursor: pointer;
+            width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: var(--md-shape-full);
+            background: none; border: none;
+            font-size: 16px; opacity: 0.35;
+            transition: background 0.2s, opacity 0.2s;
         }
-        #settings-close:hover { opacity: 1; }
-        #settings-toggle, #source-btn {
-            position: fixed; top: 16px; z-index: 30;
-            background: rgba(255,255,255,0.4);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            color: #000;
-            font-family: inherit; font-size: 10px; font-weight: 500;
-            letter-spacing: 2px; padding: 10px 20px; cursor: pointer;
-            min-height: 44px; border-radius: 8px;
-            box-shadow: 0 4px 20px -5px rgba(0,0,0,0.05);
-            transition: all 0.3s;
-        }
-        #settings-toggle { left: 16px; display: none; }
-        #source-btn { right: 16px; display: none; }
-        
-        #settings-toggle:hover, #source-btn:hover { 
-            background: #000; color: #FFF; border-color: #000;
-            transform: translateY(-2px);
-        }
+        #settings-close:hover { background: var(--md-outline-variant); opacity: 1; }
 
-        .ctrl-section { margin-bottom: 10px; }
+        /* SETTINGS TOGGLE */
+        #settings-toggle, #source-btn {
+            position: fixed; top: 12px; z-index: 30;
+            background: rgba(255,255,255,0.82);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--md-outline);
+            color: var(--md-on-surface);
+            font-family: inherit;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1.25px;
+            text-transform: uppercase;
+            padding: 10px 18px;
+            cursor: pointer;
+            min-height: 40px;
+            border-radius: var(--md-shape-md);
+            box-shadow: var(--md-elevation-1);
+            transition: all 0.2s ease;
+        }
+        #settings-toggle { left: 12px; display: none; }
+        #source-btn { right: 12px; display: none; }
+        #settings-toggle:hover, #source-btn:hover {
+            background: var(--md-on-surface);
+            color: #FFF;
+            border-color: transparent;
+            transform: translateY(-1px);
+        }
+        #settings-toggle:active { transform: scale(0.96); }
+
+        /* CTRL SECTIONS — M3 List Tile */
+        .ctrl-section { margin-bottom: 14px; }
         .ctrl-label {
-            font-size: 8px; letter-spacing: 3px; opacity: 0.4;
-            display: block; margin-bottom: 4px; text-transform: uppercase;
+            font-size: 10px;
+            letter-spacing: 1.25px;
+            color: var(--md-on-surface-dim);
+            font-weight: 600;
+            display: block;
+            margin-bottom: 6px;
+            text-transform: uppercase;
         }
-        .ctrl-section textarea {
-            width: 100%; box-sizing: border-box; resize: vertical;
-            border: 1px solid rgba(0,0,0,0.1); padding: 8px; font-family: inherit;
-            font-size: 10px; font-weight: 500; letter-spacing: 1px;
-            outline: none; min-height: 72px; line-height: 1.6;
-            background: rgba(255,255,255,0.3); border-radius: 4px;
-        }
-        .ctrl-section textarea:focus { border-color: var(--accent-primary); background: #FFF; }
+        .ctrl-section textarea,
         .ctrl-section select {
-            width: 100%; box-sizing: border-box; border: 1px solid rgba(0,0,0,0.1);
-            padding: 8px 10px; font-family: inherit; font-size: 10px;
-            font-weight: 500; outline: none; background: rgba(255,255,255,0.3); cursor: pointer;
-            border-radius: 4px;
+            width: 100%; box-sizing: border-box;
+            border: 1.5px solid var(--md-outline);
+            padding: 10px 12px;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 400;
+            outline: none;
+            background: rgba(255,255,255,0.6);
+            border-radius: var(--md-shape-sm);
+            color: var(--md-on-surface);
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .ctrl-section textarea { resize: vertical; min-height: 68px; line-height: 1.6; }
+        .ctrl-section textarea:focus,
+        .ctrl-section select:focus {
+            border-color: var(--md-primary);
+            background: #FFF;
         }
         .ctrl-inline {
-            display: flex; align-items: center; justify-content: space-between; gap: 8px;
+            display: flex; align-items: center;
+            justify-content: space-between; gap: 8px;
         }
         .ctrl-inline input[type="range"] {
-            flex: 1; accent-color: var(--accent-primary); cursor: pointer; height: 2px;
+            flex: 1; accent-color: var(--md-primary); cursor: pointer; height: 2px;
         }
-        .ctrl-val { font-size: 10px; font-weight: 500; min-width: 36px; text-align: right; }
-        #pixel-info {
-            margin-top: 15px; padding-top: 10px; border-top: 1px dashed rgba(0,0,0,0.1);
-            font-size: 9px; line-height: 1.5; color: rgba(0,0,0,0.4);
-            letter-spacing: 0.5px;
+        .ctrl-val {
+            font-size: 11px; font-weight: 600; min-width: 32px; text-align: right;
+            color: var(--md-primary);
         }
-        #pixel-info b { color: #000; }
         .ctrl-inline input[type="color"] {
-            width: 28px; height: 22px; border: 1px solid #ccc;
+            width: 30px; height: 24px;
+            border: 1.5px solid var(--md-outline);
+            border-radius: var(--md-shape-xs);
             padding: 1px; cursor: pointer; background: none;
         }
-
-        /* Unified Premium Control Buttons Styling */
-        .premium-ctrl-btn {
-            background: transparent;
-            color: #000;
-            border: 1px solid #000;
-            padding: 14px 28px;
-            font-size: 11px;
-            font-weight: 500;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            backdrop-filter: blur(10px);
-            border-radius: 2px;
-            z-index: 1;
-            min-width: 140px;
-        }
-        .premium-ctrl-btn::before {
-            content: '';
-            position: absolute;
-            top: 0; left: -100%;
-            width: 100%; height: 100%;
-            background: #000;
-            transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-            z-index: -1;
-        }
-        .premium-ctrl-btn:hover {
-            color: #fff;
-            padding-left: 34px;
-            padding-right: 22px;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
-        }
-        .premium-ctrl-btn:hover::before {
-            left: 0;
-        }
-        .premium-ctrl-btn span {
-            transition: transform 0.3s ease;
-            display: inline-block;
-        }
-        .premium-ctrl-btn:hover span {
-            transform: translateX(-5px);
-        }
-        
-        /* Specific Icon Animations */
-        #record-btn:hover span {
-            transform: scale(1.3) rotate(15deg);
-            color: #ff3b30;
-        }
-        #webcam-toggle:hover span {
-            transform: scale(1.2) translateY(-2px);
-            color: #ffcc00;
-        }
-        #color-hex { font-size: 10px; font-weight: 800; letter-spacing: 1px; }
         .ctrl-inline input[type="checkbox"] {
-            width: 14px; height: 14px; accent-color: #0000FF; cursor: pointer;
+            width: 16px; height: 16px;
+            accent-color: var(--md-primary); cursor: pointer;
         }
-        .ctrl-divider { border: none; border-top: 1px solid #eee; margin: 10px 0; }
+        #pixel-info {
+            margin-top: 12px; padding: 10px 12px;
+            background: var(--md-outline-variant);
+            border-radius: var(--md-shape-sm);
+            font-size: 10px; line-height: 1.6;
+            color: var(--md-on-surface-dim);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        #pixel-info b { color: var(--md-on-surface); font-weight: 600; }
+        #color-hex { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+        .ctrl-divider {
+            border: none;
+            border-top: 1px solid var(--md-outline-variant);
+            margin: 14px 0;
+        }
 
-        /* ?? Mobile Bottom Sheet ?? */
         @media (max-width: 767px) {
             #settings-panel {
                 width: 100%;
                 left: 0; top: auto; bottom: 0;
-                max-height: 72vh;
+                max-height: 75vh;
                 overflow-y: auto;
-                -webkit-overflow-scrolling: touch;
+                border-radius: 24px 24px 0 0;
                 border-left: none; border-right: none; border-bottom: none;
-                border-top: 3px solid #000;
-                border-radius: 16px 16px 0 0;
                 padding: 16px 16px 32px;
                 transform: translateY(110%);
             }
             #settings-panel.open { transform: translateY(0); }
             #settings-toggle {
                 top: auto; left: auto;
-                bottom: 90px; right: 16px;
-                min-height: 48px; min-width: 48px;
-                padding: 12px 20px;
-                font-size: 11px;
-                border-radius: 4px;
-            }
-            #source-btn {
-                top: 16px; right: 16px;
-                min-height: 44px;
+                bottom: 96px; right: 16px;
                 font-size: 11px;
             }
-            #controls-container {
-                bottom: 16px;
-                gap: 8px;
-            }
-            #webcam-toggle, #record-btn {
-                min-height: 44px;
-                font-size: 12px;
-                padding: 10px 16px;
-            }
-            .ctrl-section select,
-            .ctrl-section textarea {
-                font-size: 14px;
-                min-height: 44px;
-            }
-            .ctrl-section textarea { min-height: 72px; }
-            .ctrl-label { font-size: 10px; }
-            .ctrl-val { font-size: 12px; min-width: 52px; }
-            .ctrl-inline input[type="range"] { height: 20px; }
-            #settings-title { font-size: 13px; padding-bottom: 8px; border-bottom: 1px solid #eee; margin-bottom: 14px; }
-            .ctrl-divider { margin: 14px 0; }
+            #controls-container { bottom: 16px; gap: 6px; }
+            .ctrl-section select, .ctrl-section textarea { font-size: 14px; min-height: 44px; }
+            .ctrl-label { font-size: 11px; }
         }
     </style>
 </head>
