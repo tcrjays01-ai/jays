@@ -44,29 +44,43 @@
         #ui-layer {
             position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            z-index: 100; color: #000; text-align: center;
-            background: rgba(255,255,255,1);
-            padding: 50px 70px; border: 1px solid rgba(0,0,0,0.06);
-            box-shadow: 0 30px 60px -12px rgba(0,0,0,0.1);
+            z-index: 1000; color: #000; text-align: center;
+            /* Premium Blue-Tinted Glassmorphism */
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            padding: 60px 80px; border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 
+                0 40px 100px -20px rgba(0, 0, 0, 0.15),
+                inset 0 0 40px rgba(0, 0, 255, 0.05); /* Subtle blue glow */
+            border-radius: 4px;
+        }
+        #ui-layer::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(0,0,255,0.02) 100%);
+            pointer-events: none;
         }
         #ui-layer h2 { 
-            font-size: 1.0em; letter-spacing: 5px; margin-bottom: 12px; 
-            font-weight: 500; text-transform: uppercase;
+            font-size: 1.0em; letter-spacing: 6px; margin-bottom: 14px; 
+            font-weight: 500; text-transform: uppercase; color: #000;
         }
         #ui-layer p { 
-            font-size: 0.65em; opacity: 0.3; margin-bottom: 30px; letter-spacing: 3px; 
-            font-weight: 400; text-transform: uppercase;
+            font-size: 0.6em; opacity: 0.4; margin-bottom: 40px; letter-spacing: 4px; 
+            font-weight: 400; text-transform: uppercase; color: #000;
         }
         #ui-layer button {
-            background: transparent; color: #000;
-            border: 1px solid rgba(0,0,0,0.1); padding: 12px 32px;
-            font-family: inherit; font-size: 10px; font-weight: 400;
-            cursor: pointer; letter-spacing: 2px; transition: all 0.3s; margin: 6px;
+            background: rgba(0,0,0,0.03); color: #000;
+            border: 1px solid rgba(0,0,0,0.08); padding: 14px 36px;
+            font-family: inherit; font-size: 10px; font-weight: 500;
+            cursor: pointer; letter-spacing: 3px; transition: all 0.4s cubic-bezier(0.16,1,0.3,1); 
+            margin: 8px;
             text-transform: uppercase;
+            border-radius: 2px;
         }
         #ui-layer button:hover { 
             background: #000; color: #FFF; border-color: #000;
-            transform: translateY(-2px);
+            transform: translateY(-4px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
         }
         #ui-layer input[type="file"] { display: none; }
         #hud {
@@ -144,13 +158,19 @@
         /* ── Settings Panel ── */
         #settings-panel {
             position: fixed; top: 16px; left: 16px; z-index: 29;
-            background: rgba(255,255,255,0.97); border: 2px solid #000;
-            padding: 12px; width: 210px;
+            /* Premium Apple Glassmorphism */
+            background: rgba(255,255,255,0.45);
+            backdrop-filter: blur(25px) saturate(160%);
+            -webkit-backdrop-filter: blur(25px) saturate(160%);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
+            padding: 20px; width: 230px;
             font-family: inherit; font-size: 10px; font-weight: 400; letter-spacing: 1px;
-            transform: translateX(-240px);
+            transform: translateX(-260px);
             opacity: 0;
             pointer-events: none;
-            transition: transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.22s ease;
+            transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease;
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
         }
         #settings-panel.open {
             transform: translateX(0);
@@ -158,33 +178,37 @@
             pointer-events: auto;
         }
         #settings-title {
-            font-size: 11px; font-weight: 800; letter-spacing: 3px;
-            margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
+            font-size: 11px; font-weight: 500; letter-spacing: 3px;
+            margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;
+            text-transform: uppercase;
         }
         #settings-close {
-            cursor: pointer; font-size: 14px; line-height: 1; opacity: 0.4;
-            background: none; border: none; font-family: inherit; font-weight: 700;
+            cursor: pointer; font-size: 18px; line-height: 1; opacity: 0.3;
+            background: none; border: none; font-family: inherit; font-weight: 400;
             min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: flex-end;
+            transition: opacity 0.2s;
         }
         #settings-close:hover { opacity: 1; }
-        #settings-toggle {
-            position: fixed; top: 16px; left: 16px; z-index: 30;
-            background: #FFF; border: 2px solid #000; color: #000;
-            font-family: inherit; font-size: 10px; font-weight: 800;
-            letter-spacing: 2px; padding: 6px 12px; cursor: pointer;
-            min-height: 36px;
+        #settings-toggle, #source-btn {
+            position: fixed; top: 16px; z-index: 30;
+            background: rgba(255,255,255,0.4);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: #000;
+            font-family: inherit; font-size: 10px; font-weight: 500;
+            letter-spacing: 2px; padding: 10px 20px; cursor: pointer;
+            min-height: 44px; border-radius: 8px;
+            box-shadow: 0 4px 20px -5px rgba(0,0,0,0.05);
+            transition: all 0.3s;
         }
-        #settings-toggle:hover { background: #000; color: #FFF; }
-
-        #source-btn {
-            position: fixed; top: 16px; right: 16px; z-index: 30;
-            display: none;
-            background: #FFF; border: 2px solid #000; color: #000;
-            font-family: inherit; font-size: 10px; font-weight: 800;
-            letter-spacing: 2px; padding: 6px 12px; cursor: pointer;
-            min-height: 36px;
+        #settings-toggle { left: 16px; }
+        #source-btn { right: 16px; display: none; }
+        
+        #settings-toggle:hover, #source-btn:hover { 
+            background: #000; color: #FFF; border-color: #000;
+            transform: translateY(-2px);
         }
-        #source-btn:hover { background: #000; color: #FFF; }
 
         .ctrl-section { margin-bottom: 10px; }
         .ctrl-label {
@@ -193,23 +217,25 @@
         }
         .ctrl-section textarea {
             width: 100%; box-sizing: border-box; resize: vertical;
-            border: 1px solid #ccc; padding: 5px; font-family: inherit;
-            font-size: 10px; font-weight: 700; letter-spacing: 1px;
-            outline: none; min-height: 60px; line-height: 1.6;
+            border: 1px solid rgba(0,0,0,0.1); padding: 8px; font-family: inherit;
+            font-size: 10px; font-weight: 500; letter-spacing: 1px;
+            outline: none; min-height: 72px; line-height: 1.6;
+            background: rgba(255,255,255,0.3); border-radius: 4px;
         }
-        .ctrl-section textarea:focus { border-color: #0000FF; }
+        .ctrl-section textarea:focus { border-color: var(--accent-primary); background: #FFF; }
         .ctrl-section select {
-            width: 100%; box-sizing: border-box; border: 1px solid #ccc;
-            padding: 4px 6px; font-family: inherit; font-size: 10px;
-            font-weight: 700; outline: none; background: #FFF; cursor: pointer;
+            width: 100%; box-sizing: border-box; border: 1px solid rgba(0,0,0,0.1);
+            padding: 8px 10px; font-family: inherit; font-size: 10px;
+            font-weight: 500; outline: none; background: rgba(255,255,255,0.3); cursor: pointer;
+            border-radius: 4px;
         }
         .ctrl-inline {
             display: flex; align-items: center; justify-content: space-between; gap: 8px;
         }
         .ctrl-inline input[type="range"] {
-            flex: 1; accent-color: #0000FF; cursor: pointer; height: 2px;
+            flex: 1; accent-color: var(--accent-primary); cursor: pointer; height: 2px;
         }
-        .ctrl-val { font-size: 10px; font-weight: 400; min-width: 36px; text-align: right; }
+        .ctrl-val { font-size: 10px; font-weight: 500; min-width: 36px; text-align: right; }
         #pixel-info {
             margin-top: 15px; padding-top: 10px; border-top: 1px dashed rgba(0,0,0,0.1);
             font-size: 9px; line-height: 1.5; color: rgba(0,0,0,0.4);
@@ -444,27 +470,27 @@ WE ARE COSMIC</textarea>
 
         <div class="ctrl-section">
             <span class="ctrl-label">Detailed Palette</span>
-            <div class="ctrl-inline" style="flex-wrap:wrap; gap:8px;">
+            <div class="ctrl-inline" style="flex-wrap:nowrap; gap:6px; justify-content: space-between;">
                 <div style="display:flex; flex-direction:column; align-items:center;">
                     <input type="color" id="ctrl-col-z2" value="#ffffff" oninput="applyPalette('z2', this.value)">
-                    <span style="font-size:6px; letter-spacing:3px; opacity:0.3; text-transform:uppercase;">Light</span>
+                    <span style="font-size:6px; letter-spacing:2px; opacity:0.3; text-transform:uppercase;">Light</span>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:center;">
                     <input type="color" id="ctrl-col-z3" value="#808080" oninput="applyPalette('z3', this.value)">
-                    <span style="font-size:6px; letter-spacing:3px; opacity:0.3; text-transform:uppercase;">Mid</span>
+                    <span style="font-size:6px; letter-spacing:2px; opacity:0.3; text-transform:uppercase;">Mid</span>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:center;">
                     <input type="color" id="ctrl-col-z4" value="#000000" oninput="applyPalette('z4', this.value)">
-                    <span style="font-size:6px; letter-spacing:3px; opacity:0.3; text-transform:uppercase;">Deep</span>
+                    <span style="font-size:6px; letter-spacing:2px; opacity:0.3; text-transform:uppercase;">Deep</span>
                 </div>
-                <div style="width:1px; height:16px; background:rgba(0,0,0,0.06); margin:0 2px;"></div>
+                <div style="width:1px; height:18px; background:rgba(0,0,0,0.1); margin:0 1px;"></div>
                 <div style="display:flex; flex-direction:column; align-items:center;">
                     <input type="color" id="ctrl-col-txt" value="#000000" oninput="applyPalette('txt', this.value)" style="border:1px solid var(--accent-primary) !important;">
-                    <span style="font-size:6.5px; letter-spacing:3px; opacity:0.8; font-weight:700; color:var(--accent-primary); text-transform:uppercase;">Char</span>
+                    <span style="font-size:6.5px; letter-spacing:1px; opacity:0.8; font-weight:700; color:var(--accent-primary); text-transform:uppercase;">Char</span>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:center;">
                     <input type="color" id="ctrl-col-sym" value="#0000ff" oninput="applyPalette('sym', this.value)">
-                    <span style="font-size:6px; letter-spacing:3px; opacity:0.3; text-transform:uppercase;">Symbol</span>
+                    <span style="font-size:6px; letter-spacing:1px; opacity:0.3; text-transform:uppercase;">Symbol</span>
                 </div>
             </div>
         </div>
@@ -1438,7 +1464,27 @@ WE ARE COSMIC</textarea>
         });
     }
 
-    window.addEventListener('DOMContentLoaded', () => { init(); updateBgSwatches(); });
+    window.addEventListener('DOMContentLoaded', () => { 
+        init(); 
+        updateBgSwatches(); 
+        
+        // --- 🚀 Premium UI Intro Reveal Sequence ---
+        const settings = document.getElementById('settings-panel');
+        if (settings) {
+            // Show for 3 seconds to guide the user
+            settings.classList.add('open');
+            // Mock show bottom menu too
+            document.body.classList.add('touch-show');
+            
+            setTimeout(() => {
+                settings.classList.remove('open');
+                document.body.classList.remove('touch-show');
+                // Ensure the settings toggle is visible after intro
+                let toggle = document.getElementById('settings-toggle');
+                if (toggle) toggle.style.display = 'flex';
+            }, 3000);
+        }
+    });
     </script>
 
     <div id="bottom-hover-trigger"></div>
