@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -64,10 +64,10 @@
             z-index: 1000;
             text-align: center;
             color: var(--md-on-surface);
-            background: var(--md-surface);
-            backdrop-filter: blur(48px) saturate(180%);
-            -webkit-backdrop-filter: blur(48px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.75);
+            background: rgba(255, 255, 255, 0.52);
+            backdrop-filter: blur(60px) saturate(200%);
+            -webkit-backdrop-filter: blur(60px) saturate(200%);
+            border: 1px solid rgba(255, 255, 255, 0.85);
             border-radius: var(--md-shape-xl);
             padding: 56px 72px 52px;
             box-shadow: var(--md-elevation-3), inset 0 1px 0 rgba(255,255,255,0.85);
@@ -145,9 +145,9 @@
             transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
             pointer-events: none;
             padding: 10px 16px;
-            background: rgba(255, 255, 255, 0.82);
-            backdrop-filter: blur(32px) saturate(160%);
-            -webkit-backdrop-filter: blur(32px) saturate(160%);
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(40px) saturate(200%);
+            -webkit-backdrop-filter: blur(40px) saturate(200%);
             border: 1px solid rgba(255,255,255,0.8);
             border-radius: var(--md-shape-xl);
             box-shadow: var(--md-elevation-2), inset 0 1px 0 rgba(255,255,255,0.9);
@@ -219,9 +219,9 @@
         /* SETTINGS PANEL — M3 Side Sheet */
         #settings-panel {
             position: fixed; top: 12px; left: 12px; z-index: 29;
-            background: rgba(252, 252, 255, 0.9);
-            backdrop-filter: blur(32px) saturate(140%);
-            -webkit-backdrop-filter: blur(32px) saturate(140%);
+            background: rgba(255, 255, 255, 0.48);
+            backdrop-filter: blur(50px) saturate(180%);
+            -webkit-backdrop-filter: blur(50px) saturate(180%);
             border: 1px solid var(--md-outline);
             border-radius: var(--md-shape-xl);
             padding: 20px 18px 24px;
@@ -265,7 +265,7 @@
         /* SETTINGS TOGGLE */
         #settings-toggle, #source-btn {
             position: fixed; top: 12px; z-index: 30;
-            background: rgba(255,255,255,0.82);
+            background: rgba(255, 255, 255, 0.45);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--md-outline);
@@ -1139,11 +1139,11 @@ WE ARE COSMIC</textarea>
                     ctx.fillRect(fx, fy, fw, fh);
 
                     // Inject Structural Symbols (20% ratio)
-                    if (intensity > 0.4 && (i * 11 + j * 17 + Math.floor(globalFrame/5)) % 10 < 2) {
+                    if (intensity > 0.4 && (i * 11 + j * 17 + Math.floor(globalFrame/60)) % 10 < 2) {
                         ctx.save();
                         ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
                         ctx.fillStyle = `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${intensity})`; 
-                        let symIdx = (i * 3 + j * 7 + Math.floor(globalFrame/15)) % activeSymbols.length;
+                        let symIdx = (i * 3 + j * 7 + Math.floor(globalFrame/90)) % activeSymbols.length;
                         ctx.fillText(activeSymbols[symIdx], cx, vy);
                         ctx.restore();
                     } else {
