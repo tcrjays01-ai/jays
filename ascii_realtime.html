@@ -218,6 +218,7 @@
     </div>
     
     <div id="controls-container" style="display:none;">
+        <button id="btn-home" onclick="returnToMenu()" style="background:#FF0000; color:#FFF; border-color:#FF0000;">✕ HOME</button>
         <button id="webcam-toggle" onclick="toggleWebcam()">⚡ HAND CONTROL: OFF</button>
         <button id="record-btn" onclick="toggleRecording()">⏺ REC VIDEO</button>
     </div>
@@ -500,6 +501,24 @@ WE ARE COSMIC</textarea>
             });
     }
 
+    function returnToMenu() {
+        if (webcamActive) stopWebcam();
+        if (video) {
+            video.pause();
+            video.srcObject = null;
+            video.removeAttribute('src');
+        }
+        isPlaying = false;
+        
+        document.getElementById('ui-layer').style.display = '';
+        document.getElementById('controls-container').style.display = 'none';
+        document.getElementById('settings-panel').classList.remove('open');
+        document.getElementById('settings-toggle').style.display = 'none';
+        
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
     function initSegmentation() {
         if (!segCanvas) {
             segCanvas = document.createElement('canvas');
@@ -709,9 +728,12 @@ WE ARE COSMIC</textarea>
 
                 let luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
                 
+                // 마스크에서 잘려나간 배경(순수 흰색) 판별
+                let isBackground = (r === 255 && g === 255 && b === 255);
+
                 // 캠에서는 얼굴 피부 전체가 파랗게 타오르는 현상을 방지하기 위해 
                 // 하이라이트는 보존하고 그림자(안경, 헤어) 부분만 완전한 블랙으로 떨어지게 베이스를 조정합니다.
-                if (isCamera) {
+                if (isCamera && !isBackground) {
                     luma = luma - 0.12; 
                     luma = Math.max(0.001, Math.min(0.999, luma));
                 }
@@ -722,7 +744,10 @@ WE ARE COSMIC</textarea>
                 let cellIdx = j * cols + i;
                 let smoothSpeed = isCamera ? 0.20 : 0.60;
                 
-                if (cellHistory[cellIdx] === -1) {
+                if (targetDarkness === 0.0) {
+                    // 배경은 잔상(Ghost)을 남기지 않고 즉시 지움
+                    cellHistory[cellIdx] = 0.0;
+                } else if (cellHistory[cellIdx] === -1) {
                     cellHistory[cellIdx] = targetDarkness;
                 } else {
                     cellHistory[cellIdx] = cellHistory[cellIdx] * (1 - smoothSpeed) + targetDarkness * smoothSpeed;
