@@ -706,6 +706,15 @@ WE ARE COSMIC</textarea>
                 let r = pixels[idx], g = pixels[idx+1], b = pixels[idx+2];
 
                 let luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
+                
+                // 웹캠 강제 콘트라스트(대비) 보정: 너무 어둡고 잿빛인 캠 화면을 
+                // 아트웍 영상(초이 아트웍)처럼 극단적인 흑/백 대비로 찢어버려 그림자를 만듦
+                if (isCamera) {
+                    // 어두운 영역을 블랙으로 확 밀어버리고, 밝은 영역은 화이트로 땡겨서 대비를 1.8배 증가
+                    luma = (luma - 0.3) * 1.8 + 0.35; 
+                    luma = Math.max(0.0, Math.min(1.0, luma));
+                }
+                
                 let targetDarkness = 1.0 - luma;
 
                 // 플리커(Flickering) 방지를 위한 Temporal Smoothing (시계열 부드러움 연산)
