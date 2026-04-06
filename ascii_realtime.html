@@ -214,7 +214,7 @@
             box-shadow: 0 4px 20px -5px rgba(0,0,0,0.05);
             transition: all 0.3s;
         }
-        #settings-toggle { left: 16px; }
+        #settings-toggle { left: 16px; display: none; }
         #source-btn { right: 16px; display: none; }
         
         #settings-toggle:hover, #source-btn:hover { 
@@ -648,6 +648,12 @@ WE ARE COSMIC</textarea>
         ctx = canvas.getContext('2d');
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
+
+        // --- 🎯 Clear Canvas to White Initially ---
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // ------------------------------------------
+
         document.getElementById('videoUpload').addEventListener('change', (e) => {
             let f = e.target.files[0];
             if (f) {
@@ -722,7 +728,7 @@ WE ARE COSMIC</textarea>
                     document.getElementById('ui-layer').style.display = 'none';
                     document.getElementById('controls-container').style.display = 'flex';
                     document.getElementById('settings-panel').classList.add('open');
-                    document.getElementById('settings-toggle').style.display = 'none';
+                    document.getElementById('settings-toggle').style.display = 'flex';
                     isCamera = true;
                     initSegmentation();
                     video.play();
@@ -816,7 +822,7 @@ WE ARE COSMIC</textarea>
             document.getElementById('ui-layer').style.display = 'none';
             document.getElementById('controls-container').style.display = 'flex';
             document.getElementById('settings-panel').classList.add('open');
-            document.getElementById('settings-toggle').style.display = 'none';
+            document.getElementById('settings-toggle').style.display = 'flex';
 
             if (!hasPlayedIntro) {
                 hasPlayedIntro = true;
@@ -1482,8 +1488,6 @@ WE ARE COSMIC</textarea>
         
         // --- 🚀 Premium UI Intro (HUD/Buttons) ---
         // Ensure buttons and HUD are setup, but avoid auto-opening menus until video loads
-        let toggle = document.getElementById('settings-toggle');
-        if (toggle) toggle.style.display = 'flex';
     });
     </script>
 
