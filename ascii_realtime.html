@@ -646,7 +646,9 @@ WE ARE COSMIC</textarea>
                     
                     // 1. 거푸집(Mask) 적용: 사람 영역만 남기고 나머지는 투명하게 만듦. (영상과 동일한 위치/비율로 매핑)
                     offCtx.globalCompositeOperation = 'destination-in';
+                    offCtx.filter = 'blur(6px)'; // 엣지 자글거림(Aliasing) 완벽 차단을 위한 두꺼운 블러
                     offCtx.drawImage(segCanvas, dX, dY, dW, dH);
+                    offCtx.filter = 'none'; // 필터 원상복구
                     
                     // 2. 투명해진 배경을 완전히 강제 흰색(#FFFFFF)으로 채워서 ASCII 구역을 지움
                     offCtx.globalCompositeOperation = 'destination-over';
@@ -685,59 +687,47 @@ WE ARE COSMIC</textarea>
             }
         }
 
-        // Grid-aligned Rhythmic Offset (Wave)
-        let glitchCycle = globalFrame % 120;
-        let isGlitchActive = glitchCycle < 20;
-
         for (let j = 0; j < rows; j++) {
-            // Calculate Row Shift
-            let rowShift = 0;
-            if (isGlitchActive) {
-                if (j % 4 === 1) rowShift = CELL_SIZE;
-                else if (j % 4 === 3) rowShift = -CELL_SIZE;
-                
-                // Animate snap
-                let easeT = Math.sin((glitchCycle / 20) * Math.PI); // 0 -> 1 -> 0
-                if (easeT < 0.8) rowShift = 0; // Only pop at the peak
-            }
-
             for (let i = 0; i < cols; i++) {
                 let idx = (j * cols + i) * 4;
                 let r = pixels[idx], g = pixels[idx+1], b = pixels[idx+2];
 
                 let luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
                 
-                // 웹캠 강제 콘트라스트(대비) 보정: 너무 어둡고 잿빛인 캠 화면을 
-                // 아트웍 영상(초이 아트웍)처럼 극단적인 흑/백 대비로 찢어버려 그림자를 만듦
+                // 캠 화면 전용 보정: 웹캠의 좁은 조도 밴드를 넓혀서 스튜디오 명암비를 만듦
                 if (isCamera) {
-                    // 어두운 영역을 블랙으로 확 밀어버리고, 밝은 영역은 화이트로 땡겨서 대비를 1.8배 증가
-                    luma = (luma - 0.3) * 1.8 + 0.35; 
-                    luma = Math.max(0.0, Math.min(1.0, luma));
+                    // 어두운 머리카락/옷은 완전한 딥 박스(Zone 4)로 떨어지게 섀도우를 강하게 깎고,
+                    // 밝은 영역(얼굴)은 적당히 살려 화이트 텍스트 박스로 매핑되게 피벗 조정
+                    luma = (luma - 0.4) * 1.5 + 0.4; 
+                    luma = Math.max(0.001, Math.min(0.999, luma));
                 }
                 
                 let targetDarkness = 1.0 - luma;
 
                 // 플리커(Flickering) 방지를 위한 Temporal Smoothing (시계열 부드러움 연산)
                 let cellIdx = j * cols + i;
-                let smoothSpeed = isCamera ? 0.20 : 0.60; // 웹캠 노이즈 억제를 위해 웹캠일 때 더 강한 EMA 적용
+                let smoothSpeed = isCamera ? 0.20 : 0.60;
                 
                 if (cellHistory[cellIdx] === -1) {
-                    cellHistory[cellIdx] = targetDarkness; // 최초 프레임은 즉시 적용
+                    cellHistory[cellIdx] = targetDarkness;
                 } else {
                     cellHistory[cellIdx] = cellHistory[cellIdx] * (1 - smoothSpeed) + targetDarkness * smoothSpeed;
                 }
                 
                 let darkness = cellHistory[cellIdx];
 
-                let x = offsetX + i * CELL_SIZE + rowShift;
+                let x = offsetX + i * CELL_SIZE;
                 let y = offsetY + j * CELL_SIZE;
                 let cx = x + CELL_SIZE / 2;
                 let cy = y + CELL_SIZE / 2;
                 let vy = cy + CELL_SIZE * 0.045; // Optical vertical center adjustment
 
-                if (darkness < darknessThreshold) continue;
+                // 캠에서는 배경을 강제 흰색(#FFFFFF, luma=1.0)으로 만들었으므로 임계점을 극단적으로 낮춤
+                // 이렇게 해야 밝은 피부 영역이 허공으로 증발해버리는 현상을 막고 화이트 박스(테두리)로 출력됨
+                let currentThreshold = isCamera ? 0.02 : darknessThreshold;
+                if (darkness < currentThreshold) continue;
 
-                let v = (darkness - darknessThreshold) / (1.0 - darknessThreshold);
+                let v = (darkness - currentThreshold) / (1.0 - currentThreshold);
                 v = Math.min(1.0, Math.max(0.0, v));
                 v = Math.pow(v, contrastPow);
                 
@@ -825,24 +815,6 @@ WE ARE COSMIC</textarea>
                     ctx.fillRect(fx, fy, fw, fh);
                 }
             }
-        }
-
-        // Post-Processing: Grid-Aligned Glitch Displace
-        if (globalFrame % 150 > 135) { 
-            let glitchRow = Math.floor((globalFrame * 0.1) % rows);
-            let glitchH = CELL_SIZE * 2;
-            let glitchY = Math.floor(offsetY + glitchRow * CELL_SIZE);
-            let shiftX = (globalFrame % 2 === 0) ? Math.floor(CELL_SIZE * 0.5) : Math.floor(-CELL_SIZE * 0.5);
-            
-            // Draw a slice shifted on grid bounds
-            ctx.drawImage(canvas, 0, glitchY, canvas.width, glitchH, shiftX, glitchY, canvas.width, glitchH);
-            
-            // RGB Break
-            ctx.globalCompositeOperation = 'screen';
-            ctx.fillStyle = 'rgba(0, 0, 255, 0.4)'; // Cobalt Blue
-            ctx.fillRect(0, glitchY, canvas.width, glitchH);
-            ctx.drawImage(canvas, 0, glitchY, canvas.width, glitchH, shiftX * -0.5, glitchY, canvas.width, glitchH);
-            ctx.globalCompositeOperation = 'source-over';
         }
 
         // Gradient pingpong between from→to colors
