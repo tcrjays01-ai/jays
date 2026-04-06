@@ -125,13 +125,11 @@
                 inset -0.5px -1px 0 rgba(0,0,0,0.04);
         }
         #ui-layer button:hover {
-            background: rgba(0, 0, 255, 0.08);
-            color: var(--md-primary);
-            border-color: rgba(0, 0, 255, 0.2);
-            transform: translateY(-5px) scale(1.04);
-            box-shadow:
-                0 16px 40px rgba(0,0,0,0.12),
-                inset 1px 1.5px 0 rgba(255,255,255,0.9);
+            background: #0000FF;
+            color: #FFFFFF;
+            border-color: #0000FF;
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(0,0,255,0.25);
         }
         #ui-layer button:active { transform: scale(0.97); }
 
@@ -1197,9 +1195,9 @@ WE ARE COSMIC</textarea>
                     ctx.save();
                     ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
                     ctx.fillStyle = colorSymbol; // Symbols always use SYMBOL color here
-                    let t = (v - 0.72) / 0.16; // mapped to remaining span
-                    let charIdx = Math.floor(t * activeSymbols.length);
-                    let char = activeSymbols[clamp(charIdx, 0, activeSymbols.length - 1)];
+                    // Frame-based symbol index - doesn't flicker with video motion
+                    let charIdx = (i * 5 + j * 11 + Math.floor(globalFrame/90)) % activeSymbols.length;
+                    let char = activeSymbols[charIdx];
                     ctx.fillText(char, cx, vy);
                     ctx.restore();
                 }
