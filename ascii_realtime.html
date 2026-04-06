@@ -149,8 +149,8 @@
             padding: 1px; cursor: pointer; background: none;
         }
 
-        /* Premium BACK Button Styling */
-        #btn-home {
+        /* Unified Premium Control Buttons Styling */
+        .premium-ctrl-btn {
             background: transparent;
             color: #000;
             border: 1px solid #000;
@@ -165,12 +165,14 @@
             overflow: hidden;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 12px;
             backdrop-filter: blur(10px);
             border-radius: 2px;
             z-index: 1;
+            min-width: 140px;
         }
-        #btn-home::before {
+        .premium-ctrl-btn::before {
             content: '';
             position: absolute;
             top: 0; left: -100%;
@@ -179,21 +181,31 @@
             transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
             z-index: -1;
         }
-        #btn-home:hover {
+        .premium-ctrl-btn:hover {
             color: #fff;
             padding-left: 34px;
             padding-right: 22px;
             box-shadow: 0 15px 30px rgba(0,0,0,0.15);
         }
-        #btn-home:hover::before {
+        .premium-ctrl-btn:hover::before {
             left: 0;
         }
-        #btn-home span {
+        .premium-ctrl-btn span {
             transition: transform 0.3s ease;
             display: inline-block;
         }
-        #btn-home:hover span {
+        .premium-ctrl-btn:hover span {
             transform: translateX(-5px);
+        }
+        
+        /* Specific Icon Animations */
+        #record-btn:hover span {
+            transform: scale(1.3) rotate(15deg);
+            color: #ff3b30;
+        }
+        #webcam-toggle:hover span {
+            transform: scale(1.2) translateY(-2px);
+            color: #ffcc00;
         }
         #color-hex { font-size: 10px; font-weight: 800; letter-spacing: 1px; }
         .ctrl-inline input[type="checkbox"] {
@@ -265,9 +277,9 @@
     </div>
     
     <div id="controls-container" style="display:none;">
-        <button id="btn-home" onclick="returnToMenu()"><span>←</span> BACK</button>
-        <button id="webcam-toggle" onclick="toggleWebcam()">⚡ HAND CONTROL: OFF</button>
-        <button id="record-btn" onclick="toggleRecording()">⏺ REC VIDEO</button>
+        <button id="btn-home" class="premium-ctrl-btn" onclick="returnToMenu()"><span>←</span> BACK</button>
+        <button id="webcam-toggle" class="premium-ctrl-btn" onclick="toggleWebcam()"><span>⚡</span> HAND CONTROL: OFF</button>
+        <button id="record-btn" class="premium-ctrl-btn" onclick="toggleRecording()"><span>⏺</span> REC VIDEO</button>
     </div>
 
     <div id="tutorial-toast">🖱️ SCROLL TO ZOOM GRID</div>
@@ -466,24 +478,24 @@ WE ARE COSMIC</textarea>
     function setTheme(mode) {
         let btnW = document.getElementById('btn-white');
         let btnB = document.getElementById('btn-black');
-        let btnHome = document.getElementById('btn-home');
+        let btns = document.querySelectorAll('.premium-ctrl-btn');
         
         if (mode === 'black') {
             btnB.style.background = '#000'; btnB.style.color = '#FFF';
             btnW.style.background = '#FFF'; btnW.style.color = '#000';
             bgColor = '#000000'; colorZ2 = '#000000'; colorZ3 = '#606060'; colorZ4 = '#FFFFFF'; colorText = '#FFFFFF';
-            if (btnHome) {
-                btnHome.style.borderColor = '#FFF';
-                btnHome.style.color = '#FFF';
-            }
+            btns.forEach(b => {
+                b.style.borderColor = '#FFF';
+                b.style.color = '#FFF';
+            });
         } else {
             btnW.style.background = '#000'; btnW.style.color = '#FFF';
             btnB.style.background = '#FFF'; btnB.style.color = '#000';
             bgColor = '#FFFFFF'; colorZ2 = '#FFFFFF'; colorZ3 = '#808080'; colorZ4 = '#000000'; colorText = '#000000';
-            if (btnHome) {
-                btnHome.style.borderColor = '#000';
-                btnHome.style.color = '#000';
-            }
+            btns.forEach(b => {
+                b.style.borderColor = '#000';
+                b.style.color = '#000';
+            });
         }
         
         // Re-use or create theme style tag for dynamic hover effects
@@ -494,8 +506,8 @@ WE ARE COSMIC</textarea>
             document.head.appendChild(themeStyles);
         }
         themeStyles.innerHTML = `
-            #btn-home::before { background: ${colorText} !important; }
-            #btn-home:hover { color: ${bgColor} !important; }
+            .premium-ctrl-btn::before { background: ${colorText} !important; }
+            .premium-ctrl-btn:hover { color: ${bgColor} !important; }
         `;
         
         document.getElementById('ctrl-bg').value = bgColor;
