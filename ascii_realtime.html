@@ -189,15 +189,10 @@
             opacity: 1;
             pointer-events: auto;
         }
-        /* ── 🎯 FIX: Hide toggle when panel is open ── */
-        #settings-panel.open ~ #settings-toggle {
-            opacity: 0;
-            pointer-events: none;
-        }
         /* ── 🎯 FIX: Hide toggle when panel is open to prevent overlap ── */
+        #settings-panel.open ~ #settings-toggle,
         #settings-panel.open + #settings-toggle {
-            opacity: 0;
-            pointer-events: none;
+            display: none !important;
         }
         #settings-title {
             font-size: 11px; font-weight: 500; letter-spacing: 3px;
