@@ -25,14 +25,7 @@
             justify-content: center;
             align-items: center;
         }
-        #stripe-bg {
-            position: fixed; top: 0; left: 0;
-            width: 100vw; height: 100vh; z-index: 0;
-            pointer-events: none;
-            background: repeating-linear-gradient(90deg,
-                rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px,
-                transparent 1px, transparent 4px);
-        }
+
         #ascii-canvas {
             width: 1080px; height: 1350px;
             max-width: 100vw; max-height: 100vh;
@@ -168,7 +161,7 @@
             text-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
-        /* ── Settings Panel ── */
+        /* ?? Settings Panel ?? */
         #settings-panel {
             position: fixed; top: 16px; left: 16px; z-index: 29;
             /* Premium Apple Glassmorphism */
@@ -190,7 +183,7 @@
             opacity: 1;
             pointer-events: auto;
         }
-        /* ── 🎯 FIX: Hide toggle when panel is open to prevent overlap ── */
+        /* ?? ?렞 FIX: Hide toggle when panel is open to prevent overlap ?? */
         #settings-panel.open ~ #settings-toggle,
         #settings-panel.open + #settings-toggle {
             display: none !important;
@@ -329,7 +322,7 @@
         }
         .ctrl-divider { border: none; border-top: 1px solid #eee; margin: 10px 0; }
 
-        /* ── Mobile Bottom Sheet ── */
+        /* ?? Mobile Bottom Sheet ?? */
         @media (max-width: 767px) {
             #settings-panel {
                 width: 100%;
@@ -381,7 +374,7 @@
     </style>
 </head>
 <body>
-    <div id="stripe-bg"></div>
+
     <canvas id="ascii-canvas"></canvas>
     <div id="ui-layer">
         <h2>WE ARE NOT RAY</h2>
@@ -393,19 +386,19 @@
     </div>
     
     <div id="controls-container" style="display:none;">
-        <button id="btn-home" class="premium-ctrl-btn" onclick="returnToMenu()"><span>←</span> BACK</button>
-        <button id="webcam-toggle" class="premium-ctrl-btn" onclick="toggleWebcam()"><span>⚡</span> HAND CONTROL: OFF</button>
-        <button id="record-btn" class="premium-ctrl-btn" onclick="toggleRecording()"><span>⏺</span> REC VIDEO</button>
+        <button id="btn-home" class="premium-ctrl-btn" onclick="returnToMenu()"><span>??/span> BACK</button>
+        <button id="webcam-toggle" class="premium-ctrl-btn" onclick="toggleWebcam()"><span>??/span> HAND CONTROL: OFF</button>
+        <button id="record-btn" class="premium-ctrl-btn" onclick="toggleRecording()"><span>??/span> REC VIDEO</button>
     </div>
 
-    <div id="tutorial-toast">🖱️ SCROLL TO ZOOM GRID</div>
+    <div id="tutorial-toast">?뼮截?SCROLL TO ZOOM GRID</div>
     <div id="hud"><span id="hud-grid"></span> | <span id="hud-fps"></span> | <span id="hud-hand"></span></div>
 
     <div id="settings-panel">
     <button id="settings-toggle" onclick="toggleSettings()" style="display:none;">SETTINGS</button>
         <div id="settings-title">
             COSMIC ENGINE
-            <button id="settings-close" onclick="toggleSettings()">✕</button>
+            <button id="settings-close" onclick="toggleSettings()">??/button>
         </div>
         <div style="display:flex; gap:10px; margin-bottom:20px;">
             <button id="btn-white" onclick="setTheme('white')" style="
@@ -424,21 +417,21 @@
 
         <span class="ctrl-label">TEXT</span>
         <div class="ctrl-section">
-            <textarea id="ctrl-text" rows="3" placeholder="단어를 줄바꿈으로 입력" onchange="applyText(this.value)">WE ARE NOT RAY
+            <textarea id="ctrl-text" rows="3" placeholder="?⑥뼱瑜?以꾨컮轅덉쑝濡??낅젰" onchange="applyText(this.value)">WE ARE NOT RAY
 WE ARE COSMIC</textarea>
         </div>
 
         <div class="ctrl-section">
             <span class="ctrl-label">FONT</span>
             <select id="ctrl-font" onchange="applyFont(this.value)">
-                <!-- 신규 아트 컨셉 폰트 -->
+                <!-- ?좉퇋 ?꾪듃 而⑥뀎 ?고듃 -->
                 <option value="Pretendard Variable" selected>Pretendard (Standard)</option>
                 <option value="Anton">Anton (Brutalist Block)</option>
                 <option value="Playfair Display">Playfair Display (Editorial Chic)</option>
                 <option value="VT323">VT323 (Terminal Retro)</option>
                 <option value="Silkscreen">Silkscreen (Pixel Art)</option>
                 
-                <!-- 기존 코딩용 모노스페이스 -->
+                <!-- 湲곗〈 肄붾뵫??紐⑤끂?ㅽ럹?댁뒪 -->
                 <option value="JetBrains Mono">JetBrains Mono</option>
                 <option value="Space Mono">Space Mono</option>
                 <option value="IBM Plex Mono">IBM Plex Mono</option>
@@ -549,7 +542,7 @@ WE ARE COSMIC</textarea>
     // COSMIC ASCII ENGINE v4
     // ==========================================================
 
-    // ── Global State & Variables (Moved to Top for Safety) ──
+    // ?? Global State & Variables (Moved to Top for Safety) ??
     let video = null;
     let isCamera = false;
     let selfieSegmentation = null;
@@ -610,7 +603,7 @@ WE ARE COSMIC</textarea>
         return `rgb(${Math.round(a[0]+(b[0]-a[0])*t)},${Math.round(a[1]+(b[1]-a[1])*t)},${Math.round(a[2]+(b[2]-a[2])*t)})`;
     }
 
-    // ── UI Controls & Logic ──
+    // ?? UI Controls & Logic ??
 
     function setTheme(mode) {
         let btnW = document.getElementById('btn-white');
@@ -665,7 +658,7 @@ WE ARE COSMIC</textarea>
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
-        // --- 🎯 Clear Canvas to White Initially ---
+        // --- ?렞 Clear Canvas to White Initially ---
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         // ------------------------------------------
@@ -702,7 +695,7 @@ WE ARE COSMIC</textarea>
             offCanvas = document.createElement('canvas');
             offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
         }
-        // 크기가 바뀔 때만 리사이즈 — 매 프레임 클리어 방지
+        // ?ш린媛 諛붾??뚮쭔 由ъ궗?댁쫰 ??留??꾨젅???대━??諛⑹?
         if (newCols !== cols || newRows !== rows) {
             cols = newCols;
             rows = newRows;
@@ -722,11 +715,11 @@ WE ARE COSMIC</textarea>
     }
 
     function startCameraSource() {
-        console.log("🎥 Starting Camera...");
+        console.log("?렏 Starting Camera...");
         let btn = document.querySelector(`button[onclick="startCameraSource()"]`);
         btn.innerText = 'CONNECTING...';
         
-        // --- 🎥 Camera Initial Preset ---
+        // --- ?렏 Camera Initial Preset ---
         updatePhaseUI(0.30); // Start at 30% for better facial details
         applyZone1(0.35);    // Width 35% (Default)
         contrastPow = 2.0;   // High contrast for camera
@@ -749,7 +742,7 @@ WE ARE COSMIC</textarea>
                     initSegmentation();
                     video.play();
                     
-                    // --- 🚀 UX Reveal: Show Controls + Toast together ---
+                    // --- ?? UX Reveal: Show Controls + Toast together ---
                     document.body.classList.add('touch-show');
                     let toast = document.getElementById('tutorial-toast');
                     if (toast) {
@@ -772,7 +765,7 @@ WE ARE COSMIC</textarea>
                 btn.innerText = 'CAM';
                 let ui = document.getElementById('ui-layer');
                 ui.querySelector('h2').textContent = 'CAMERA ACCESS DENIED';
-                ui.querySelector('p').textContent = '브라우저에서 카메라 권한을 허용해주세요.';
+                ui.querySelector('p').textContent = '釉뚮씪?곗??먯꽌 移대찓??沅뚰븳???덉슜?댁＜?몄슂.';
             });
     }
 
@@ -799,7 +792,7 @@ WE ARE COSMIC</textarea>
         basePhase = v;
         bluePhase = v;
         window.bluePhase = v; // Force global scope for reliability
-        console.log("🎨 Phase Updated:", v);
+        console.log("?렓 Phase Updated:", v);
         
         let slider = document.getElementById('ctrl-contrast');
         if (slider) slider.value = val;
@@ -818,7 +811,7 @@ WE ARE COSMIC</textarea>
         selfieSegmentation.setOptions({ modelSelection: 0 }); // 0 = general (Google Meet portrait style)
         selfieSegmentation.onResults((results) => { 
             if (results.segmentationMask) {
-                // 부하(Stutter) 방지: 마스크 해상도가 다를 때만 캔버스를 강제 리사이징(메모리 재할당 방지)
+                // 遺??Stutter) 諛⑹?: 留덉뒪???댁긽?꾧? ?ㅻ? ?뚮쭔 罹붾쾭?ㅻ? 媛뺤젣 由ъ궗?댁쭠(硫붾え由??ы븷??諛⑹?)
                 if (segCanvas.width !== results.segmentationMask.width) {
                     segCanvas.width = results.segmentationMask.width;
                     segCanvas.height = results.segmentationMask.height;
@@ -832,9 +825,9 @@ WE ARE COSMIC</textarea>
     }
 
     function loadVideo(src) {
-        console.log("🎬 Loading video:", src);
+        console.log("?렗 Loading video:", src);
         
-        // --- 🎬 Video Initial Preset (Image 1 Style) ---
+        // --- ?렗 Video Initial Preset (Image 1 Style) ---
         updatePhaseUI(0.0);  // Phase 0% (Leftmost)
         applyZone1(0.35);    // Width 35% (Default)
         contrastPow = 1.2;   // Natural contrast for video
@@ -879,7 +872,7 @@ WE ARE COSMIC</textarea>
             let ui = document.getElementById('ui-layer');
             ui.style.display = '';
             ui.querySelector('h2').textContent = 'VIDEO LOAD FAILED';
-            ui.querySelector('p').textContent = 'SELECT VIDEO 버튼으로 파일을 직접 선택하세요.';
+            ui.querySelector('p').textContent = 'SELECT VIDEO 踰꾪듉?쇰줈 ?뚯씪??吏곸젒 ?좏깮?섏꽭??';
         });
         video.load();
     }
@@ -904,7 +897,7 @@ WE ARE COSMIC</textarea>
                 let t = elapsed / INTRO_LEN;
                 let ease = 1 - Math.pow(1 - t, 3); // easeOutCubic
                 CELL_SIZE = 150 + (12 - 150) * ease;
-                targetFrameDelay = 125 + (42 - 125) * t; // 8fps → 24fps
+                targetFrameDelay = 125 + (42 - 125) * t; // 8fps ??24fps
             } else {
                 isIntro = false;
                 targetCellSize = 12;
@@ -932,7 +925,7 @@ WE ARE COSMIC</textarea>
         CELL_SIZE = Math.max(12, Math.min(150, CELL_SIZE));
         calcGrid();
 
-        // Draw video to offscreen — keep last frame during seek (prevents flash on loop)
+        // Draw video to offscreen ??keep last frame during seek (prevents flash on loop)
         if (video && video.readyState >= 2 && !video.seeking) {
             let vR = video.videoWidth / video.videoHeight;
             let cR = cols / rows;
@@ -948,9 +941,9 @@ WE ARE COSMIC</textarea>
             if (dX > 0) { offCtx.fillRect(0, 0, dX, rows); offCtx.fillRect(cols - dX, 0, dX, rows); }
             offCtx.drawImage(video, dX, dY, dW, dH);
 
-            // Segmentation: 카메라 모드일 때 사람과 배경 분리
+            // Segmentation: 移대찓??紐⑤뱶?????щ엺怨?諛곌꼍 遺꾨━
             if (isCamera && selfieSegmentation) {
-                // 비동기 메모리 교착상태(Deadlock) 방지 및 프레임 속도 일치
+                // 鍮꾨룞湲?硫붾え由?援먯갑?곹깭(Deadlock) 諛⑹? 諛??꾨젅???띾룄 ?쇱튂
                 if (!isSegmenting && video.readyState >= 2) {
                     isSegmenting = true;
                     selfieSegmentation.send({ image: video }).catch(err => {
@@ -960,21 +953,21 @@ WE ARE COSMIC</textarea>
                 }
 
                 if (segMask) {
-                    // CPU 픽셀 연산 대신, 하드웨어 가속 Canvas 블렌딩을 사용하여
-                    // 경계선을 아주 부드럽고 깔끔하게 안티앨리어싱(Anti-Aliasing) 처리합니다.
+                    // CPU ?쎌? ?곗궛 ??? ?섎뱶?⑥뼱 媛??Canvas 釉붾젋?⑹쓣 ?ъ슜?섏뿬
+                    // 寃쎄퀎?좎쓣 ?꾩＜ 遺?쒕읇怨?源붾걫?섍쾶 ?덊떚?⑤━?댁떛(Anti-Aliasing) 泥섎━?⑸땲??
                     
-                    // 1. 거푸집(Mask) 적용: 사람 영역만 남기고 나머지는 투명하게 만듦. (영상과 동일한 위치/비율로 매핑)
+                    // 1. 嫄고뫖吏?Mask) ?곸슜: ?щ엺 ?곸뿭留??④린怨??섎㉧吏???щ챸?섍쾶 留뚮벀. (?곸긽怨??숈씪???꾩튂/鍮꾩쑉濡?留ㅽ븨)
                     offCtx.globalCompositeOperation = 'destination-in';
-                    offCtx.filter = 'blur(6px)'; // 엣지 자글거림(Aliasing) 완벽 차단을 위한 두꺼운 블러
+                    offCtx.filter = 'blur(6px)'; // ?ｌ? ?먭?嫄곕┝(Aliasing) ?꾨꼍 李⑤떒???꾪븳 ?먭볼??釉붾윭
                     offCtx.drawImage(segCanvas, dX, dY, dW, dH);
-                    offCtx.filter = 'none'; // 필터 원상복구
+                    offCtx.filter = 'none'; // ?꾪꽣 ?먯긽蹂듦뎄
                     
-                    // 2. 투명해진 배경을 완전히 강제 흰색(#FFFFFF)으로 채워서 ASCII 구역을 지움
+                    // 2. ?щ챸?댁쭊 諛곌꼍???꾩쟾??媛뺤젣 ?곗깋(#FFFFFF)?쇰줈 梨꾩썙??ASCII 援ъ뿭??吏?
                     offCtx.globalCompositeOperation = 'destination-over';
                     offCtx.fillStyle = '#FFFFFF';
                     offCtx.fillRect(0, 0, cols, rows);
                     
-                    // 3. 합성 모드 초기화
+                    // 3. ?⑹꽦 紐⑤뱶 珥덇린??
                     offCtx.globalCompositeOperation = 'source-over';
                 }
             }
@@ -1013,11 +1006,11 @@ WE ARE COSMIC</textarea>
 
                 let luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
                 
-                // 마스크에서 잘려나간 배경 및 안티앨리어싱 경계를 부드럽게 감별 (안전하게 허공으로 날림)
+                // 留덉뒪?ъ뿉???섎젮?섍컙 諛곌꼍 諛??덊떚?⑤━?댁떛 寃쎄퀎瑜?遺?쒕읇寃?媛먮퀎 (?덉쟾?섍쾶 ?덇났?쇰줈 ?좊┝)
                 let isBackground = (isCamera && luma > 0.98);
 
-                // 캠 화면 전용 보정: 피부(밝은 영역)는 날려서 미니멀한 캔버스로 만들고,
-                // 안경테, 머리카락, 수염 같은 질감만 남기기 위해 대비를 강하게 날림(Blow out)
+                // 罹??붾㈃ ?꾩슜 蹂댁젙: ?쇰?(諛앹? ?곸뿭)???좊젮??誘몃땲硫??罹붾쾭?ㅻ줈 留뚮뱾怨?
+                // ?덇꼍?? 癒몃━移대씫, ?섏뿼 媛숈? 吏덇컧留??④린湲??꾪빐 ?鍮꾨? 媛뺥븯寃??좊┝(Blow out)
                 if (isCamera && !isBackground) {
                     luma = (luma - 0.35) * 1.4 + 0.35; 
                     luma = Math.max(0.001, Math.min(0.999, luma));
@@ -1025,12 +1018,12 @@ WE ARE COSMIC</textarea>
                 
                 let targetDarkness = 1.0 - luma;
 
-                // 플리커(Flickering) 방지를 위한 Temporal Smoothing (시계열 부드러움 연산)
+                // ?뚮━而?Flickering) 諛⑹?瑜??꾪븳 Temporal Smoothing (?쒓퀎??遺?쒕윭? ?곗궛)
                 let cellIdx = j * cols + i;
                 let smoothSpeed = isCamera ? 0.20 : 0.60;
                 
                 if (targetDarkness === 0.0) {
-                    // 배경은 잔상(Ghost)을 남기지 않고 즉시 지움
+                    // 諛곌꼍? ?붿긽(Ghost)???④린吏 ?딄퀬 利됱떆 吏?
                     cellHistory[cellIdx] = 0.0;
                 } else if (cellHistory[cellIdx] === -1) {
                     cellHistory[cellIdx] = targetDarkness;
@@ -1046,7 +1039,7 @@ WE ARE COSMIC</textarea>
                 let cy = y + CELL_SIZE / 2;
                 let vy = cy + CELL_SIZE * 0.045; // Optical vertical center adjustment
 
-                // 지정된 밝기(Threshold)보다 밝은 픽셀은 렌더링 무시 (피부 허공 증발)
+                // 吏?뺣맂 諛앷린(Threshold)蹂대떎 諛앹? ?쎌?? ?뚮뜑留?臾댁떆 (?쇰? ?덇났 利앸컻)
                 let currentThreshold = darknessThreshold; // 0.12
                 
                 // --- Temporal Dot Logic ---
@@ -1061,10 +1054,10 @@ WE ARE COSMIC</textarea>
                     if (dotLife[cellIdx] > 0.01) {
                         ctx.save();
                         ctx.globalAlpha = dotLife[cellIdx] * 0.9;
-                        // 점의 크기를 키우고 더 굵게 보이도록 조정
+                        // ?먯쓽 ?ш린瑜??ㅼ슦怨???援듦쾶 蹂댁씠?꾨줉 議곗젙
                         ctx.font = `400 ${Math.round(CELL_SIZE * 0.45 * dotLife[cellIdx])}px JetBrains Mono`;
                         ctx.fillStyle = colorSymbol; // Use dedicated symbol color
-                        ctx.fillText('·', cx, vy);
+                        ctx.fillText('쨌', cx, vy);
                         ctx.restore();
                     }
                     continue;
@@ -1082,17 +1075,17 @@ WE ARE COSMIC</textarea>
                 const fx = Math.floor(x), fy = Math.floor(y);
                 const fw = Math.ceil(CELL_SIZE), fh = Math.ceil(CELL_SIZE);
 
-                // --- 🎯 NEW: High Performance Phase Comparison (Linear) ---
+                // --- ?렞 NEW: High Performance Phase Comparison (Linear) ---
                 // Compare with vLinear BEFORE contrastPow to ensure consistent responsiveness
                 let dist = Math.abs(vLinear - bluePhase);
                 let z1Limit = zone1Limit; // Use the slider-controlled variable directly
                 
-                // 1순위: 가장 어두운 섀도우는 블루 오라를 무시하고 무조건 딥 블랙 박스로 유지 (머리카락 등)
+                // 1?쒖쐞: 媛???대몢????꾩슦??釉붾（ ?ㅻ씪瑜?臾댁떆?섍퀬 臾댁“嫄???釉붾옓 諛뺤뒪濡??좎? (癒몃━移대씫 ??
                 if (v >= 0.88) {
                     ctx.fillStyle = colorZ4;
                     ctx.fillRect(fx, fy, fw, fh);
                 }
-                // 2순위: ZONE 1 Key Color Point — glowing soft blend (안경테, 윤곽선 등)
+                // 2?쒖쐞: ZONE 1 Key Color Point ??glowing soft blend (?덇꼍?? ?ㅺ낸????
                 else if (dist < z1Limit) {
                     let intensity = 1.0 - (dist / z1Limit); // 1.0 at center, 0.0 at edge
                     intensity = Math.pow(intensity, 2.0); // Sharper falloff curve
@@ -1119,7 +1112,7 @@ WE ARE COSMIC</textarea>
                     if (intensity > 0.4 && (i * 11 + j * 17 + Math.floor(globalFrame/5)) % 10 < 2) {
                         ctx.save();
                         ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
-                        // --- 🎯 FIX: Structural symbols MUST use rgbSymbol ---
+                        // --- ?렞 FIX: Structural symbols MUST use rgbSymbol ---
                         ctx.fillStyle = `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${intensity})`; 
                         let symIdx = (i * 3 + j * 7 + Math.floor(globalFrame/15)) % MATH_SYMBOLS.length;
                         ctx.fillText(MATH_SYMBOLS[symIdx], cx, vy);
@@ -1133,7 +1126,7 @@ WE ARE COSMIC</textarea>
                         let charIdx = (Math.floor(i) + rowOffset) % TEXT_FLOW.length;
                         let char = TEXT_FLOW[charIdx % TEXT_FLOW.length];
 
-                        // --- 🎯 Color Logic: Letters vs Symbols ---
+                        // --- ?렞 Color Logic: Letters vs Symbols ---
                         let isLetter = /[a-zA-Z]/.test(char);
                         if (isLetter) {
                             ctx.fillStyle = `rgba(${rgbText[0]}, ${rgbText[1]}, ${rgbText[2]}, ${1.0 - intensity * 0.85})`;
@@ -1144,7 +1137,7 @@ WE ARE COSMIC</textarea>
                         ctx.restore();
                     }
                 }
-                // 3순위: 밝은 영역 (피부, 몸통) - 타이포그래피 + 빈 박스
+                // 3?쒖쐞: 諛앹? ?곸뿭 (?쇰?, 紐명넻) - ??댄룷洹몃옒??+ 鍮?諛뺤뒪
                 else if (v < 0.72) {
                     ctx.fillStyle = colorZ2;
                     ctx.fillRect(fx, fy, fw, fh);
@@ -1155,12 +1148,12 @@ WE ARE COSMIC</textarea>
                     let charIdx = (Math.floor(i) + rowOffset) % TEXT_FLOW.length;
                     let char = TEXT_FLOW[charIdx % TEXT_FLOW.length];
 
-                    // --- 🎯 Color Logic: Letters vs Symbols ---
+                    // --- ?렞 Color Logic: Letters vs Symbols ---
                     ctx.fillStyle = /[a-zA-Z]/.test(char) ? colorText : colorSymbol;
                     ctx.fillText(char, cx, vy);
                     ctx.restore();
                 }
-                // 4순위: 중간 밝기 (음영) - 그레이 박스 + ASCII
+                // 4?쒖쐞: 以묎컙 諛앷린 (?뚯쁺) - 洹몃젅??諛뺤뒪 + ASCII
                 else {
                     ctx.fillStyle = colorZ3;
                     ctx.fillRect(fx, fy, fw, fh);
@@ -1176,25 +1169,9 @@ WE ARE COSMIC</textarea>
             }
         }
 
-        // Post-Processing: Grid-Aligned Glitch Displace
-        if (globalFrame % 150 > 135) { 
-            let glitchRow = Math.floor((globalFrame * 0.1) % rows);
-            let glitchH = CELL_SIZE * 2;
-            let glitchY = Math.floor(offsetY + glitchRow * CELL_SIZE);
-            let shiftX = (globalFrame % 2 === 0) ? Math.floor(CELL_SIZE * 0.5) : Math.floor(-CELL_SIZE * 0.5);
-            
-            // Draw a slice shifted on grid bounds
-            ctx.drawImage(canvas, 0, glitchY, canvas.width, glitchH, shiftX, glitchY, canvas.width, glitchH);
-            
-            // RGB Break
-            ctx.globalCompositeOperation = 'screen';
-            ctx.fillStyle = 'rgba(0, 0, 255, 0.4)'; // Cobalt Blue
-            ctx.fillRect(0, glitchY, canvas.width, glitchH);
-            ctx.drawImage(canvas, 0, glitchY, canvas.width, glitchH, shiftX * -0.5, glitchY, canvas.width, glitchH);
-            ctx.globalCompositeOperation = 'source-over';
-        }
+        // Post-Processing: Perfectly Stable Map
 
-        // Gradient pingpong between from→to colors
+        // Gradient pingpong between from?뭪o colors
         if (gradientMode) {
             gradientT += 0.008 * gradientDir;
             if (gradientT >= 1) { gradientT = 1; gradientDir = -1; }
@@ -1224,9 +1201,9 @@ WE ARE COSMIC</textarea>
     function toggleWebcam() {
         let btn = document.getElementById('webcam-toggle');
         if (webcamActive) {
-            stopWebcam(); btn.textContent = '⚡ HAND CONTROL: OFF'; btn.classList.remove('active');
+            stopWebcam(); btn.textContent = '??HAND CONTROL: OFF'; btn.classList.remove('active');
         } else {
-            startWebcam(); btn.textContent = '⚡ HAND CONTROL: ON'; btn.classList.add('active');
+            startWebcam(); btn.textContent = '??HAND CONTROL: ON'; btn.classList.add('active');
         }
     }
     function startWebcam() {
@@ -1249,7 +1226,7 @@ WE ARE COSMIC</textarea>
             width: 320, height: 240
         });
         mpCamera.start().catch(err => {
-            alert('카메라 권한을 허용해주세요! (Camera start failed: ' + err + ')');
+            alert('移대찓??沅뚰븳???덉슜?댁＜?몄슂! (Camera start failed: ' + err + ')');
             toggleWebcam();
         });
     }
@@ -1369,14 +1346,14 @@ WE ARE COSMIC</textarea>
         };
         mediaRecorder.start();
         let btn = document.getElementById('record-btn');
-        btn.textContent = '🔴 REC (CLICK TO SAVE)';
+        btn.textContent = '?뵶 REC (CLICK TO SAVE)';
         btn.classList.add('active');
     }
 
     function stopRecording() {
         if(mediaRecorder) mediaRecorder.stop();
         let btn = document.getElementById('record-btn');
-        btn.textContent = '⏺ REC VIDEO';
+        btn.textContent = '??REC VIDEO';
         btn.classList.remove('active');
     }
 
@@ -1385,15 +1362,14 @@ WE ARE COSMIC</textarea>
     // ==========================================================
     function toggleSettings() {
         let panel = document.getElementById('settings-panel');
-        let btn = document.getElementById('settings-toggle');
-        let isOpen = panel.classList.toggle('open');
-        btn.style.display = isOpen ? 'none' : 'block';
+        panel.classList.toggle('open');
+        // Visibility is handled globally by CSS to ensure reliable state
     }
     function applyFont(val) {
         currentFont = val;
     }
     function applyText(val) {
-        // 줄 단위로 분리 → 줄 안 단어는 1칸, 줄 사이는 10칸 → 2회 반복으로 flow 구성
+        // 以??⑥쐞濡?遺꾨━ ??以????⑥뼱??1移? 以??ъ씠??10移???2??諛섎났?쇰줈 flow 援ъ꽦
         const LINE_GAP = '          '; // 10 spaces
         let lines = val.split(/[\n\r]+/).map(l => l.trim().split(/\s+/).filter(w => w.length > 0).join(' ')).filter(l => l.length > 0);
         if (lines.length === 0) { TEXT_FLOW = ' '; return; }
@@ -1493,7 +1469,7 @@ WE ARE COSMIC</textarea>
     function updateBgSwatches() {
         let [r,g,b] = hexToRgb(keyColor);
         let [h, s] = rgbToHsl(r, g, b);
-        // 5 tonal suggestions: very light → light → mid-dark → dark → very dark
+        // 5 tonal suggestions: very light ??light ??mid-dark ??dark ??very dark
         const tones = [
             [h, Math.min(s*0.25, 20), 97],   // near-white surface
             [h, Math.min(s*0.4, 35),  88],   // light tint
@@ -1517,7 +1493,7 @@ WE ARE COSMIC</textarea>
         init(); 
         updateBgSwatches(); 
         
-        // --- 🚀 Premium UI Intro (HUD/Buttons) ---
+        // --- ?? Premium UI Intro (HUD/Buttons) ---
         // Ensure buttons and HUD are setup, but avoid auto-opening menus until video loads
     });
     </script>
