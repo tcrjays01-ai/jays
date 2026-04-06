@@ -420,9 +420,9 @@ WE ARE COSMIC</textarea>
     let darknessThreshold = 0.12;
     let contrastPow = 2.0;
     let zone1Limit = 0.15;
-    let bluePhase = 0.82;
+    let bluePhase = 0.0;
     let autoPhase = false;
-    let basePhase = 0.82;
+    let basePhase = 0.0;
     let gradientMode = false;
     let gradientT = 0;
     let gradientDir = 1;
@@ -559,8 +559,15 @@ WE ARE COSMIC</textarea>
     }
 
     function startCameraSource() {
+        console.log("🎥 Starting Camera...");
         let btn = document.querySelector(`button[onclick="startCameraSource()"]`);
         btn.innerText = 'CONNECTING...';
+        
+        // --- 🎥 Camera Initial Preset ---
+        updatePhaseUI(0.30); // Start at 30% for better facial details
+        contrastPow = 2.0;   // High contrast for camera
+        // -------------------------------
+
         const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
         const facingMode = isMobile ? 'environment' : 'user';
         navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: false })
@@ -612,6 +619,15 @@ WE ARE COSMIC</textarea>
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
+    function updatePhaseUI(val) {
+        basePhase = parseFloat(val);
+        bluePhase = basePhase;
+        let slider = document.getElementById('ctrl-contrast');
+        if (slider) slider.value = val;
+        let valDisp = document.getElementById('contrast-val');
+        if (valDisp) valDisp.innerText = Math.round(val * 100) + '%';
+    }
+
     function initSegmentation() {
         if (!segCanvas) {
             segCanvas = document.createElement('canvas');
@@ -637,6 +653,13 @@ WE ARE COSMIC</textarea>
     }
 
     function loadVideo(src) {
+        console.log("🎬 Loading video:", src);
+        
+        // --- 🎬 Video Initial Preset ---
+        updatePhaseUI(0.0); // Start at 0% for video outlines
+        contrastPow = 1.2;  // Natural contrast for video
+        // -------------------------------
+
         if (video) { video.pause(); video.remove(); }
         video = document.createElement('video');
         video.src = typeof src === 'string' ? src : URL.createObjectURL(src);
@@ -1204,8 +1227,7 @@ WE ARE COSMIC</textarea>
         document.getElementById('zone1-val').textContent = Math.round(val * 100) + '%';
     }
     function applyContrast(val) {
-        basePhase = parseFloat(val);
-        bluePhase = basePhase;
+        updatePhaseUI(val);
         if (autoPhase) {
             document.getElementById('ctrl-auto-phase').checked = false;
             autoPhase = false;
