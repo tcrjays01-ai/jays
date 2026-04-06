@@ -189,6 +189,16 @@
             opacity: 1;
             pointer-events: auto;
         }
+        /* ── 🎯 FIX: Hide toggle when panel is open ── */
+        #settings-panel.open ~ #settings-toggle {
+            opacity: 0;
+            pointer-events: none;
+        }
+        /* ── 🎯 FIX: Hide toggle when panel is open to prevent overlap ── */
+        #settings-panel.open + #settings-toggle {
+            opacity: 0;
+            pointer-events: none;
+        }
         #settings-title {
             font-size: 11px; font-weight: 500; letter-spacing: 3px;
             margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;
@@ -401,9 +411,19 @@
             COSMIC ENGINE
             <button id="settings-close" onclick="toggleSettings()">✕</button>
         </div>
-        <div style="display:flex; gap:6px; margin-bottom:15px;">
-            <button id="btn-white" onclick="setTheme('white')" style="flex:1; padding:8px; font-weight:800; cursor:pointer; background:#000; color:#FFF; border:1px solid #000; transition:0.2s;">WHITE</button>
-            <button id="btn-black" onclick="setTheme('black')" style="flex:1; padding:8px; font-weight:800; cursor:pointer; background:#FFF; color:#000; border:1px solid #000; transition:0.2s;">BLACK</button>
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <button id="btn-white" onclick="setTheme('white')" style="
+                flex:1; padding:12px; font-weight:500; font-size:10px; cursor:pointer; 
+                background:rgba(255,255,255,0.8); color:#000; border:1px solid rgba(0,0,0,0.1); 
+                border-radius:40px; transition:0.3s;
+                box-shadow: inset 1px 1.5px 1px rgba(255,255,255,1), 0 4px 10px rgba(0,0,0,0.05);
+            ">WHITE</button>
+            <button id="btn-black" onclick="setTheme('black')" style="
+                flex:1; padding:12px; font-weight:500; font-size:10px; cursor:pointer; 
+                background:rgba(0,0,0,0.85); color:#FFF; border:1px solid rgba(255,255,255,0.2); 
+                border-radius:40px; transition:0.3s;
+                box-shadow: inset 1px 1.5px 1px rgba(255,255,255,0.1), 0 4px 10px rgba(0,0,0,0.2);
+            ">BLACK</button>
         </div>
 
         <span class="ctrl-label">TEXT</span>
