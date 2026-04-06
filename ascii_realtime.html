@@ -409,10 +409,14 @@ WE ARE COSMIC</textarea>
                     <input type="color" id="ctrl-col-z4" value="#000000" oninput="applyPalette('z4', this.value)">
                     <span style="font-size:8px; letter-spacing:1px; opacity:0.5;">DEEP</span>
                 </div>
-                <div style="width:1px; height:18px; background:rgba(0,0,0,0.1); margin:0 4px;"></div>
+                <div style="width:1px; height:18px; background:rgba(0,0,0,0.1); margin:0 2px;"></div>
                 <div style="display:flex; flex-direction:column; align-items:center;">
                     <input type="color" id="ctrl-col-txt" value="#000000" oninput="applyPalette('txt', this.value)" style="border:1px solid #0000ff !important;">
-                    <span style="font-size:8px; letter-spacing:1px; opacity:0.6; font-weight:900; color:#0000ff;">CHAR</span>
+                    <span style="font-size:7px; letter-spacing:1px; opacity:0.6; font-weight:900; color:#0000ff;">CHAR</span>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                    <input type="color" id="ctrl-col-sym" value="#000000" oninput="applyPalette('sym', this.value)">
+                    <span style="font-size:7px; letter-spacing:1px; opacity:0.5; font-weight:900;">SYMBOL</span>
                 </div>
             </div>
         </div>
@@ -475,6 +479,7 @@ WE ARE COSMIC</textarea>
     let colorZ3 = '#808080';
     let colorZ4 = '#000000';
     let colorText = '#000000'; let rgbText = [0, 0, 0];
+    let colorSymbol = '#000000'; let rgbSymbol = [0, 0, 0];
     let CELL_SIZE = 150;
     let targetCellSize = 150;
     let frameCounter = 0, globalFrame = 0;
@@ -934,7 +939,7 @@ WE ARE COSMIC</textarea>
                         ctx.globalAlpha = dotLife[cellIdx] * 0.9;
                         // 점의 크기를 키우고 더 굵게 보이도록 조정
                         ctx.font = `400 ${Math.round(CELL_SIZE * 0.45 * dotLife[cellIdx])}px JetBrains Mono`;
-                        ctx.fillStyle = colorText; // 선명한 대비 색상 사용
+                        ctx.fillStyle = colorSymbol; // Use dedicated symbol color
                         ctx.fillText('·', cx, vy);
                         ctx.restore();
                     }
@@ -1307,6 +1312,7 @@ WE ARE COSMIC</textarea>
         else if (target === 'z3') { colorZ3 = val; }
         else if (target === 'z4') { colorZ4 = val; }
         else if (target === 'txt') { colorText = val; rgbText = hexToRgb(val); }
+        else if (target === 'sym') { colorSymbol = val; rgbSymbol = hexToRgb(val); }
     }
 
     function rgbToHsl(r, g, b) {
