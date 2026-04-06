@@ -270,7 +270,7 @@ WE ARE COSMIC</textarea>
         <div class="ctrl-section">
             <span class="ctrl-label">Color Phase (Depth)</span>
             <div class="ctrl-inline">
-                <input type="range" id="ctrl-contrast" min="0" max="0.85" step="0.01" value="0" oninput="applyContrast(this.value)">
+                <input type="range" id="ctrl-contrast" min="0" max="1.0" step="0.01" value="0.82" oninput="applyContrast(this.value)">
                 <label style="display:flex;align-items:center;gap:4px;font-size:9px;font-weight:800;cursor:pointer;">
                     <input type="checkbox" id="ctrl-auto-phase" onchange="applyAutoPhase(this.checked)"> WAVES
                 </label>
@@ -359,9 +359,9 @@ WE ARE COSMIC</textarea>
     let darknessThreshold = 0.12;
     let contrastPow = 2.0;
     let zone1Limit = 0.15;
-    let bluePhase = 0.0;   // 0 = highlights, 0.85 = shadows
+    let bluePhase = 0.82;   // 0.82 = shadows (glasses/contours)
     let autoPhase = false;
-    let basePhase = 0.0;
+    let basePhase = 0.82;
     let gradientMode = false;
     let gradientT = 0;
     let gradientDir = 1;
@@ -779,8 +779,13 @@ WE ARE COSMIC</textarea>
                 // Calculate distance to phase core for soft glow
                 let dist = Math.abs(v - bluePhase);
 
-                // ZONE 1: Key Color Point — glowing soft blend
-                if (dist < zone1Limit) {
+                // 1순위: 가장 어두운 섀도우는 블루 오라를 무시하고 무조건 딥 블랙 박스로 유지 (머리카락 등)
+                if (v >= 0.88) {
+                    ctx.fillStyle = colorZ4;
+                    ctx.fillRect(fx, fy, fw, fh);
+                }
+                // 2순위: ZONE 1 Key Color Point — glowing soft blend (안경테, 윤곽선 등)
+                else if (dist < zone1Limit) {
                     let intensity = 1.0 - (dist / zone1Limit); // 1.0 at center, 0.0 at edge
                     intensity = Math.pow(intensity, 1.5); // Smoother falloff curve
                     
@@ -822,8 +827,8 @@ WE ARE COSMIC</textarea>
                         ctx.restore();
                     }
                 }
-                // ZONE 2: Typography (Light)
-                else if (v < 0.80) {
+                // 3순위: 밝은 영역 (피부, 몸통) - 타이포그래피 + 빈 박스
+                else if (v < 0.72) {
                     ctx.fillStyle = colorZ2;
                     ctx.fillRect(fx, fy, fw, fh);
                     ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
@@ -835,23 +840,18 @@ WE ARE COSMIC</textarea>
                     ctx.fillText(TEXT_FLOW[charIdx % TEXT_FLOW.length], cx, vy);
                     ctx.restore();
                 }
-                // ZONE 3: Grey + ASCII (Mid)
-                else if (v < 0.92) {
+                // 4순위: 중간 밝기 (음영) - 그레이 박스 + ASCII
+                else {
                     ctx.fillStyle = colorZ3;
                     ctx.fillRect(fx, fy, fw, fh);
                     ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
                     ctx.save();
                     ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
                     ctx.fillStyle = colorText;
-                    let t = (v - 0.80) / 0.12;
+                    let t = (v - 0.72) / 0.16; // mapped to remaining span
                     let block = t < 0.2 ? '.' : t < 0.4 ? ':' : t < 0.6 ? '░' : t < 0.8 ? '▒' : '▓';
                     ctx.fillText(block, cx, vy);
                     ctx.restore();
-                }
-                // ZONE 4: Deep Shadow
-                else {
-                    ctx.fillStyle = colorZ4;
-                    ctx.fillRect(fx, fy, fw, fh);
                 }
             }
         }
