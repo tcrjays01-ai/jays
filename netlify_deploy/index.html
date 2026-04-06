@@ -1,386 +1,1223 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>COSMIC</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;background:#000;overflow:hidden;touch-action:none}
-canvas{display:block}
-#hint{
-  position:fixed;bottom:36px;left:50%;transform:translateX(-50%);
-  color:rgba(255,255,255,.45);
-  font:13px/2 'Helvetica Neue',system-ui,sans-serif;
-  letter-spacing:.18em;text-align:center;
-  pointer-events:none;
-  transition:opacity 1.4s ease;
-}
-#hint.hide{opacity:0}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COSMIC - ASCII Realtime Engine</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;500;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Silkscreen:wght@400;700&family=VT323&family=Space+Mono:wght@400;700&family=IBM+Plex+Mono:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap');
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html {
+            width: 100%; height: 100%;
+            background: #FFF;
+            overflow: auto;
+            font-family: 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #stripe-bg {
+            position: fixed; top: 0; left: 0;
+            width: 100vw; height: 100vh; z-index: 0;
+            pointer-events: none;
+            background: repeating-linear-gradient(90deg,
+                rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px,
+                transparent 1px, transparent 4px);
+        }
+        #ascii-canvas {
+            width: 1080px; height: 1350px;
+            max-width: 100vw; max-height: 100vh;
+            object-fit: contain;
+            touch-action: none;
+            z-index: 1;
+            box-shadow: 0 0 40px rgba(0,0,0,0.08);
+        }
+        #ui-layer {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100; color: #000; text-align: center;
+            background: rgba(255,255,255,0.97);
+            padding: 40px 50px; border: 2px solid #0000FF;
+        }
+        #ui-layer h2 { font-size: 1.1em; letter-spacing: 4px; margin-bottom: 8px; }
+        #ui-layer p { font-size: 0.7em; opacity: 0.4; margin-bottom: 20px; letter-spacing: 2px; }
+        #ui-layer button {
+            background: transparent; color: #0000FF;
+            border: 2px solid #0000FF; padding: 10px 28px;
+            font-family: inherit; font-size: 0.85em; font-weight: 700;
+            cursor: pointer; letter-spacing: 2px; transition: all 0.2s; margin: 5px;
+        }
+        #ui-layer button:hover { background: #0000FF; color: #FFF; }
+        #ui-layer input[type="file"] { display: none; }
+        #hud {
+            position: fixed; bottom: 16px; left: 16px; z-index: 10;
+            color: rgba(0,0,0,0.2); font-size: 9px; letter-spacing: 1px;
+            pointer-events: none;
+        }
+        #controls-container {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 10px; z-index: 10;
+        }
+        #webcam-toggle, #record-btn {
+            background: #FFF; padding: 10px 20px; font-family: inherit; font-size: 11px;
+            font-weight: 700; cursor: pointer; letter-spacing: 1px; transition: all 0.3s;
+        }
+        #webcam-toggle { border: 2px solid #0000FF; color: #0000FF; }
+        #webcam-toggle:hover, #webcam-toggle.active { background: #0000FF; color: #FFF; }
+        
+        #record-btn { border: 2px solid #FF0000; color: #FF0000; }
+        #record-btn:hover, #record-btn.active { background: #FF0000; color: #FFF; }
+        
+        #tutorial-toast {
+            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+            background: #000; color: #FFF; padding: 12px 24px; font-family: inherit;
+            font-size: 12px; font-weight: 800; letter-spacing: 2px; z-index: 20;
+            opacity: 0; pointer-events: none; transition: opacity 0.8s ease;
+        }
+
+        /* ── Settings Panel ── */
+        #settings-panel {
+            position: fixed; top: 16px; left: 16px; z-index: 29;
+            background: rgba(255,255,255,0.97); border: 2px solid #000;
+            padding: 12px; width: 210px;
+            font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: 1px;
+            transform: translateX(-240px);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.22s ease;
+        }
+        #settings-panel.open {
+            transform: translateX(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #settings-title {
+            font-size: 11px; font-weight: 800; letter-spacing: 3px;
+            margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
+        }
+        #settings-close {
+            cursor: pointer; font-size: 14px; line-height: 1; opacity: 0.4;
+            background: none; border: none; font-family: inherit; font-weight: 700;
+            min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: flex-end;
+        }
+        #settings-close:hover { opacity: 1; }
+        #settings-toggle {
+            position: fixed; top: 16px; left: 16px; z-index: 30;
+            background: #FFF; border: 2px solid #000; color: #000;
+            font-family: inherit; font-size: 10px; font-weight: 800;
+            letter-spacing: 2px; padding: 6px 12px; cursor: pointer;
+            min-height: 36px;
+        }
+        #settings-toggle:hover { background: #000; color: #FFF; }
+
+        #source-btn {
+            position: fixed; top: 16px; right: 16px; z-index: 30;
+            display: none;
+            background: #FFF; border: 2px solid #000; color: #000;
+            font-family: inherit; font-size: 10px; font-weight: 800;
+            letter-spacing: 2px; padding: 6px 12px; cursor: pointer;
+            min-height: 36px;
+        }
+        #source-btn:hover { background: #000; color: #FFF; }
+
+        .ctrl-section { margin-bottom: 10px; }
+        .ctrl-label {
+            font-size: 8px; letter-spacing: 3px; opacity: 0.4;
+            display: block; margin-bottom: 4px; text-transform: uppercase;
+        }
+        .ctrl-section textarea {
+            width: 100%; box-sizing: border-box; resize: vertical;
+            border: 1px solid #ccc; padding: 5px; font-family: inherit;
+            font-size: 10px; font-weight: 700; letter-spacing: 1px;
+            outline: none; min-height: 60px; line-height: 1.6;
+        }
+        .ctrl-section textarea:focus { border-color: #0000FF; }
+        .ctrl-section select {
+            width: 100%; box-sizing: border-box; border: 1px solid #ccc;
+            padding: 4px 6px; font-family: inherit; font-size: 10px;
+            font-weight: 700; outline: none; background: #FFF; cursor: pointer;
+        }
+        .ctrl-inline {
+            display: flex; align-items: center; justify-content: space-between; gap: 8px;
+        }
+        .ctrl-inline input[type="range"] {
+            flex: 1; accent-color: #0000FF; cursor: pointer; height: 2px;
+        }
+        .ctrl-val { font-size: 10px; font-weight: 800; min-width: 36px; text-align: right; }
+        .ctrl-inline input[type="color"] {
+            width: 28px; height: 22px; border: 1px solid #ccc;
+            padding: 1px; cursor: pointer; background: none;
+        }
+        #color-hex { font-size: 10px; font-weight: 800; letter-spacing: 1px; }
+        .ctrl-inline input[type="checkbox"] {
+            width: 14px; height: 14px; accent-color: #0000FF; cursor: pointer;
+        }
+        .ctrl-divider { border: none; border-top: 1px solid #eee; margin: 10px 0; }
+
+        /* ── Mobile Bottom Sheet ── */
+        @media (max-width: 767px) {
+            #settings-panel {
+                width: 100%;
+                left: 0; top: auto; bottom: 0;
+                max-height: 72vh;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                border-left: none; border-right: none; border-bottom: none;
+                border-top: 3px solid #000;
+                border-radius: 16px 16px 0 0;
+                padding: 16px 16px 32px;
+                transform: translateY(110%);
+            }
+            #settings-panel.open { transform: translateY(0); }
+            #settings-toggle {
+                top: auto; left: auto;
+                bottom: 90px; right: 16px;
+                min-height: 48px; min-width: 48px;
+                padding: 12px 20px;
+                font-size: 11px;
+                border-radius: 4px;
+            }
+            #source-btn {
+                top: 16px; right: 16px;
+                min-height: 44px;
+                font-size: 11px;
+            }
+            #controls-container {
+                bottom: 16px;
+                gap: 8px;
+            }
+            #webcam-toggle, #record-btn {
+                min-height: 44px;
+                font-size: 12px;
+                padding: 10px 16px;
+            }
+            .ctrl-section select,
+            .ctrl-section textarea {
+                font-size: 14px;
+                min-height: 44px;
+            }
+            .ctrl-section textarea { min-height: 72px; }
+            .ctrl-label { font-size: 10px; }
+            .ctrl-val { font-size: 12px; min-width: 52px; }
+            .ctrl-inline input[type="range"] { height: 20px; }
+            #settings-title { font-size: 13px; padding-bottom: 8px; border-bottom: 1px solid #eee; margin-bottom: 14px; }
+            .ctrl-divider { margin: 14px 0; }
+        }
+    </style>
 </head>
 <body>
-<canvas id="c"></canvas>
-<div id="hint">CLICK TO EXPLORE THE UNIVERSE</div>
-<script>
-'use strict';
+    <div id="stripe-bg"></div>
+    <canvas id="ascii-canvas"></canvas>
+    <div id="ui-layer">
+        <h2>WE ARE NOT RAY</h2>
+        <p>SELECT VIDEO SOURCE TO BEGIN</p>
+        <input type="file" id="videoUpload" accept="video/mp4,video/webm,video/*">
+        <button onclick="document.getElementById('videoUpload').click()">SELECT VIDEO</button>
+        <button onclick="tryLocalVideo()">PLAY CHOI</button>
+        <button onclick="startCameraSource()">CAM</button>
+    </div>
+    
+    <div id="controls-container" style="display:none;">
+        <button id="btn-home" onclick="returnToMenu()">← BACK</button>
+        <button id="webcam-toggle" onclick="toggleWebcam()">⚡ HAND CONTROL: OFF</button>
+        <button id="record-btn" onclick="toggleRecording()">⏺ REC VIDEO</button>
+    </div>
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   WebGL setup
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const canvas = document.getElementById('c');
-const hint   = document.getElementById('hint');
-const gl     = canvas.getContext('webgl', {
-  antialias: false, alpha: false, powerPreference: 'high-performance'
-});
-if (!gl) {
-  document.body.innerHTML =
-    '<p style="color:#fff;padding:2rem;font-family:sans-serif">WebGL이 지원되지 않습니다.</p>';
-  throw 0;
-}
+    <div id="tutorial-toast">🖱️ SCROLL TO ZOOM GRID</div>
+    <div id="hud"><span id="hud-grid"></span> | <span id="hud-fps"></span> | <span id="hud-hand"></span></div>
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   Vertex shader – fullscreen quad
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const VS = `
-attribute vec2 a;
-void main(){ gl_Position = vec4(a, 0.0, 1.0); }
-`;
+    <button id="settings-toggle" onclick="toggleSettings()" style="display:none;">SETTINGS</button>
+    <div id="settings-panel">
+        <div id="settings-title">
+            COSMIC ENGINE
+            <button id="settings-close" onclick="toggleSettings()">✕</button>
+        </div>
+        <button id="btn-invert" onclick="toggleInvert()" style="width:100%; margin-bottom:15px; padding:8px; font-weight:800; cursor:pointer; background:#FFF; color:#000; border:1px solid #000; transition:0.2s;">THEME : WHITE (기본)</button>
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   Fragment shader – all visual logic on GPU
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const FS = `
-precision highp float;
+        <span class="ctrl-label">TEXT</span>
+        <div class="ctrl-section">
+            <textarea id="ctrl-text" rows="3" placeholder="단어를 줄바꿈으로 입력" onchange="applyText(this.value)">WE ARE NOT RAY
+WE ARE COSMIC</textarea>
+        </div>
 
-uniform vec2  u_res;
-uniform float u_t;
-uniform vec2  u_big;
-uniform float u_bigR;
-uniform vec2  u_sm[8];
-uniform float u_smR[8];
-uniform float u_phase;
-uniform float u_flash;
+        <div class="ctrl-section">
+            <span class="ctrl-label">FONT</span>
+            <select id="ctrl-font" onchange="applyFont(this.value)">
+                <!-- 신규 아트 컨셉 폰트 -->
+                <option value="Anton">Anton (Brutalist Block)</option>
+                <option value="Playfair Display">Playfair Display (Editorial Chic)</option>
+                <option value="VT323">VT323 (Terminal Retro)</option>
+                <option value="Silkscreen">Silkscreen (Pixel Art)</option>
+                
+                <!-- 기존 코딩용 모노스페이스 -->
+                <option value="JetBrains Mono">JetBrains Mono</option>
+                <option value="Space Mono">Space Mono</option>
+                <option value="IBM Plex Mono">IBM Plex Mono</option>
+                <option value="Roboto Mono">Roboto Mono</option>
+                <option value="Courier New">Courier New</option>
+            </select>
+        </div>
 
-const float TAU = 6.28318530718;
+        <hr class="ctrl-divider">
 
-/* ── Polynomial smooth-min (IQ) ─────────────────────────── */
-float smin(float a, float b, float k){
-  float h = clamp(0.5 + 0.5*(b-a)/k, 0.0, 1.0);
-  return mix(b, a, h) - k*h*(1.0-h);
-}
+        <div class="ctrl-section">
+            <span class="ctrl-label">Blue Zone</span>
+            <div class="ctrl-inline">
+                <input type="range" id="ctrl-zone1" min="0" max="0.6" step="0.01" value="0.15" oninput="applyZone1(this.value)">
+                <span class="ctrl-val" id="zone1-val">15%</span>
+            </div>
+        </div>
 
-/* ── Compact HSV → RGB ───────────────────────────────────── */
-vec3 hsv(float h, float s, float v){
-  h = fract(h);
-  vec3 p = abs(fract(h + vec3(0.0,2.0,1.0)/3.0)*6.0 - 3.0);
-  return v * mix(vec3(1.0), clamp(p-1.0,0.0,1.0), s);
-}
+        <div class="ctrl-section">
+            <span class="ctrl-label">Color Phase (Depth)</span>
+            <div class="ctrl-inline">
+                <input type="range" id="ctrl-contrast" min="0" max="1.0" step="0.01" value="0.82" oninput="applyContrast(this.value)">
+                <label style="display:flex;align-items:center;gap:4px;font-size:9px;font-weight:800;cursor:pointer;">
+                    <input type="checkbox" id="ctrl-auto-phase" onchange="applyAutoPhase(this.checked)"> WAVES
+                </label>
+            </div>
+        </div>
 
-void main(){
-  vec2 px = gl_FragCoord.xy;
+        <hr class="ctrl-divider">
 
-  /* ── Metaball SDF ──────────────────────────────────────── */
-  float d = length(px - u_big) - u_bigR;
-  float k = u_bigR * 0.20;
-  d = smin(d, length(px-u_sm[0])-u_smR[0], k);
-  d = smin(d, length(px-u_sm[1])-u_smR[1], k);
-  d = smin(d, length(px-u_sm[2])-u_smR[2], k);
-  d = smin(d, length(px-u_sm[3])-u_smR[3], k);
-  d = smin(d, length(px-u_sm[4])-u_smR[4], k);
-  d = smin(d, length(px-u_sm[5])-u_smR[5], k);
-  d = smin(d, length(px-u_sm[6])-u_smR[6], k);
-  d = smin(d, length(px-u_sm[7])-u_smR[7], k);
+        <div class="ctrl-section">
+            <span class="ctrl-label">Key Color</span>
+            <div class="ctrl-inline">
+                <input type="color" id="ctrl-color" value="#0000ff" oninput="applyColor(this.value)">
+                <span id="color-hex">#0000FF</span>
+                <label style="display:flex;align-items:center;gap:4px;font-size:9px;letter-spacing:1px;cursor:pointer;">
+                    <input type="checkbox" id="ctrl-gradient" onchange="applyGradient(this.checked)">
+                    GRADIENT
+                </label>
+            </div>
+        </div>
+        <div class="ctrl-section" id="gradient-controls" style="display:none;">
+            <span class="ctrl-label">Gradient Range</span>
+            <div id="gradient-bar" style="height:12px;border-radius:2px;margin:4px 0 8px;border:1px solid #ccc;background:linear-gradient(to right,#0000FF,#FF00FF);"></div>
+            <div class="ctrl-inline">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+                    <input type="color" id="ctrl-grad-from" value="#0000ff" oninput="applyGradientColors()">
+                    <span style="font-size:8px;letter-spacing:1px;opacity:0.5;">FROM</span>
+                </div>
+                <div style="flex:1;height:1px;background:#eee;"></div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+                    <input type="color" id="ctrl-grad-to" value="#ff00ff" oninput="applyGradientColors()">
+                    <span style="font-size:8px;letter-spacing:1px;opacity:0.5;">TO</span>
+                </div>
+            </div>
+        </div>
 
-  float glowW = u_bigR * 0.13;
-  if(d > glowW){ gl_FragColor = vec4(0.0,0.0,0.0,1.0); return; }
+        <div class="ctrl-section">
+            <span class="ctrl-label">Detailed Palette</span>
+            <div class="ctrl-inline" style="flex-wrap:wrap; gap:8px;">
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                    <input type="color" id="ctrl-col-z2" value="#ffffff" oninput="applyPalette('z2', this.value)">
+                    <span style="font-size:8px; letter-spacing:1px; opacity:0.5;">LIGHT</span>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                    <input type="color" id="ctrl-col-z3" value="#808080" oninput="applyPalette('z3', this.value)">
+                    <span style="font-size:8px; letter-spacing:1px; opacity:0.5;">MID</span>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                    <input type="color" id="ctrl-col-z4" value="#000000" oninput="applyPalette('z4', this.value)">
+                    <span style="font-size:8px; letter-spacing:1px; opacity:0.5;">DEEP</span>
+                </div>
+                <div style="flex:1;"></div>
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                    <input type="color" id="ctrl-col-txt" value="#000000" oninput="applyPalette('txt', this.value)">
+                    <span style="font-size:8px; letter-spacing:1px; opacity:0.5;">TEXT</span>
+                </div>
+            </div>
+        </div>
 
-  vec2 uv = (px - u_big) / u_bigR;   /* -1 ~ +1 inside sphere */
-  float T  = u_t;
-  float ph = u_phase;
+        <hr class="ctrl-divider">
 
-  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-     FAKE SPHERE NORMAL
-     Reference images = 3 colored spotlights on a matte sphere.
-     We derive a hemisphere normal to compute Lambertian + Fresnel.
-     N.z = 1 at center (facing viewer), 0 at edge (grazing).
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-  float zcomp = sqrt(max(0.0, 1.0 - dot(uv, uv)));
-  vec3  N     = normalize(vec3(uv, zcomp));
+        <div class="ctrl-section">
+            <span class="ctrl-label">Background Color</span>
+            <div class="ctrl-inline" style="margin-bottom:6px;">
+                <input type="color" id="ctrl-bg" value="#ffffff" oninput="applyBg(this.value)">
+                <span id="bg-hex">#FFFFFF</span>
+            </div>
+            <div id="bg-swatches" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
+        </div>
+    </div>
 
-  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-     4 COLORED LAMBERTIAN LIGHTS — LISSAJOUS ORBITS
-     문제: 같은 속도 원형 공전 → 색상환이 돌아가는 느낌
-     해결: X/Y 주파수를 달리한 리사주 궤도 → 비주기적, 유기적
-     각 조명의 Hue도 독립적으로 드리프트 → 기계적 feel 제거
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-  float phBase = ph * 0.618;
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"></script>
 
-  /* Lissajous: X주파수 ≠ Y주파수 → 타원+세차운동, 비반복 궤도  */
-  vec3 L1 = normalize(vec3(
-    cos(T*0.110 + phBase)         * 0.55,
-    sin(T*0.097 + phBase + 0.50)  * 0.50,
-    0.42));
-  vec3 L2 = normalize(vec3(
-    cos(T*0.073 + phBase + 2.09)  * 0.52,
-    sin(T*0.061 + phBase + 1.32)  * 0.55,
-    0.38));
-  vec3 L3 = normalize(vec3(
-    cos(T*0.089 + phBase + 4.19)  * 0.48,
-    sin(T*0.079 + phBase + 2.74)  * 0.48,
-    0.45));
-  vec3 L4 = normalize(vec3(
-    cos(T*0.057 + phBase + 3.33)  * 0.40,
-    sin(T*0.068 + phBase + 0.88)  * 0.44,
-    0.50));
+    <script>
+    // ==========================================================
+    // COSMIC ASCII ENGINE v4
+    // ==========================================================
 
-  /* Lambertian (power 1.0 → 더 넓고 부드러운 색상 존)           */
-  float i1 = max(0.0, dot(N, L1));
-  float i2 = max(0.0, dot(N, L2));
-  float i3 = max(0.0, dot(N, L3));
-  float i4 = max(0.0, dot(N, L4));
+    let TEXT_FLOW = 'WE ARE NOT RAY        WE ARE COSMIC        WE ARE NOT RAY        WE ARE COSMIC        ';
+    const MATH_SYMBOLS = ['+', '×', '÷', '=', 'Δ', '○', '↘', '■', '✦', '▚', '░'];
 
-  /* 각 조명 Hue: 서로 독립적 속도로 드리프트 (색상환 고정 방지)  */
-  float h1 = phBase + T * 0.009;
-  float h2 = phBase + T * 0.013 + 0.28;
-  float h3 = phBase + T * 0.007 + 0.55;
-  float h4 = phBase + T * 0.011 + 0.77;
+    // ── UI Controls State ──
+    let currentFont = 'JetBrains Mono';
+    let keyColor = '#0000FF';
+    let darknessThreshold = 0.12;
+    let contrastPow = isCamera ? 2.0 : 1.2;
+    let zone1Limit = 0.15;
+    let bluePhase = 0.82;   // 0.82 = shadows (glasses/contours)
+    let autoPhase = false;
+    let basePhase = 0.82;
+    let gradientMode = false;
+    let gradientT = 0;
+    let gradientDir = 1;
+    let gradientFrom = [0, 0, 255];
+    let gradientTo = [255, 0, 255];
+    let bgColor = '#FFFFFF';
 
-  /* 채도 breathing: 각 조명 독립 위상 → 더 유기적                */
-  float b1 = 0.80 + 0.20*sin(T*0.37 + ph*0.5);
-  float b2 = 0.82 + 0.18*sin(T*0.29 + ph*0.5 + 1.1);
-  float b3 = 0.78 + 0.22*sin(T*0.43 + ph*0.5 + 2.3);
-  float b4 = 0.84 + 0.16*sin(T*0.33 + ph*0.5 + 0.7);
+    // Detailed Palette
+    let colorZ2 = '#FFFFFF'; let rgbZ2 = [255, 255, 255];
+    let colorZ3 = '#808080';
+    let colorZ4 = '#000000';
+    let colorText = '#000000'; let rgbText = [0, 0, 0];
 
-  vec3 col = hsv(h1, 1.0, i1*b1)
-           + hsv(h2, 1.0, i2*b2)
-           + hsv(h3, 1.0, i3*b3)
-           + hsv(h4, 0.8, i4*b4*0.6);  /* 4번째는 약하게 */
-
-  /* 극 암부 방지 ambient (매우 약하게)                            */
-  col += hsv(h1 + 0.5, 0.5, 0.04);
-
-  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-     FRESNEL RIM  (physically correct via N.z)
-     At sphere edge N.z → 0, so fresnel → 1 (bright rim).
-     At sphere center N.z = 1, so fresnel → 0 (no rim).
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-  float fresnel = pow(max(0.0, 1.0 - N.z), 3.5);
-
-  /* Rim color: neon rainbow cycling around circumference      */
-  float ang = atan(uv.y, uv.x);
-  float rh  = base * 0.5 + ang * 0.159 + T * 0.09;
-  vec3 rimA   = hsv(rh,        1.0, 3.2);
-  vec3 rimB   = hsv(rh + 0.12, 1.0, 3.8);
-  vec3 rimCol = mix(rimA, rimB, 0.5 + 0.5*sin(ang*2.5 + T*1.8));
-
-  /* Absorption flash                                           */
-  rimCol += vec3(u_flash * 2.5);
-  col    += vec3(u_flash * 0.35);
-
-  /* ── Outside glow ──────────────────────────────────────── */
-  if(d >= 0.0){
-    float g = pow(max(1.0 - d/glowW, 0.0), 2.5);
-    vec3 glowC = rimCol * g * 0.45;
-    glowC = glowC / (glowC + 0.9);
-    gl_FragColor = vec4(glowC, 1.0);
-    return;
-  }
-
-  /* ── Additive Fresnel rim ───────────────────────────────── */
-  col = col + rimCol * fresnel * 1.9;
-
-  /* ── Tone map + gamma ───────────────────────────────────── */
-  col = col / (col + 0.68);
-  col = pow(max(col, vec3(0.0)), vec3(0.88));
-
-  gl_FragColor = vec4(col, 1.0);
-}
-`;
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   Compile & link
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-function mkShader(type, src) {
-  const s = gl.createShader(type);
-  gl.shaderSource(s, src);
-  gl.compileShader(s);
-  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
-    console.error('Shader error:', gl.getShaderInfoLog(s));
-  return s;
-}
-const prog = gl.createProgram();
-gl.attachShader(prog, mkShader(gl.VERTEX_SHADER, VS));
-gl.attachShader(prog, mkShader(gl.FRAGMENT_SHADER, FS));
-gl.linkProgram(prog);
-if (!gl.getProgramParameter(prog, gl.LINK_STATUS))
-  console.error('Link error:', gl.getProgramInfoLog(prog));
-gl.useProgram(prog);
-
-/* Fullscreen quad (2 triangles) */
-const vbuf = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, vbuf);
-gl.bufferData(gl.ARRAY_BUFFER,
-  new Float32Array([-1,-1, 1,-1, -1,1,  -1,1, 1,-1, 1,1]),
-  gl.STATIC_DRAW);
-const aLoc = gl.getAttribLocation(prog, 'a');
-gl.enableVertexAttribArray(aLoc);
-gl.vertexAttribPointer(aLoc, 2, gl.FLOAT, false, 0, 0);
-
-/* Cache uniform locations */
-const U = {};
-'u_res u_t u_big u_bigR u_sm u_smR u_phase u_flash'
-  .split(' ').forEach(n => U[n] = gl.getUniformLocation(prog, n));
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   Simulation state
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-const MAX_SMALL = 8;
-const smPos = new Float32Array(MAX_SMALL * 2); /* pre-alloc     */
-const smRad = new Float32Array(MAX_SMALL);
-
-let smalls  = [];   /* active small circles                     */
-let phase   = 0.0;  /* increments on each absorption            */
-let flash   = 0.0;  /* 1→0 decay after absorption               */
-let bigX    = 0, bigY = 0, bigR = 1;
-let floatT  = 0;    /* independent time for floating motion      */
-let interacted = false;
-const t0 = performance.now();
-
-/* ── Resize ──────────────────────────────────────────────── */
-function resize() {
-  canvas.width  = innerWidth;
-  canvas.height = innerHeight;
-  gl.viewport(0, 0, canvas.width, canvas.height);
-  bigR = Math.min(canvas.width, canvas.height) * 0.315;
-}
-addEventListener('resize', resize);
-resize();
-
-/* ── Lissajous floating position ─────────────────────────── */
-function floatPos(t) {
-  const W = canvas.width, H = canvas.height;
-  /* Two overlapping sine waves per axis → organic drift      */
-  const x = W*0.5 + Math.sin(t*0.130)*W*0.085 + Math.sin(t*0.071+1.23)*W*0.032;
-  const y = H*0.5 + Math.cos(t*0.093)*H*0.065 + Math.cos(t*0.110+0.74)*H*0.028;
-  return [x, y];
-}
-
-/* ── Spawn small circle at click/touch ───────────────────── */
-function spawn(clientX, clientY) {
-  if (smalls.length >= MAX_SMALL) return;
-
-  const gx = clientX;
-  const gy = canvas.height - clientY;          /* flip Y → GL  */
-
-  /* Ignore clicks inside the big sphere */
-  if (Math.hypot(gx - bigX, gy - bigY) < bigR * 0.95) return;
-
-  if (!interacted) {
-    interacted = true;
-    hint.classList.add('hide');
-  }
-
-  smalls.push({
-    x: gx, y: gy,
-    r: 0,
-    maxR: 16 + Math.random() * 26,
-    age: 0,
-    state: 'in'   /* 'in' → appears; 'chase' → moves to big   */
-  });
-}
-
-canvas.addEventListener('click',      e => spawn(e.clientX, e.clientY));
-canvas.addEventListener('touchstart', e => {
-  e.preventDefault();
-  const t = e.changedTouches[0];
-  spawn(t.clientX, t.clientY);
-}, { passive: false });
-
-/* ── Per-frame simulation update ─────────────────────────── */
-function update(dt) {
-  floatT += dt;
-  [bigX, bigY] = floatPos(floatT);
-
-  flash = Math.max(0.0, flash - dt * 3.5);  /* decay flash    */
-
-  smalls = smalls.filter(s => {
-    s.age += dt;
-
-    if (s.state === 'in') {
-      /* Pop-in with slight elastic overshoot */
-      const p = Math.min(1.0, s.age / 0.22);
-      const eased = p < 0.7
-        ? (p / 0.7)
-        : 1.0 + Math.sin((p - 0.7) / 0.3 * Math.PI) * 0.13;
-      s.r = s.maxR * eased;
-      if (s.age > 0.22) s.state = 'chase';
-      return true;
+    function hexToRgb(hex) {
+        let r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+        return [r, g, b];
+    }
+    function lerpColor(a, b, t) {
+        return `rgb(${Math.round(a[0]+(b[0]-a[0])*t)},${Math.round(a[1]+(b[1]-a[1])*t)},${Math.round(a[2]+(b[2]-a[2])*t)})`;
     }
 
-    /* Chase: accelerate toward big circle */
-    const dx = bigX - s.x, dy = bigY - s.y;
-    const dist = Math.hypot(dx, dy);
-    if (dist < 1) { onAbsorb(); return false; }
+    // Segmentation
+    let isCamera = false;
+    let selfieSegmentation = null;
+    let segMask = false;
+    let isSegmenting = false;
+    let segCanvas = null, segCtx = null;
+    let cellHistory = new Float32Array(0); // For video noise temporal smoothing
 
-    /* Eased speed: faster as it closes in */
-    const spd = 60 + Math.max(0, bigR * 1.5 - dist) * 1.5;
-    s.x += (dx / dist) * spd * dt;
-    s.y += (dy / dist) * spd * dt;
+    let CELL_SIZE = 150;
+    let targetCellSize = 150;
 
-    /* Shrink radius as it enters the big sphere */
-    const enterZone = bigR * 0.55;
-    if (dist < enterZone) {
-      s.r = s.maxR * Math.max(0, dist / enterZone);
+    let canvas, ctx;
+    let video = null;
+    let offCanvas, offCtx;
+    let cols = 0, rows = 0;
+    let isPlaying = false;
+    let frameCounter = 0, globalFrame = 0;
+    let lastFpsTime = performance.now();
+    let fpsDisplay = 0;
+    let lastRenderTime = 0;
+
+    // MediaPipe
+    let mpHands = null, mpCamera = null;
+    let webcamActive = false, webcamVideo = null;
+    let pinchDistance = -1;
+
+    // Recording
+    let mediaRecorder = null;
+    let recordedChunks = [];
+
+    // Intro
+    let isIntro = false;
+    let introStartTime = 0;
+    let hasPlayedIntro = false;
+
+    // Invert Logic
+    let isInverted = false;
+    let baseTheme = null;
+
+    function toggleInvert() {
+        if (!baseTheme) {
+            baseTheme = { bgColor: bgColor, z2: colorZ2, z3: colorZ3, z4: colorZ4, txt: colorText };
+        }
+        isInverted = !isInverted;
+        let btn = document.getElementById('btn-invert');
+        if (isInverted) {
+            btn.textContent = 'THEME : BLACK (반전)';
+            btn.style.background = '#000'; btn.style.color = '#FFF';
+            bgColor = '#000000'; colorZ2 = '#000000'; colorZ3 = '#303030'; colorZ4 = '#FFFFFF'; colorText = '#FFFFFF';
+        } else {
+            btn.textContent = 'THEME : WHITE (기본)';
+            btn.style.background = '#FFF'; btn.style.color = '#000';
+            bgColor = baseTheme.bgColor; colorZ2 = baseTheme.z2; colorZ3 = baseTheme.z3; colorZ4 = baseTheme.z4; colorText = baseTheme.txt;
+        }
+        document.getElementById('ctrl-bg').value = bgColor;
+        document.getElementById('bg-hex').textContent = bgColor.toUpperCase();
+        
+        document.getElementById('ctrl-col-z2').value = colorZ2;
+        document.getElementById('ctrl-col-z3').value = colorZ3;
+        document.getElementById('ctrl-col-z4').value = colorZ4;
+        document.getElementById('ctrl-col-txt').value = colorText;
+        
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    /* Absorb threshold */
-    if (dist < bigR * 0.065) { onAbsorb(); return false; }
-    return true;
-  });
-}
+    // ==========================================================
+    function init() {
+        canvas = document.getElementById('ascii-canvas');
+        ctx = canvas.getContext('2d');
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        document.getElementById('videoUpload').addEventListener('change', (e) => {
+            let f = e.target.files[0];
+            if (f) {
+                document.querySelector('button[onclick="document.getElementById(\'videoUpload\').click()"]').innerText = "LOADING...";
+                loadVideo(URL.createObjectURL(f));
+            }
+        });
+    }
 
-function onAbsorb() {
-  /* Golden-ratio step keeps palette shifts visually distinct  */
-  phase += 0.09 + Math.random() * 0.07;
-  flash  = 1.0;
-}
+    const CANVAS_W = 1080;
+    const CANVAS_H = 1350;
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   Render loop
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-function frame(now) {
-  const elapsed = (now - t0) * 0.001;
-  const dt = Math.min((now - (frame._prev || now)) * 0.001, 0.05);
-  frame._prev = now;
+    function resizeCanvas() {
+        canvas.width = CANVAS_W;
+        canvas.height = CANVAS_H;
+        calcGrid();
+    }
 
-  update(dt);
+    function calcGrid() {
+        let newCols = Math.floor(canvas.width / CELL_SIZE);
+        let newRows = Math.floor(canvas.height / CELL_SIZE);
+        if (!offCanvas) {
+            offCanvas = document.createElement('canvas');
+            offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
+        }
+        // 크기가 바뀔 때만 리사이즈 — 매 프레임 클리어 방지
+        if (newCols !== cols || newRows !== rows) {
+            cols = newCols;
+            rows = newRows;
+            offCanvas.width = cols;
+            offCanvas.height = rows;
+            cellHistory = new Float32Array(cols * rows);
+            cellHistory.fill(-1); // Mark as uninitialized
+        }
+    }
 
-  /* Pack small-circle data into flat typed arrays            */
-  smPos.fill(0);
-  smRad.fill(-9999);   /* negative radius → SDF always huge+  */
-  const n = Math.min(smalls.length, MAX_SMALL);
-  for (let i = 0; i < n; i++) {
-    smPos[i * 2]     = smalls[i].x;
-    smPos[i * 2 + 1] = smalls[i].y;
-    smRad[i]         = smalls[i].r;
-  }
+    function tryLocalVideo() {
+        document.querySelector('button[onclick="tryLocalVideo()"]').innerText = "LOADING...";
+        loadVideo('choi_insta.mp4');
+    }
 
-  /* Upload uniforms */
-  gl.uniform2f(U.u_res,   canvas.width, canvas.height);
-  gl.uniform1f(U.u_t,     elapsed);
-  gl.uniform2f(U.u_big,   bigX, bigY);
-  gl.uniform1f(U.u_bigR,  bigR);
-  gl.uniform2fv(U.u_sm,   smPos);
-  gl.uniform1fv(U.u_smR,  smRad);
-  gl.uniform1f(U.u_phase, phase);
-  gl.uniform1f(U.u_flash, flash);
+    function startCameraSource() {
+        let btn = document.querySelector(`button[onclick="startCameraSource()"]`);
+        btn.innerText = 'CONNECTING...';
+        const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+        const facingMode = isMobile ? 'environment' : 'user';
+        navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: false })
+            .then(stream => {
+                if (video) { video.pause(); video.srcObject = null; video.remove(); }
+                video = document.createElement('video');
+                video.srcObject = stream;
+                video.autoplay = true; video.muted = true; video.playsInline = true;
+                video.addEventListener('canplay', () => {
+                    document.getElementById('ui-layer').style.display = 'none';
+                    document.getElementById('controls-container').style.display = 'flex';
+                    document.getElementById('settings-panel').classList.add('open');
+                    document.getElementById('settings-toggle').style.display = 'none';
+                    isCamera = true;
+                    initSegmentation();
+                    video.play();
+                    
+                    // Trigger Intro Zoom Effect for Webcam
+                    isIntro = true;
+                    introStartTime = performance.now() + 500;
 
-  gl.drawArrays(gl.TRIANGLES, 0, 6);
-  requestAnimationFrame(frame);
-}
+                    isPlaying = true;
+                    requestAnimationFrame(renderLoop);
+                }, {once: true});
+            })
+            .catch(err => {
+                btn.innerText = 'CAM';
+                let ui = document.getElementById('ui-layer');
+                ui.querySelector('h2').textContent = 'CAMERA ACCESS DENIED';
+                ui.querySelector('p').textContent = '브라우저에서 카메라 권한을 허용해주세요.';
+            });
+    }
 
-requestAnimationFrame(frame);
-</script>
+    function returnToMenu() {
+        if (webcamActive) stopWebcam();
+        if (video) {
+            video.pause();
+            video.srcObject = null;
+            video.removeAttribute('src');
+        }
+        isPlaying = false;
+        
+        document.getElementById('ui-layer').style.display = '';
+        document.getElementById('controls-container').style.display = 'none';
+        document.getElementById('settings-panel').classList.remove('open');
+        document.getElementById('settings-toggle').style.display = 'none';
+        
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function initSegmentation() {
+        if (!segCanvas) {
+            segCanvas = document.createElement('canvas');
+            segCtx = segCanvas.getContext('2d', { willReadFrequently: true });
+        }
+        selfieSegmentation = new SelfieSegmentation({
+            locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${f}`
+        });
+        selfieSegmentation.setOptions({ modelSelection: 0 }); // 0 = general (Google Meet portrait style)
+        selfieSegmentation.onResults((results) => { 
+            if (results.segmentationMask) {
+                // 부하(Stutter) 방지: 마스크 해상도가 다를 때만 캔버스를 강제 리사이징(메모리 재할당 방지)
+                if (segCanvas.width !== results.segmentationMask.width) {
+                    segCanvas.width = results.segmentationMask.width;
+                    segCanvas.height = results.segmentationMask.height;
+                }
+                segCtx.clearRect(0, 0, segCanvas.width, segCanvas.height);
+                segCtx.drawImage(results.segmentationMask, 0, 0);
+                segMask = true;
+            }
+            isSegmenting = false; // Release lock
+        });
+    }
+
+    function loadVideo(src) {
+        if (video) { video.pause(); video.remove(); }
+        video = document.createElement('video');
+        video.src = typeof src === 'string' ? src : URL.createObjectURL(src);
+        video.autoplay = true; video.loop = true; video.muted = true; video.playsInline = true;
+
+        video.addEventListener('canplay', () => {
+            document.getElementById('ui-layer').style.display = 'none';
+            document.getElementById('controls-container').style.display = 'flex';
+            document.getElementById('settings-panel').classList.add('open');
+            document.getElementById('settings-toggle').style.display = 'none';
+
+            if (!hasPlayedIntro) {
+                hasPlayedIntro = true;
+                let toast = document.getElementById('tutorial-toast');
+                if (toast) {
+                    toast.style.opacity = '1';
+                    setTimeout(() => { toast.style.opacity = '0'; }, 8000);
+                }
+            }
+
+            // Always trigger Intro Zoom Effect for newly selected videos
+            isIntro = true;
+            introStartTime = performance.now() + 500;
+
+            let playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(err => { console.warn("Auto-play blocked", err); });
+            }
+            isPlaying = true;
+            requestAnimationFrame(renderLoop);
+        }, {once: true});
+        video.addEventListener('error', () => {
+            let ui = document.getElementById('ui-layer');
+            ui.style.display = '';
+            ui.querySelector('h2').textContent = 'VIDEO LOAD FAILED';
+            ui.querySelector('p').textContent = 'SELECT VIDEO 버튼으로 파일을 직접 선택하세요.';
+        });
+        video.load();
+    }
+
+    // ==========================================================
+    // RENDER
+    // ==========================================================
+    function renderLoop() {
+        if (!isPlaying) return;
+        let now = performance.now();
+
+
+        let targetFrameDelay = 16;
+
+        if (isIntro) {
+            let elapsed = now - introStartTime;
+            const INTRO_LEN = 3000;
+            if (elapsed < 0) {
+                CELL_SIZE = 150;
+                targetFrameDelay = 125; // 8fps
+            } else if (elapsed <= INTRO_LEN) {
+                let t = elapsed / INTRO_LEN;
+                let ease = 1 - Math.pow(1 - t, 3); // easeOutCubic
+                CELL_SIZE = 150 + (12 - 150) * ease;
+                targetFrameDelay = 125 + (42 - 125) * t; // 8fps → 24fps
+            } else {
+                isIntro = false;
+                targetCellSize = 12;
+            }
+        } else {
+            if (Math.abs(CELL_SIZE - targetCellSize) > 0.1) {
+                CELL_SIZE = CELL_SIZE * 0.90 + targetCellSize * 0.10;
+            } else {
+                CELL_SIZE = targetCellSize;
+            }
+        }
+
+        // Frame Throttling
+        if (now - lastRenderTime < targetFrameDelay) {
+            requestAnimationFrame(renderLoop);
+            return;
+        }
+        lastRenderTime = now;
+
+        // Reset context completely each frame
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.filter = 'none';
+        ctx.globalCompositeOperation = 'source-over';
+
+        CELL_SIZE = Math.max(12, Math.min(150, CELL_SIZE));
+        calcGrid();
+
+        // Draw video to offscreen — keep last frame during seek (prevents flash on loop)
+        if (video && video.readyState >= 2 && !video.seeking) {
+            let vR = video.videoWidth / video.videoHeight;
+            let cR = cols / rows;
+            let dW, dH, dX, dY;
+            if (cR > vR) {
+                dW = cols; dH = cols / vR; dX = 0; dY = (rows - dH) / 2;
+            } else {
+                dH = rows; dW = rows * vR; dY = 0; dX = (cols - dW) / 2;
+            }
+            // Clear ONLY the letterbox areas, not the full canvas
+            offCtx.fillStyle = '#FFF';
+            if (dY > 0) { offCtx.fillRect(0, 0, cols, dY); offCtx.fillRect(0, rows - dY, cols, dY); }
+            if (dX > 0) { offCtx.fillRect(0, 0, dX, rows); offCtx.fillRect(cols - dX, 0, dX, rows); }
+            offCtx.drawImage(video, dX, dY, dW, dH);
+
+            // Segmentation: 카메라 모드일 때 사람과 배경 분리
+            if (isCamera && selfieSegmentation) {
+                // 비동기 메모리 교착상태(Deadlock) 방지 및 프레임 속도 일치
+                if (!isSegmenting && video.readyState >= 2) {
+                    isSegmenting = true;
+                    selfieSegmentation.send({ image: video }).catch(err => {
+                        console.error('Segmentation error:', err);
+                        isSegmenting = false;
+                    });
+                }
+
+                if (segMask) {
+                    // CPU 픽셀 연산 대신, 하드웨어 가속 Canvas 블렌딩을 사용하여
+                    // 경계선을 아주 부드럽고 깔끔하게 안티앨리어싱(Anti-Aliasing) 처리합니다.
+                    
+                    // 1. 거푸집(Mask) 적용: 사람 영역만 남기고 나머지는 투명하게 만듦. (영상과 동일한 위치/비율로 매핑)
+                    offCtx.globalCompositeOperation = 'destination-in';
+                    offCtx.filter = 'blur(6px)'; // 엣지 자글거림(Aliasing) 완벽 차단을 위한 두꺼운 블러
+                    offCtx.drawImage(segCanvas, dX, dY, dW, dH);
+                    offCtx.filter = 'none'; // 필터 원상복구
+                    
+                    // 2. 투명해진 배경을 완전히 강제 흰색(#FFFFFF)으로 채워서 ASCII 구역을 지움
+                    offCtx.globalCompositeOperation = 'destination-over';
+                    offCtx.fillStyle = '#FFFFFF';
+                    offCtx.fillRect(0, 0, cols, rows);
+                    
+                    // 3. 합성 모드 초기화
+                    offCtx.globalCompositeOperation = 'source-over';
+                }
+            }
+        }
+
+        let imageData;
+        try { imageData = offCtx.getImageData(0, 0, cols, rows); }
+        catch(e) { requestAnimationFrame(renderLoop); return; }
+        let pixels = imageData.data;
+
+        // Clear background
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        let offsetX = (canvas.width - cols * CELL_SIZE) / 2;
+        let offsetY = (canvas.height - rows * CELL_SIZE) / 2;
+
+        let fontSize = Math.max(6, CELL_SIZE * 0.88);
+        ctx.font = `800 ${fontSize}px '${currentFont}', 'Consolas', monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Auto Phase wave breathing over time
+        if (autoPhase) {
+            bluePhase = (Math.sin(globalFrame * 0.04) * 0.5 + 0.5) * 0.85;
+            let slider = document.getElementById('ctrl-contrast');
+            if (slider && Math.abs(parseFloat(slider.value) - bluePhase) > 0.02) {
+                slider.value = bluePhase;
+            }
+        }
+
+        // Grid-aligned Rhythmic Offset (Wave)
+        let glitchCycle = globalFrame % 120;
+        let isGlitchActive = glitchCycle < 20;
+
+        for (let j = 0; j < rows; j++) {
+            // Calculate Row Shift
+            let rowShift = 0;
+            if (isGlitchActive) {
+                if (j % 4 === 1) rowShift = CELL_SIZE;
+                else if (j % 4 === 3) rowShift = -CELL_SIZE;
+                
+                // Animate snap
+                let easeT = Math.sin((glitchCycle / 20) * Math.PI); // 0 -> 1 -> 0
+                if (easeT < 0.8) rowShift = 0; // Only pop at the peak
+            }
+
+            for (let i = 0; i < cols; i++) {
+                let idx = (j * cols + i) * 4;
+                let r = pixels[idx], g = pixels[idx+1], b = pixels[idx+2];
+
+                let luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
+                
+                // 마스크에서 잘려나간 배경 및 안티앨리어싱 경계를 부드럽게 감별 (안전하게 허공으로 날림)
+                let isBackground = (isCamera && luma > 0.98);
+
+                // 캠 화면 전용 보정: 피부(밝은 영역)는 날려서 미니멀한 캔버스로 만들고,
+                // 안경테, 머리카락, 수염 같은 질감만 남기기 위해 대비를 강하게 날림(Blow out)
+                if (isCamera && !isBackground) {
+                    luma = (luma - 0.35) * 1.4 + 0.35; 
+                    luma = Math.max(0.001, Math.min(0.999, luma));
+                }
+                
+                let targetDarkness = 1.0 - luma;
+
+                // 플리커(Flickering) 방지를 위한 Temporal Smoothing (시계열 부드러움 연산)
+                let cellIdx = j * cols + i;
+                let smoothSpeed = isCamera ? 0.20 : 0.60;
+                
+                if (targetDarkness === 0.0) {
+                    // 배경은 잔상(Ghost)을 남기지 않고 즉시 지움
+                    cellHistory[cellIdx] = 0.0;
+                } else if (cellHistory[cellIdx] === -1) {
+                    cellHistory[cellIdx] = targetDarkness;
+                } else {
+                    cellHistory[cellIdx] = cellHistory[cellIdx] * (1 - smoothSpeed) + targetDarkness * smoothSpeed;
+                }
+                
+                let darkness = cellHistory[cellIdx];
+
+                let x = offsetX + i * CELL_SIZE + rowShift;
+                let y = offsetY + j * CELL_SIZE;
+                let cx = x + CELL_SIZE / 2;
+                let cy = y + CELL_SIZE / 2;
+                let vy = cy + CELL_SIZE * 0.045; // Optical vertical center adjustment
+
+                // 지정된 밝기(Threshold)보다 밝은 픽셀은 렌더링 무시 (피부 허공 증발)
+                let currentThreshold = darknessThreshold; // 0.12
+                if (darkness <= currentThreshold) {
+                    ctx.fillStyle = colorZ3; // 조금 더 흐릿한 색으로 사용
+                    ctx.fillText('·', cx, vy);
+                    continue;
+                }
+
+                let v = (darkness - currentThreshold) / (1.0 - currentThreshold);
+                v = Math.min(1.0, Math.max(0.0, v));
+                v = Math.pow(v, contrastPow);
+                
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = CELL_SIZE >= 30 ? 2 : 1;
+                
+                const fx = Math.floor(x), fy = Math.floor(y);
+                const fw = Math.ceil(CELL_SIZE), fh = Math.ceil(CELL_SIZE);
+
+                // Calculate distance to phase core for soft glow
+                let dist = Math.abs(v - bluePhase);
+
+                // 1순위: 가장 어두운 섀도우는 블루 오라를 무시하고 무조건 딥 블랙 박스로 유지 (머리카락 등)
+                if (v >= 0.88) {
+                    ctx.fillStyle = colorZ4;
+                    ctx.fillRect(fx, fy, fw, fh);
+                }
+                // 2순위: ZONE 1 Key Color Point — glowing soft blend (안경테, 윤곽선 등)
+                else if (dist < zone1Limit) {
+                    let intensity = 1.0 - (dist / zone1Limit); // 1.0 at center, 0.0 at edge
+                    intensity = Math.pow(intensity, 1.5); // Smoother falloff curve
+                    
+                    let baseR, baseG, baseB;
+                    if (gradientMode) {
+                        let c = lerpColor(gradientFrom, gradientTo, gradientT);
+                        let m = c.match(/\d+/g);
+                        baseR = parseInt(m[0]); baseG = parseInt(m[1]); baseB = parseInt(m[2]);
+                    } else {
+                        let rgb = hexToRgb(keyColor);
+                        baseR = rgb[0]; baseG = rgb[1]; baseB = rgb[2];
+                    }
+                    
+                    // Blend block from Light Zone (ambient) to Pure Color (core)
+                    let fillR = Math.round(baseR * intensity + rgbZ2[0] * (1 - intensity));
+                    let fillG = Math.round(baseG * intensity + rgbZ2[1] * (1 - intensity));
+                    let fillB = Math.round(baseB * intensity + rgbZ2[2] * (1 - intensity));
+                    
+                    ctx.fillStyle = `rgb(${fillR}, ${fillG}, ${fillB})`;
+                    ctx.fillRect(fx, fy, fw, fh);
+
+                    // Inject Structural Symbols (20% ratio)
+                    if (intensity > 0.4 && (i * 11 + j * 17 + Math.floor(globalFrame/5)) % 10 < 2) {
+                        ctx.save();
+                        ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
+                        ctx.fillStyle = `rgba(${rgbZ2[0]}, ${rgbZ2[1]}, ${rgbZ2[2]}, ${intensity})`; // Fade symbol in
+                        let symIdx = (i * 3 + j * 7 + Math.floor(globalFrame/15)) % MATH_SYMBOLS.length;
+                        ctx.fillText(MATH_SYMBOLS[symIdx], cx, vy);
+                        ctx.restore();
+                    } else {
+                        // Standard typography fading away as it gets close to core
+                        ctx.save();
+                        ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
+                        // Text uses user's selected text color, fading opacity towards core
+                        ctx.fillStyle = `rgba(${rgbText[0]}, ${rgbText[1]}, ${rgbText[2]}, ${1.0 - intensity * 0.85})`; 
+                        let rowOffset = Math.floor(j) * 17;
+                        let charIdx = (Math.floor(i) + rowOffset) % TEXT_FLOW.length;
+                        ctx.fillText(TEXT_FLOW[charIdx % TEXT_FLOW.length], cx, vy);
+                        ctx.restore();
+                    }
+                }
+                // 3순위: 밝은 영역 (피부, 몸통) - 타이포그래피 + 빈 박스
+                else if (v < 0.72) {
+                    ctx.fillStyle = colorZ2;
+                    ctx.fillRect(fx, fy, fw, fh);
+                    ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+                    ctx.save();
+                    ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
+                    ctx.fillStyle = colorText;
+                    let rowOffset = Math.floor(j) * 17;
+                    let charIdx = (Math.floor(i) + rowOffset) % TEXT_FLOW.length;
+                    ctx.fillText(TEXT_FLOW[charIdx % TEXT_FLOW.length], cx, vy);
+                    ctx.restore();
+                }
+                // 4순위: 중간 밝기 (음영) - 그레이 박스 + ASCII
+                else {
+                    ctx.fillStyle = colorZ3;
+                    ctx.fillRect(fx, fy, fw, fh);
+                    ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+                    ctx.save();
+                    ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
+                    ctx.fillStyle = colorText;
+                    let t = (v - 0.72) / 0.16; // mapped to remaining span
+                    let block = t < 0.2 ? '.' : t < 0.4 ? ':' : t < 0.6 ? '░' : t < 0.8 ? '▒' : '▓';
+                    ctx.fillText(block, cx, vy);
+                    ctx.restore();
+                }
+            }
+        }
+
+        // Post-Processing: Grid-Aligned Glitch Displace
+        if (globalFrame % 150 > 135) { 
+            let glitchRow = Math.floor((globalFrame * 0.1) % rows);
+            let glitchH = CELL_SIZE * 2;
+            let glitchY = Math.floor(offsetY + glitchRow * CELL_SIZE);
+            let shiftX = (globalFrame % 2 === 0) ? Math.floor(CELL_SIZE * 0.5) : Math.floor(-CELL_SIZE * 0.5);
+            
+            // Draw a slice shifted on grid bounds
+            ctx.drawImage(canvas, 0, glitchY, canvas.width, glitchH, shiftX, glitchY, canvas.width, glitchH);
+            
+            // RGB Break
+            ctx.globalCompositeOperation = 'screen';
+            ctx.fillStyle = 'rgba(0, 0, 255, 0.4)'; // Cobalt Blue
+            ctx.fillRect(0, glitchY, canvas.width, glitchH);
+            ctx.drawImage(canvas, 0, glitchY, canvas.width, glitchH, shiftX * -0.5, glitchY, canvas.width, glitchH);
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        // Gradient pingpong between from→to colors
+        if (gradientMode) {
+            gradientT += 0.008 * gradientDir;
+            if (gradientT >= 1) { gradientT = 1; gradientDir = -1; }
+            else if (gradientT <= 0) { gradientT = 0; gradientDir = 1; }
+        }
+
+        // FPS
+        globalFrame++;
+        frameCounter++;
+        now = performance.now();
+        if (now - lastFpsTime > 500) {
+            fpsDisplay = Math.round(frameCounter / ((now - lastFpsTime) / 1000));
+            frameCounter = 0;
+            lastFpsTime = now;
+        }
+        document.getElementById('hud-grid').textContent = `GRID ${cols}×${rows} (${Math.round(CELL_SIZE)}px)`;
+        document.getElementById('hud-fps').textContent = `${fpsDisplay} FPS`;
+        document.getElementById('hud-hand').textContent = pinchDistance >= 0
+            ? `PINCH: ${Math.round(pinchDistance)}px` : 'NO HAND';
+
+        requestAnimationFrame(renderLoop);
+    }
+
+    // ==========================================================
+    // MEDIAPIPE
+    // ==========================================================
+    function toggleWebcam() {
+        let btn = document.getElementById('webcam-toggle');
+        if (webcamActive) {
+            stopWebcam(); btn.textContent = '⚡ HAND CONTROL: OFF'; btn.classList.remove('active');
+        } else {
+            startWebcam(); btn.textContent = '⚡ HAND CONTROL: ON'; btn.classList.add('active');
+        }
+    }
+    function startWebcam() {
+        webcamActive = true;
+        webcamVideo = document.createElement('video');
+        webcamVideo.setAttribute('playsinline', '');
+        webcamVideo.setAttribute('autoplay', '');
+        webcamVideo.setAttribute('muted', '');
+        webcamVideo.muted = true;
+        webcamVideo.style.display = 'none';
+        document.body.appendChild(webcamVideo);
+        mpHands = new Hands({
+            locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/${f}`
+        });
+        mpHands.setOptions({ maxNumHands: 1, modelComplexity: 0, minDetectionConfidence: 0.6, minTrackingConfidence: 0.5 });
+        mpHands.onResults(onHandResults);
+        mpCamera = new Camera(webcamVideo, {
+            onFrame: async () => { if (webcamActive && mpHands) await mpHands.send({ image: webcamVideo }); },
+            facingMode: 'user',
+            width: 320, height: 240
+        });
+        mpCamera.start().catch(err => {
+            alert('카메라 권한을 허용해주세요! (Camera start failed: ' + err + ')');
+            toggleWebcam();
+        });
+    }
+    function stopWebcam() {
+        webcamActive = false; pinchDistance = -1; targetCellSize = 150;
+        if (mpCamera) { mpCamera.stop(); mpCamera = null; }
+        if (webcamVideo) { webcamVideo.srcObject?.getTracks().forEach(t => t.stop()); webcamVideo.remove(); webcamVideo = null; }
+    }
+    function onHandResults(results) {
+        if (!results.multiHandLandmarks || !results.multiHandLandmarks.length) { pinchDistance = -1; return; }
+        let lm = results.multiHandLandmarks[0];
+        let dx = (lm[4].x - lm[8].x) * 320, dy = (lm[4].y - lm[8].y) * 240;
+        pinchDistance = Math.sqrt(dx * dx + dy * dy);
+        targetCellSize = Math.round(lerp(12, 150, clamp((pinchDistance - 15) / 140, 0, 1)));
+    }
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function clamp(v, mn, mx) { return Math.min(mx, Math.max(mn, v)); }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === '+' || e.key === '=') targetCellSize = Math.min(150, targetCellSize + 5);
+        else if (e.key === '-' || e.key === '_') targetCellSize = Math.max(12, targetCellSize - 5);
+    });
+    
+    document.addEventListener('wheel', (e) => {
+        document.getElementById('tutorial-toast').style.opacity = '0';
+        if (!webcamActive) {
+            if (e.deltaY < 0) {
+                targetCellSize = Math.min(150, targetCellSize + 5);
+            } else if (e.deltaY > 0) {
+                targetCellSize = Math.max(12, targetCellSize - 5);
+            }
+        }
+    }, { passive: true });
+
+    // Touch event listeners for mobile gesture mapping
+    let initialPinchDist = null;
+    let initialCellSize = 0;
+    let lastTouchY = null;
+
+    window.addEventListener('touchstart', (e) => {
+        if (!webcamActive) {
+            if (e.touches.length === 1) {
+                lastTouchY = e.touches[0].pageY;
+            } else if (e.touches.length === 2) {
+                e.preventDefault();
+                let dx = e.touches[0].pageX - e.touches[1].pageX;
+                let dy = e.touches[0].pageY - e.touches[1].pageY;
+                initialPinchDist = Math.hypot(dx, dy);
+                initialCellSize = targetCellSize;
+            }
+        }
+    }, { passive: false });
+
+    window.addEventListener('touchmove', (e) => {
+        if (!webcamActive) {
+            if (e.touches.length === 1 && lastTouchY !== null) {
+                e.preventDefault();
+                document.getElementById('tutorial-toast').style.opacity = '0';
+                let dy = e.touches[0].pageY - lastTouchY;
+                lastTouchY = e.touches[0].pageY;
+                targetCellSize = Math.max(12, Math.min(150, targetCellSize + dy * 0.3));
+            } 
+            else if (e.touches.length === 2 && initialPinchDist !== null) {
+                e.preventDefault();
+                document.getElementById('tutorial-toast').style.opacity = '0';
+                let dx = e.touches[0].pageX - e.touches[1].pageX;
+                let dy = e.touches[0].pageY - e.touches[1].pageY;
+                let scale = Math.hypot(dx, dy) / initialPinchDist; 
+                targetCellSize = Math.max(12, Math.min(150, initialCellSize / scale));
+            }
+        }
+    }, { passive: false });
+
+    window.addEventListener('touchend', (e) => {
+        if (e.touches.length < 2) initialPinchDist = null;
+        if (e.touches.length < 1) lastTouchY = null;
+    });
+
+    // ==========================================================
+    // RECORDING
+    // ==========================================================
+    function toggleRecording() {
+        if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+            startRecording();
+        } else {
+            stopRecording();
+        }
+    }
+
+    function startRecording() {
+        let stream = canvas.captureStream(60);
+        let mimeType = 'video/webm';
+        let extension = 'webm';
+        
+        if (MediaRecorder.isTypeSupported('video/mp4; codecs="avc1.424028, mp4a.40.2"')) {
+            mimeType = 'video/mp4; codecs="avc1.424028, mp4a.40.2"';
+            extension = 'mp4';
+        } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+            mimeType = 'video/mp4';
+            extension = 'mp4';
+        } else if (MediaRecorder.isTypeSupported('video/webm; codecs=h264')) {
+            mimeType = 'video/webm; codecs=h264';
+            extension = 'mp4';
+        }
+
+        mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+            let blob = new Blob(recordedChunks, { type: mimeType });
+            recordedChunks = [];
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a'); 
+            a.style.display = 'none'; a.href = url;
+            a.download = `cosmic_ascii_${Date.now()}.${extension}`;
+            document.body.appendChild(a); a.click();
+            setTimeout(() => { window.URL.revokeObjectURL(url); a.remove(); }, 100);
+        };
+        mediaRecorder.start();
+        let btn = document.getElementById('record-btn');
+        btn.textContent = '🔴 REC (CLICK TO SAVE)';
+        btn.classList.add('active');
+    }
+
+    function stopRecording() {
+        if(mediaRecorder) mediaRecorder.stop();
+        let btn = document.getElementById('record-btn');
+        btn.textContent = '⏺ REC VIDEO';
+        btn.classList.remove('active');
+    }
+
+    // ==========================================================
+    // SETTINGS PANEL
+    // ==========================================================
+    function toggleSettings() {
+        let panel = document.getElementById('settings-panel');
+        let btn = document.getElementById('settings-toggle');
+        let isOpen = panel.classList.toggle('open');
+        btn.style.display = isOpen ? 'none' : 'block';
+    }
+    function applyFont(val) {
+        currentFont = val;
+    }
+    function applyText(val) {
+        // 줄 단위로 분리 → 줄 안 단어는 1칸, 줄 사이는 10칸 → 2회 반복으로 flow 구성
+        const LINE_GAP = '          '; // 10 spaces
+        let lines = val.split(/[\n\r]+/).map(l => l.trim().split(/\s+/).filter(w => w.length > 0).join(' ')).filter(l => l.length > 0);
+        if (lines.length === 0) { TEXT_FLOW = ' '; return; }
+        let unit = lines.join(LINE_GAP) + LINE_GAP;
+        TEXT_FLOW = unit + unit;
+    }
+    function applyColor(val) {
+        keyColor = val;
+        document.getElementById('color-hex').textContent = val.toUpperCase();
+        document.getElementById('color-hex').style.color = val;
+        updateBgSwatches();
+    }
+    function applyZone1(val) {
+        zone1Limit = parseFloat(val);
+        document.getElementById('zone1-val').textContent = Math.round(val * 100) + '%';
+    }
+    function applyContrast(val) {
+        basePhase = parseFloat(val);
+        bluePhase = basePhase;
+        if (autoPhase) {
+            document.getElementById('ctrl-auto-phase').checked = false;
+            autoPhase = false;
+        }
+    }
+    function applyAutoPhase(checked) {
+        autoPhase = checked;
+        if (!checked) {
+            bluePhase = basePhase; // Restore position when unchecked
+            document.getElementById('ctrl-contrast').value = basePhase;
+        }
+    }
+    function applyGradient(checked) {
+        gradientMode = checked;
+        document.getElementById('ctrl-color').disabled = checked;
+        document.getElementById('color-hex').style.opacity = checked ? '0.3' : '1';
+        document.getElementById('gradient-controls').style.display = checked ? 'block' : 'none';
+    }
+    function applyGradientColors() {
+        let from = document.getElementById('ctrl-grad-from').value;
+        let to = document.getElementById('ctrl-grad-to').value;
+        gradientFrom = hexToRgb(from);
+        gradientTo = hexToRgb(to);
+        document.getElementById('gradient-bar').style.background = `linear-gradient(to right, ${from}, ${to})`;
+    }
+    function applyBg(val) {
+        bgColor = val;
+        document.getElementById('bg-hex').textContent = val.toUpperCase();
+        document.getElementById('ctrl-bg').value = val;
+    }
+    
+    function applyPalette(target, val) {
+        if (target === 'z2') { colorZ2 = val; rgbZ2 = hexToRgb(val); }
+        else if (target === 'z3') { colorZ3 = val; }
+        else if (target === 'z4') { colorZ4 = val; }
+        else if (target === 'txt') { colorText = val; rgbText = hexToRgb(val); }
+    }
+
+    function rgbToHsl(r, g, b) {
+        r /= 255; g /= 255; b /= 255;
+        let max = Math.max(r,g,b), min = Math.min(r,g,b), h, s, l = (max+min)/2;
+        if (max === min) { h = s = 0; }
+        else {
+            let d = max - min;
+            s = l > 0.5 ? d/(2-max-min) : d/(max+min);
+            switch(max) {
+                case r: h = ((g-b)/d + (g<b?6:0))/6; break;
+                case g: h = ((b-r)/d + 2)/6; break;
+                case b: h = ((r-g)/d + 4)/6; break;
+            }
+        }
+        return [h*360, s*100, l*100];
+    }
+
+    function hslToHex(h, s, l) {
+        h /= 360; s /= 100; l /= 100;
+        let r, g, b;
+        if (s === 0) { r = g = b = l; }
+        else {
+            const q = l < 0.5 ? l*(1+s) : l+s-l*s, p = 2*l-q;
+            const hue2rgb = (p,q,t) => { if(t<0)t+=1; if(t>1)t-=1; if(t<1/6)return p+(q-p)*6*t; if(t<1/2)return q; if(t<2/3)return p+(q-p)*(2/3-t)*6; return p; };
+            r = hue2rgb(p,q,h+1/3); g = hue2rgb(p,q,h); b = hue2rgb(p,q,h-1/3);
+        }
+        return '#' + [r,g,b].map(x=>Math.round(x*255).toString(16).padStart(2,'0')).join('');
+    }
+
+    function updateBgSwatches() {
+        let [r,g,b] = hexToRgb(keyColor);
+        let [h, s] = rgbToHsl(r, g, b);
+        // 5 tonal suggestions: very light → light → mid-dark → dark → very dark
+        const tones = [
+            [h, Math.min(s*0.25, 20), 97],   // near-white surface
+            [h, Math.min(s*0.4, 35),  88],   // light tint
+            [h, Math.min(s*0.5, 45),  75],   // medium tint
+            [h, Math.min(s*0.5, 40),  20],   // dark
+            [h, Math.min(s*0.3, 25),  10],   // very dark
+        ];
+        let container = document.getElementById('bg-swatches');
+        container.innerHTML = '';
+        tones.forEach(([th, ts, tl]) => {
+            let hex = hslToHex(th, ts, tl);
+            let sw = document.createElement('div');
+            sw.style.cssText = `width:28px;height:20px;background:${hex};border:1px solid #ccc;cursor:pointer;border-radius:2px;`;
+            sw.title = hex;
+            sw.onclick = () => applyBg(hex);
+            container.appendChild(sw);
+        });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => { init(); updateBgSwatches(); });
+    </script>
 </body>
 </html>
