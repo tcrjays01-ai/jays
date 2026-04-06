@@ -148,6 +148,53 @@
             width: 28px; height: 22px; border: 1px solid #ccc;
             padding: 1px; cursor: pointer; background: none;
         }
+
+        /* Premium BACK Button Styling */
+        #btn-home {
+            background: transparent;
+            color: #000;
+            border: 1px solid #000;
+            padding: 14px 28px;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            backdrop-filter: blur(10px);
+            border-radius: 2px;
+            z-index: 1;
+        }
+        #btn-home::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: #000;
+            transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+            z-index: -1;
+        }
+        #btn-home:hover {
+            color: #fff;
+            padding-left: 34px;
+            padding-right: 22px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+        #btn-home:hover::before {
+            left: 0;
+        }
+        #btn-home span {
+            transition: transform 0.3s ease;
+            display: inline-block;
+        }
+        #btn-home:hover span {
+            transform: translateX(-5px);
+        }
         #color-hex { font-size: 10px; font-weight: 800; letter-spacing: 1px; }
         .ctrl-inline input[type="checkbox"] {
             width: 14px; height: 14px; accent-color: #0000FF; cursor: pointer;
@@ -218,7 +265,7 @@
     </div>
     
     <div id="controls-container" style="display:none;">
-        <button id="btn-home" onclick="returnToMenu()">← BACK</button>
+        <button id="btn-home" onclick="returnToMenu()"><span>←</span> BACK</button>
         <button id="webcam-toggle" onclick="toggleWebcam()">⚡ HAND CONTROL: OFF</button>
         <button id="record-btn" onclick="toggleRecording()">⏺ REC VIDEO</button>
     </div>
@@ -419,15 +466,38 @@ WE ARE COSMIC</textarea>
     function setTheme(mode) {
         let btnW = document.getElementById('btn-white');
         let btnB = document.getElementById('btn-black');
+        let btnHome = document.getElementById('btn-home');
+        
         if (mode === 'black') {
             btnB.style.background = '#000'; btnB.style.color = '#FFF';
             btnW.style.background = '#FFF'; btnW.style.color = '#000';
             bgColor = '#000000'; colorZ2 = '#000000'; colorZ3 = '#606060'; colorZ4 = '#FFFFFF'; colorText = '#FFFFFF';
+            if (btnHome) {
+                btnHome.style.borderColor = '#FFF';
+                btnHome.style.color = '#FFF';
+            }
         } else {
             btnW.style.background = '#000'; btnW.style.color = '#FFF';
             btnB.style.background = '#FFF'; btnB.style.color = '#000';
             bgColor = '#FFFFFF'; colorZ2 = '#FFFFFF'; colorZ3 = '#808080'; colorZ4 = '#000000'; colorText = '#000000';
+            if (btnHome) {
+                btnHome.style.borderColor = '#000';
+                btnHome.style.color = '#000';
+            }
         }
+        
+        // Re-use or create theme style tag for dynamic hover effects
+        let themeStyles = document.getElementById('dynamic-theme-styles');
+        if (!themeStyles) {
+            themeStyles = document.createElement('style');
+            themeStyles.id = 'dynamic-theme-styles';
+            document.head.appendChild(themeStyles);
+        }
+        themeStyles.innerHTML = `
+            #btn-home::before { background: ${colorText} !important; }
+            #btn-home:hover { color: ${bgColor} !important; }
+        `;
+        
         document.getElementById('ctrl-bg').value = bgColor;
         document.getElementById('bg-hex').textContent = bgColor.toUpperCase();
         document.getElementById('ctrl-col-z2').value = colorZ2;
