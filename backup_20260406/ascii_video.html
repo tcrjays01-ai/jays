@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy Zero Phase 2 - Video ASCII Art</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #010103;
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* UI Overlay for Video Loading and Controls */
+        #ui-layer {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            color: #0000FF;
+            text-align: center;
+            background: rgba(0, 0, 5, 0.85);
+            padding: 30px;
+            border: 1px solid #0000FF;
+            box-shadow: 0 0 20px rgba(0, 0, 255, 0.4);
+            border-radius: 8px;
+            pointer-events: auto; /* Allow clicking here */
+        }
+        
+        #ui-layer button {
+            background-color: transparent;
+            color: #0000FF;
+            border: 1px solid #0000FF;
+            padding: 10px 20px;
+            margin-top: 15px;
+            font-family: 'Courier New', Courier, monospace;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #ui-layer button:hover {
+            background-color: #0000FF;
+            color: #010103;
+        }
+
+        /* CRT Effects: Scanlines & Vignette */
+        #crt-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 10;
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%, 
+                rgba(0, 0, 0, 0.25) 50%), 
+                linear-gradient(90deg, 
+                rgba(255, 0, 0, 0.03), 
+                rgba(0, 255, 0, 0.01), 
+                rgba(0, 0, 255, 0.03));
+            background-size: 100% 4px, 6px 100%;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            filter: drop-shadow(0px 0px 4px rgba(0, 0, 255, 0.4));
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+    <!-- p5.js via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div id="crt-overlay"></div>
+    
+    <!-- UI layer to handle CORS/Local Video Load blocks robustly -->
+    <div id="ui-layer">
+        <h2 id="status">Loading choi.mp4...</h2>
+        <p id="sub-status" style="font-size: 0.9em; opacity: 0.7;">If the video doesn't load within 3 seconds, your browser is blocking local file access (CORS).</p>
+        <input type="file" id="videoUpload" accept="video/mp4,video/webm" style="display:none;" />
+        <button id="uploadBtn" onclick="document.getElementById('videoUpload').click()" style="display:none;">Select choi.mp4 Manually</button>
+        <button id="playBtn" onclick="startVideo()" style="display:none;">Click to Play</button>
+    </div>
+
+    <script>
+        const CELL_SIZE = 12;
+        let cols, rows;
+        let offscreenCanvas; // Downscaled layout
+        let video;
+        let isVideoReady = false;
+
+        const charsBlock = ' .:░▒▓█';
+        const charsText = ' .YRATONEWE'; // WE ARE NOT RAY
+        let currentChars = charsBlock;
+        let isTextMode = false;
+
+        let currentPaletteIdx = 0;
+        const palettes = [
+            { // 1. Main: Pure Blue
+                bg: [1, 2, 4], c1: [8, 8, 26], c2: [13, 13, 58], c3: [26, 26, 110], peak: [0, 0, 255], glow: [80, 80, 255]
+            },
+            { // 2. Navy -> Cobalt
+                bg: [0, 0, 5], c1: [2, 5, 24], c2: [5, 10, 46], c3: [10, 20, 92], peak: [0, 0, 255], glow: [80, 80, 255]
+            },
+            { // 3. Indigo / Deep Blue
+                bg: [2, 0, 5], c1: [10, 4, 24], c2: [20, 8, 51], c3: [40, 16, 102], peak: [0, 0, 255], glow: [80, 80, 255]
+            }
+        ];
+
+        function setup() {
+            let canvas = createCanvas(windowWidth, windowHeight);
+            canvas.parent('canvas-container');
+            
+            calcGrid();
+            
+            textFont('Courier New');
+            textSize(CELL_SIZE);
+            textAlign(CENTER, CENTER);
+            noStroke();
+
+            // Try loading local choi.mp4 automatically
+            video = createVideo(['choi.mp4'], onVideoLoadSuccess);
+            video.hide(); // Hide raw DOM element
+            video.volume(0); // Mute for autoplay
+
+            // Timeout check for strict CORS / local file block
+            setTimeout(() => {
+                if (!isVideoReady) {
+                    document.getElementById('status').innerText = 'Local Access Blocked (CORS) 🚫';
+                    document.getElementById('sub-status').innerText = 'Please select the file manually to bypass security limits.';
+                    document.getElementById('uploadBtn').style.display = 'inline-block';
+                }
+            }, 2500);
+        }
+
+        function onVideoLoadSuccess() {
+            isVideoReady = true;
+            document.getElementById('status').innerText = 'Video Ready! 🎬';
+            document.getElementById('sub-status').innerText = 'Click to start generative process.';
+            document.getElementById('uploadBtn').style.display = 'none';
+            document.getElementById('playBtn').style.display = 'inline-block';
+        }
+
+        function startVideo() {
+            document.getElementById('ui-layer').style.display = 'none';
+            video.loop();
+        }
+
+        // File upload fallback handling
+        document.getElementById('videoUpload').addEventListener('change', function(e) {
+            let file = e.target.files[0];
+            if (file) {
+                let fileURL = URL.createObjectURL(file);
+                if (video) video.remove();
+                video = createVideo([fileURL], () => {
+                    isVideoReady = true;
+                    startVideo();
+                });
+                video.hide();
+                video.volume(0);
+            }
+        });
+
+        function calcGrid() {
+            cols = floor(width / CELL_SIZE) + 1;
+            rows = floor(height / CELL_SIZE) + 1;
+            // Create offscreen canvas mirroring the grid size exactly for 1:1 downscaling
+            offscreenCanvas = createGraphics(cols, rows);
+            offscreenCanvas.pixelDensity(1); 
+        }
+
+        function draw() {
+            let p = palettes[currentPaletteIdx];
+            background(p.bg[0], p.bg[1], p.bg[2]);
+
+            // Initial load gate only — not re-checked during loop transitions
+            if (!isVideoReady) {
+                fill(p.c2[0], p.c2[1], p.c2[2]);
+                text("LOADING / WAITING FOR START...", width/2, height/2);
+                return;
+            }
+
+            // Skip frame update during brief loop-transition stalls,
+            // keeping the offscreen canvas at the last valid frame (no black flash)
+            if (video.elt.readyState < 2) return;
+
+            // Draw video to downscaled 1pixel/cell offscreen canvas
+            // Using cover scaling logic to fill the screen without extreme stretching
+            let vRatio = video.width / video.height;
+            let cRatio = cols / rows;
+            let drawW, drawH, drawX, drawY;
+
+            if (cRatio > vRatio) {
+                // Canvas wider than video
+                drawW = cols;
+                drawH = cols / vRatio;
+                drawX = 0;
+                drawY = (rows - drawH) / 2;
+            } else {
+                // Video wider than canvas
+                drawH = rows;
+                drawW = rows * vRatio;
+                drawY = 0;
+                drawX = (cols - drawW) / 2;
+            }
+
+            // No background(0) clear — last valid frame persists during loop stall
+            offscreenCanvas.image(video, drawX, drawY, drawW, drawH);
+            offscreenCanvas.loadPixels();
+
+            // Iterate over the cell grid
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    let index = (i + j * cols) * 4;
+                    // Read pixel RGB from offscreen
+                    let rPix = offscreenCanvas.pixels[index + 0];
+                    let gPix = offscreenCanvas.pixels[index + 1];
+                    let bPix = offscreenCanvas.pixels[index + 2];
+                    
+                    // Convert to CCIR 601 Luminance
+                    let luma = (0.299 * rPix + 0.587 * gPix + 0.114 * bPix) / 255.0;
+
+                    // Aesthetic modifications (Contrast adjustments analogous to Phase 1)
+                    let val = luma;
+                    val -= 0.1; // Darken global response threshold to simulate noise gating
+                    val = constrain(val, 0, 1);
+                    val = pow(val, 1.4); // Steep contrast curve
+
+                    // Optimization: Skip empty black space
+                    if (val < 0.01) continue;
+
+                    let x = i * CELL_SIZE;
+                    let y = j * CELL_SIZE;
+
+                    // --- Character Mapping ---
+                    let charIndex = floor(val * (currentChars.length - 1));
+                    charIndex = constrain(charIndex, 0, currentChars.length - 1);
+                    let displayChar = currentChars.charAt(charIndex);
+
+                    // --- Color Mapping ---
+                    let r, g, b;
+                    if (val < 0.25) {
+                        let amount = val * 4; 
+                        r = map(amount, 0, 1, p.bg[0], p.c1[0]);
+                        g = map(amount, 0, 1, p.bg[1], p.c1[1]);
+                        b = map(amount, 0, 1, p.bg[2], p.c1[2]);
+                    } else if (val < 0.5) {
+                        let amount = (val - 0.25) * 4;
+                        r = map(amount, 0, 1, p.c1[0], p.c2[0]);
+                        g = map(amount, 0, 1, p.c1[1], p.c2[1]);
+                        b = map(amount, 0, 1, p.c1[2], p.c2[2]);
+                    } else if (val < 0.75) {
+                        let amount = (val - 0.5) * 4;
+                        r = map(amount, 0, 1, p.c2[0], p.c3[0]);
+                        g = map(amount, 0, 1, p.c2[1], p.c3[1]);
+                        b = map(amount, 0, 1, p.c2[2], p.c3[2]);
+                    } else if (val < 0.9) {
+                        let amount = (val - 0.75) * 10;
+                        r = map(amount, 0, 1, p.c3[0], p.peak[0]);
+                        g = map(amount, 0, 1, p.c3[1], p.peak[1]);
+                        b = map(amount, 0, 1, p.c3[2], p.peak[2]);
+                    } else {
+                        // Glow peak 
+                        let amount = (val - 0.9) * 10;
+                        r = map(amount, 0, 1, p.peak[0], p.glow[0]);
+                        g = map(amount, 0, 1, p.peak[1], p.glow[1]);
+                        b = map(amount, 0, 1, p.peak[2], p.glow[2]);
+                    }
+
+                    fill(r, g, b);
+                    text(displayChar, x + CELL_SIZE / 2, y + CELL_SIZE / 2);
+                }
+            }
+        }
+
+        // --- Interaction Handlers ---
+        function keyPressed() {
+            if (key === ' ' || keyCode === 32) {
+                isTextMode = !isTextMode;
+                currentChars = isTextMode ? charsText : charsBlock;
+                return false;
+            }
+        }
+
+        function mousePressed(event) {
+            // Ignore if clicking UI
+            if (event.target.tagName !== 'CANVAS') return;
+            currentPaletteIdx = (currentPaletteIdx + 1) % palettes.length;
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+            calcGrid();
+        }
+    </script>
+</body>
+</html>

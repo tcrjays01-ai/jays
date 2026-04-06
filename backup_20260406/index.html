@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>COSMIC</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#000;overflow:hidden;touch-action:none}
+canvas{display:block}
+#hint{
+  position:fixed;bottom:36px;left:50%;transform:translateX(-50%);
+  color:rgba(255,255,255,.45);
+  font:13px/2 'Helvetica Neue',system-ui,sans-serif;
+  letter-spacing:.18em;text-align:center;
+  pointer-events:none;
+  transition:opacity 1.4s ease;
+}
+#hint.hide{opacity:0}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hint">CLICK TO EXPLORE THE UNIVERSE</div>
+<script>
+'use strict';
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   WebGL setup
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const canvas = document.getElementById('c');
+const hint   = document.getElementById('hint');
+const gl     = canvas.getContext('webgl', {
+  antialias: false, alpha: false, powerPreference: 'high-performance'
+});
+if (!gl) {
+  document.body.innerHTML =
+    '<p style="color:#fff;padding:2rem;font-family:sans-serif">WebGL이 지원되지 않습니다.</p>';
+  throw 0;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Vertex shader – fullscreen quad
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const VS = `
+attribute vec2 a;
+void main(){ gl_Position = vec4(a, 0.0, 1.0); }
+`;
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Fragment shader – all visual logic on GPU
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const FS = `
+precision highp float;
+
+uniform vec2  u_res;
+uniform float u_t;
+uniform vec2  u_big;
+uniform float u_bigR;
+uniform vec2  u_sm[8];
+uniform float u_smR[8];
+uniform float u_phase;
+uniform float u_flash;
+
+const float TAU = 6.28318530718;
+
+/* ── Polynomial smooth-min (IQ) ─────────────────────────── */
+float smin(float a, float b, float k){
+  float h = clamp(0.5 + 0.5*(b-a)/k, 0.0, 1.0);
+  return mix(b, a, h) - k*h*(1.0-h);
+}
+
+/* ── Compact HSV → RGB ───────────────────────────────────── */
+vec3 hsv(float h, float s, float v){
+  h = fract(h);
+  vec3 p = abs(fract(h + vec3(0.0,2.0,1.0)/3.0)*6.0 - 3.0);
+  return v * mix(vec3(1.0), clamp(p-1.0,0.0,1.0), s);
+}
+
+void main(){
+  vec2 px = gl_FragCoord.xy;
+
+  /* ── Metaball SDF ──────────────────────────────────────── */
+  float d = length(px - u_big) - u_bigR;
+  float k = u_bigR * 0.20;
+  d = smin(d, length(px-u_sm[0])-u_smR[0], k);
+  d = smin(d, length(px-u_sm[1])-u_smR[1], k);
+  d = smin(d, length(px-u_sm[2])-u_smR[2], k);
+  d = smin(d, length(px-u_sm[3])-u_smR[3], k);
+  d = smin(d, length(px-u_sm[4])-u_smR[4], k);
+  d = smin(d, length(px-u_sm[5])-u_smR[5], k);
+  d = smin(d, length(px-u_sm[6])-u_smR[6], k);
+  d = smin(d, length(px-u_sm[7])-u_smR[7], k);
+
+  float glowW = u_bigR * 0.13;
+  if(d > glowW){ gl_FragColor = vec4(0.0,0.0,0.0,1.0); return; }
+
+  vec2 uv = (px - u_big) / u_bigR;   /* -1 ~ +1 inside sphere */
+  float T  = u_t;
+  float ph = u_phase;
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     FAKE SPHERE NORMAL
+     Reference images = 3 colored spotlights on a matte sphere.
+     We derive a hemisphere normal to compute Lambertian + Fresnel.
+     N.z = 1 at center (facing viewer), 0 at edge (grazing).
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  float zcomp = sqrt(max(0.0, 1.0 - dot(uv, uv)));
+  vec3  N     = normalize(vec3(uv, zcomp));
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     4 COLORED LAMBERTIAN LIGHTS — LISSAJOUS ORBITS
+     문제: 같은 속도 원형 공전 → 색상환이 돌아가는 느낌
+     해결: X/Y 주파수를 달리한 리사주 궤도 → 비주기적, 유기적
+     각 조명의 Hue도 독립적으로 드리프트 → 기계적 feel 제거
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  float phBase = ph * 0.618;
+
+  /* Lissajous: X주파수 ≠ Y주파수 → 타원+세차운동, 비반복 궤도  */
+  vec3 L1 = normalize(vec3(
+    cos(T*0.110 + phBase)         * 0.55,
+    sin(T*0.097 + phBase + 0.50)  * 0.50,
+    0.42));
+  vec3 L2 = normalize(vec3(
+    cos(T*0.073 + phBase + 2.09)  * 0.52,
+    sin(T*0.061 + phBase + 1.32)  * 0.55,
+    0.38));
+  vec3 L3 = normalize(vec3(
+    cos(T*0.089 + phBase + 4.19)  * 0.48,
+    sin(T*0.079 + phBase + 2.74)  * 0.48,
+    0.45));
+  vec3 L4 = normalize(vec3(
+    cos(T*0.057 + phBase + 3.33)  * 0.40,
+    sin(T*0.068 + phBase + 0.88)  * 0.44,
+    0.50));
+
+  /* Lambertian (power 1.0 → 더 넓고 부드러운 색상 존)           */
+  float i1 = max(0.0, dot(N, L1));
+  float i2 = max(0.0, dot(N, L2));
+  float i3 = max(0.0, dot(N, L3));
+  float i4 = max(0.0, dot(N, L4));
+
+  /* 각 조명 Hue: 서로 독립적 속도로 드리프트 (색상환 고정 방지)  */
+  float h1 = phBase + T * 0.009;
+  float h2 = phBase + T * 0.013 + 0.28;
+  float h3 = phBase + T * 0.007 + 0.55;
+  float h4 = phBase + T * 0.011 + 0.77;
+
+  /* 채도 breathing: 각 조명 독립 위상 → 더 유기적                */
+  float b1 = 0.80 + 0.20*sin(T*0.37 + ph*0.5);
+  float b2 = 0.82 + 0.18*sin(T*0.29 + ph*0.5 + 1.1);
+  float b3 = 0.78 + 0.22*sin(T*0.43 + ph*0.5 + 2.3);
+  float b4 = 0.84 + 0.16*sin(T*0.33 + ph*0.5 + 0.7);
+
+  vec3 col = hsv(h1, 1.0, i1*b1)
+           + hsv(h2, 1.0, i2*b2)
+           + hsv(h3, 1.0, i3*b3)
+           + hsv(h4, 0.8, i4*b4*0.6);  /* 4번째는 약하게 */
+
+  /* 극 암부 방지 ambient (매우 약하게)                            */
+  col += hsv(h1 + 0.5, 0.5, 0.04);
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     FRESNEL RIM  (physically correct via N.z)
+     At sphere edge N.z → 0, so fresnel → 1 (bright rim).
+     At sphere center N.z = 1, so fresnel → 0 (no rim).
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  float fresnel = pow(max(0.0, 1.0 - N.z), 3.5);
+
+  /* Rim color: neon rainbow cycling around circumference      */
+  float ang = atan(uv.y, uv.x);
+  float rh  = base * 0.5 + ang * 0.159 + T * 0.09;
+  vec3 rimA   = hsv(rh,        1.0, 3.2);
+  vec3 rimB   = hsv(rh + 0.12, 1.0, 3.8);
+  vec3 rimCol = mix(rimA, rimB, 0.5 + 0.5*sin(ang*2.5 + T*1.8));
+
+  /* Absorption flash                                           */
+  rimCol += vec3(u_flash * 2.5);
+  col    += vec3(u_flash * 0.35);
+
+  /* ── Outside glow ──────────────────────────────────────── */
+  if(d >= 0.0){
+    float g = pow(max(1.0 - d/glowW, 0.0), 2.5);
+    vec3 glowC = rimCol * g * 0.45;
+    glowC = glowC / (glowC + 0.9);
+    gl_FragColor = vec4(glowC, 1.0);
+    return;
+  }
+
+  /* ── Additive Fresnel rim ───────────────────────────────── */
+  col = col + rimCol * fresnel * 1.9;
+
+  /* ── Tone map + gamma ───────────────────────────────────── */
+  col = col / (col + 0.68);
+  col = pow(max(col, vec3(0.0)), vec3(0.88));
+
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Compile & link
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function mkShader(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+    console.error('Shader error:', gl.getShaderInfoLog(s));
+  return s;
+}
+const prog = gl.createProgram();
+gl.attachShader(prog, mkShader(gl.VERTEX_SHADER, VS));
+gl.attachShader(prog, mkShader(gl.FRAGMENT_SHADER, FS));
+gl.linkProgram(prog);
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS))
+  console.error('Link error:', gl.getProgramInfoLog(prog));
+gl.useProgram(prog);
+
+/* Fullscreen quad (2 triangles) */
+const vbuf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, vbuf);
+gl.bufferData(gl.ARRAY_BUFFER,
+  new Float32Array([-1,-1, 1,-1, -1,1,  -1,1, 1,-1, 1,1]),
+  gl.STATIC_DRAW);
+const aLoc = gl.getAttribLocation(prog, 'a');
+gl.enableVertexAttribArray(aLoc);
+gl.vertexAttribPointer(aLoc, 2, gl.FLOAT, false, 0, 0);
+
+/* Cache uniform locations */
+const U = {};
+'u_res u_t u_big u_bigR u_sm u_smR u_phase u_flash'
+  .split(' ').forEach(n => U[n] = gl.getUniformLocation(prog, n));
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Simulation state
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const MAX_SMALL = 8;
+const smPos = new Float32Array(MAX_SMALL * 2); /* pre-alloc     */
+const smRad = new Float32Array(MAX_SMALL);
+
+let smalls  = [];   /* active small circles                     */
+let phase   = 0.0;  /* increments on each absorption            */
+let flash   = 0.0;  /* 1→0 decay after absorption               */
+let bigX    = 0, bigY = 0, bigR = 1;
+let floatT  = 0;    /* independent time for floating motion      */
+let interacted = false;
+const t0 = performance.now();
+
+/* ── Resize ──────────────────────────────────────────────── */
+function resize() {
+  canvas.width  = innerWidth;
+  canvas.height = innerHeight;
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  bigR = Math.min(canvas.width, canvas.height) * 0.315;
+}
+addEventListener('resize', resize);
+resize();
+
+/* ── Lissajous floating position ─────────────────────────── */
+function floatPos(t) {
+  const W = canvas.width, H = canvas.height;
+  /* Two overlapping sine waves per axis → organic drift      */
+  const x = W*0.5 + Math.sin(t*0.130)*W*0.085 + Math.sin(t*0.071+1.23)*W*0.032;
+  const y = H*0.5 + Math.cos(t*0.093)*H*0.065 + Math.cos(t*0.110+0.74)*H*0.028;
+  return [x, y];
+}
+
+/* ── Spawn small circle at click/touch ───────────────────── */
+function spawn(clientX, clientY) {
+  if (smalls.length >= MAX_SMALL) return;
+
+  const gx = clientX;
+  const gy = canvas.height - clientY;          /* flip Y → GL  */
+
+  /* Ignore clicks inside the big sphere */
+  if (Math.hypot(gx - bigX, gy - bigY) < bigR * 0.95) return;
+
+  if (!interacted) {
+    interacted = true;
+    hint.classList.add('hide');
+  }
+
+  smalls.push({
+    x: gx, y: gy,
+    r: 0,
+    maxR: 16 + Math.random() * 26,
+    age: 0,
+    state: 'in'   /* 'in' → appears; 'chase' → moves to big   */
+  });
+}
+
+canvas.addEventListener('click',      e => spawn(e.clientX, e.clientY));
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  spawn(t.clientX, t.clientY);
+}, { passive: false });
+
+/* ── Per-frame simulation update ─────────────────────────── */
+function update(dt) {
+  floatT += dt;
+  [bigX, bigY] = floatPos(floatT);
+
+  flash = Math.max(0.0, flash - dt * 3.5);  /* decay flash    */
+
+  smalls = smalls.filter(s => {
+    s.age += dt;
+
+    if (s.state === 'in') {
+      /* Pop-in with slight elastic overshoot */
+      const p = Math.min(1.0, s.age / 0.22);
+      const eased = p < 0.7
+        ? (p / 0.7)
+        : 1.0 + Math.sin((p - 0.7) / 0.3 * Math.PI) * 0.13;
+      s.r = s.maxR * eased;
+      if (s.age > 0.22) s.state = 'chase';
+      return true;
+    }
+
+    /* Chase: accelerate toward big circle */
+    const dx = bigX - s.x, dy = bigY - s.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 1) { onAbsorb(); return false; }
+
+    /* Eased speed: faster as it closes in */
+    const spd = 60 + Math.max(0, bigR * 1.5 - dist) * 1.5;
+    s.x += (dx / dist) * spd * dt;
+    s.y += (dy / dist) * spd * dt;
+
+    /* Shrink radius as it enters the big sphere */
+    const enterZone = bigR * 0.55;
+    if (dist < enterZone) {
+      s.r = s.maxR * Math.max(0, dist / enterZone);
+    }
+
+    /* Absorb threshold */
+    if (dist < bigR * 0.065) { onAbsorb(); return false; }
+    return true;
+  });
+}
+
+function onAbsorb() {
+  /* Golden-ratio step keeps palette shifts visually distinct  */
+  phase += 0.09 + Math.random() * 0.07;
+  flash  = 1.0;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Render loop
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function frame(now) {
+  const elapsed = (now - t0) * 0.001;
+  const dt = Math.min((now - (frame._prev || now)) * 0.001, 0.05);
+  frame._prev = now;
+
+  update(dt);
+
+  /* Pack small-circle data into flat typed arrays            */
+  smPos.fill(0);
+  smRad.fill(-9999);   /* negative radius → SDF always huge+  */
+  const n = Math.min(smalls.length, MAX_SMALL);
+  for (let i = 0; i < n; i++) {
+    smPos[i * 2]     = smalls[i].x;
+    smPos[i * 2 + 1] = smalls[i].y;
+    smRad[i]         = smalls[i].r;
+  }
+
+  /* Upload uniforms */
+  gl.uniform2f(U.u_res,   canvas.width, canvas.height);
+  gl.uniform1f(U.u_t,     elapsed);
+  gl.uniform2f(U.u_big,   bigX, bigY);
+  gl.uniform1f(U.u_bigR,  bigR);
+  gl.uniform2fv(U.u_sm,   smPos);
+  gl.uniform1fv(U.u_smR,  smRad);
+  gl.uniform1f(U.u_phase, phase);
+  gl.uniform1f(U.u_flash, flash);
+
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

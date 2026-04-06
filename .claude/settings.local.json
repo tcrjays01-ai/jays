@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:iquilezles.org)",
+      "WebFetch(domain:blog.form.dev)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:www.shadertoy.com)",
+      "WebFetch(domain:tympanus.net)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:thebookofshaders.com)",
+      "WebFetch(domain:offscreencanvas.com)",
+      "WebFetch(domain:greentec.github.io)",
+      "WebFetch(domain:alexharri.com)",
+      "WebFetch(domain:godotshaders.com)",
+      "WebFetch(domain:gameidea.org)",
+      "WebFetch(domain:kylehalladay.com)",
+      "WebFetch(domain:blog.frost.kiwi)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(powershell -Command \":*)",
+      "Bash(start chrome:*)",
+      "Bash(start msedge:*)"
+    ]
+  }
+}

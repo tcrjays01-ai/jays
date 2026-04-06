@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy Zero - ASCII Generative Art</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #010103;
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* 
+         * CRT Effects: Scanlines & Vignette
+         * Applied via CSS overlay for performance over canvas drawing.
+         */
+        #crt-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 10;
+            /* Scanlines */
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%, 
+                rgba(0, 0, 0, 0.25) 50%), 
+                linear-gradient(90deg, 
+                rgba(255, 0, 0, 0.03), 
+                rgba(0, 255, 0, 0.01), 
+                rgba(0, 0, 255, 0.03));
+            background-size: 100% 4px, 6px 100%;
+            /* Vignette */
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+        }
+
+        /* Canvas Wrapper */
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            /* Global glow effect (simulating bloom) */
+            filter: drop-shadow(0px 0px 4px rgba(0, 0, 255, 0.4));
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+    <!-- p5.js via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div id="crt-overlay"></div>
+
+    <script>
+        const CELL_SIZE = 12;
+        let cols, rows;
+        let zoff = 0; // Z-axis noise offset (time)
+
+        // Character Sets (ordered by visual weight: ascending)
+        const charsBlock = ' .:░▒▓█';
+        const charsText = ' .YRATONEWE'; // WE ARE NOT RAY
+        let currentChars = charsBlock;
+        let isTextMode = false;
+
+        // Palettes configuration 
+        let currentPaletteIdx = 0;
+        const palettes = [
+            { // 1. Main: Pure Blue Base (#0000FF target)
+                bg: [1, 2, 4],       // #010204 
+                c1: [8, 8, 26],      // #08081a
+                c2: [13, 13, 58],    // #0d0d3a
+                c3: [26, 26, 110],   // #1a1a6e
+                peak: [0, 0, 255],   // #0000FF (Highlight)
+                glow: [80, 80, 255]  // #5050FF
+            },
+            { // 2. Navy -> Cobalt (Deeper, heavier midtones, No Cyan)
+                bg: [0, 0, 5],       // Near Black Navy
+                c1: [2, 5, 24],      // Deep Navy (#020518)
+                c2: [5, 10, 46],     // Heavy Mid (#050a2e)
+                c3: [10, 20, 92],    // Cobalt Base (#0a145c)
+                peak: [0, 0, 255],   // Highlight
+                glow: [80, 80, 255]
+            },
+            { // 3. Indigo / Deep Blue (Subtle violet touch in darks, No Teal)
+                bg: [2, 0, 5],       // Near Black Indigo
+                c1: [10, 4, 24],     // Deep Indigo (#0a0418)
+                c2: [20, 8, 51],     // Subtly Violet Mid (#140833)
+                c3: [40, 16, 102],   // Bright Indigo (#281066)
+                peak: [0, 0, 255],   // Highlight
+                glow: [80, 80, 255]
+            }
+        ];
+
+        let targetTx = 0;
+        let targetTy = 0;
+        let currentTx = 0;
+        let currentTy = 0;
+
+        function setup() {
+            let canvas = createCanvas(windowWidth, windowHeight);
+            canvas.parent('canvas-container');
+            
+            calcGrid();
+            
+            textFont('Courier New'); // Monospace requirement
+            textSize(CELL_SIZE);
+            textAlign(CENTER, CENTER);
+            noStroke();
+        }
+
+        function calcGrid() {
+            cols = floor(width / CELL_SIZE) + 1;
+            rows = floor(height / CELL_SIZE) + 1;
+        }
+
+        function draw() {
+            let p = palettes[currentPaletteIdx];
+            
+            // Solid background clean
+            background(p.bg[0], p.bg[1], p.bg[2]);
+
+            // Smooth mouse tracking interpolation
+            targetTx = (mouseX - width/2) * 0.05;
+            targetTy = (mouseY - height/2) * 0.05;
+            currentTx = lerp(currentTx, targetTx, 0.05);
+            currentTy = lerp(currentTy, targetTy, 0.05);
+
+            let maxDistDistSq = (width*width + height*height) * 0.5;
+
+            // Iterate over the cell grid
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    let x = i * CELL_SIZE;
+                    let y = j * CELL_SIZE;
+
+                    let cx = (x - width / 2) / width;
+                    let cy = (y - height / 2) / height;
+
+                    let nx = i * 0.03;
+                    let ny = j * 0.03;
+
+                    // Form 1: Mouse tracking pool
+                    let dx = mouseX - x;
+                    let dy = mouseY - y;
+                    let distSq = dx*dx + dy*dy;
+                    let mouseInf = map(distSq, 0, maxDistDistSq, 1.2, 0, true);
+
+                    // Form 2: Flowing noise fields via Perlin
+                    let n1 = noise(nx + currentTx, ny + currentTy, zoff);
+                    // Slow counter-flowing wave
+                    let n2 = noise(nx * 0.6 - zoff * 0.3, ny * 0.6 + zoff * 0.2, zoff * 0.8);
+                    
+                    // Form 3: Subtle energetic spiral ripples
+                    let angle = atan2(cy, cx);
+                    // Using distance to center for spiral
+                    let distCenter = dist(width/2, height/2, x, y);
+                    let spiral = sin(angle * 4 + distCenter * 0.01 - zoff * 3) * 0.5 + 0.5;
+
+                    // Combine forces
+                    let val = (n1 * 0.55) + (n2 * 0.25) + (spiral * 0.1) + (mouseInf * 0.4);
+                    
+                    // Threshold and contrast
+                    val -= 0.15; // Darken global field
+                    val = constrain(val, 0, 1);
+                    val = pow(val, 1.6); // Higher power means steeper contrast curve
+
+                    // Optimization: Skip empty black space
+                    if (val < 0.01) continue;
+
+                    // --- Character Mapping ---
+                    let charIndex = floor(val * (currentChars.length - 1));
+                    charIndex = constrain(charIndex, 0, currentChars.length - 1);
+                    let displayChar = currentChars.charAt(charIndex);
+
+                    // --- Color Mapping (LUT interpolated style) ---
+                    let r, g, b;
+                    if (val < 0.25) {
+                        let amount = val * 4; 
+                        r = map(amount, 0, 1, p.bg[0], p.c1[0]);
+                        g = map(amount, 0, 1, p.bg[1], p.c1[1]);
+                        b = map(amount, 0, 1, p.bg[2], p.c1[2]);
+                    } else if (val < 0.5) {
+                        let amount = (val - 0.25) * 4;
+                        r = map(amount, 0, 1, p.c1[0], p.c2[0]);
+                        g = map(amount, 0, 1, p.c1[1], p.c2[1]);
+                        b = map(amount, 0, 1, p.c1[2], p.c2[2]);
+                    } else if (val < 0.75) {
+                        let amount = (val - 0.5) * 4;
+                        r = map(amount, 0, 1, p.c2[0], p.c3[0]);
+                        g = map(amount, 0, 1, p.c2[1], p.c3[1]);
+                        b = map(amount, 0, 1, p.c2[2], p.c3[2]);
+                    } else if (val < 0.9) {
+                        let amount = (val - 0.75) * 10;
+                        r = map(amount, 0, 1, p.c3[0], p.peak[0]);
+                        g = map(amount, 0, 1, p.c3[1], p.peak[1]);
+                        b = map(amount, 0, 1, p.c3[2], p.peak[2]);
+                    } else {
+                        // Beyond 0.9 -> Bloom / Glow peak 
+                        let amount = (val - 0.9) * 10;
+                        r = map(amount, 0, 1, p.peak[0], p.glow[0]);
+                        g = map(amount, 0, 1, p.peak[1], p.glow[1]);
+                        b = map(amount, 0, 1, p.peak[2], p.glow[2]);
+                    }
+
+                    fill(r, g, b);
+                    // +CELL_SIZE/2 to align center due to textAlign(CENTER, CENTER)
+                    text(displayChar, x + CELL_SIZE / 2, y + CELL_SIZE / 2);
+                }
+            }
+
+            zoff += 0.005; // Advance global time
+        }
+
+        // --- Interaction Handlers ---
+        
+        function keyPressed() {
+            // Spacebar = 32
+            if (key === ' ' || keyCode === 32) {
+                isTextMode = !isTextMode;
+                currentChars = isTextMode ? charsText : charsBlock;
+                // Prevent scrolling when pressing space within browser
+                return false;
+            }
+        }
+
+        function mousePressed() {
+            // Cycle pallets on click
+            currentPaletteIdx = (currentPaletteIdx + 1) % palettes.length;
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+            calcGrid();
+        }
+    </script>
+</body>
+</html>

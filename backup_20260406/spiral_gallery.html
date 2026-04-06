@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Interactive Flying Spiral Gallery</title>
+    <style>
+        /* 
+        ========================================================================
+        🎨 1. COMPOSITION SETTINGS (컴포지션 셋업)
+        ========================================================================
+        끝없이 날아가는 느낌의 딥 블랙 / 네온 다크 컨셉입니다.
+        */
+        :root {
+            --bg-color: #030303;
+            --layer-width: 250px;
+            --layer-height: 380px;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 50% 50%, #111 0%, #000 100%);
+            overflow: hidden; 
+            font-family: 'Inter', sans-serif;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 
+        ========================================================================
+        🎥 2. CAMERA SETUP (카메라 시야 & 무한 뎁스)
+        ========================================================================
+        아주 깊은 시야각(Perspective)을 설정합니다.
+        */
+        #MainComp {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 800px; /* 약간 왜곡된 광각 렌즈 효과 (터널 느낌 강조) */
+            transform-style: preserve-3d;
+        }
+
+        /* 
+        ========================================================================
+        🎛️ 3. MASTER NULL OBJECT (마스터 카메라 틸팅)
+        ========================================================================
+        마우스 움직임에 반응하여 터널 전체 방향을 틀어줍니다.
+        */
+        #MasterNull {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0; left: 0;
+            transform-style: preserve-3d;
+            /* JS Expression을 통해 마우스 패닝/틸팅이 주입됩니다 */
+        }
+
+        /* 
+        ========================================================================
+        🖼️ 4. 3D LAYERS (나선형 비행 레이어)
+        ========================================================================
+        Z축 뒤쪽에서 앞으로 끊임없이 날아오는 각각의 이미지(면)입니다.
+        */
+        .layer-card {
+            position: absolute;
+            width: var(--layer-width);
+            height: var(--layer-height);
+            top: 50%;
+            left: 50%;
+            margin-top: calc(var(--layer-height) / -2);
+            margin-left: calc(var(--layer-width) / -2);
+            border-radius: 10px;
+            background-color: #222;
+            background-size: cover;
+            background-position: center;
+            
+            /* 네온 후처리 및 입체감 */
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.9), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+            filter: grayscale(0.6) contrast(1.1) brightness(0.8);
+            
+            /* Opacity와 Transform은 JS에서 초당 60픽셀씩 실시간 변화합니다 */
+            transition: filter 0.3s ease, box-shadow 0.3s ease, transform 0.1s linear;
+            cursor: pointer;
+            -webkit-box-reflect: below 5px linear-gradient(transparent 70%, rgba(255,255,255,0.15));
+        }
+
+        /* 오버 시 사이버네틱 활성화 효과 */
+        .layer-card:hover {
+            filter: grayscale(0) contrast(1.2) brightness(1.2);
+            box-shadow: 0 0 60px rgba(0, 255, 200, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+            /* z-index는 3D에서 깨질 수 있으므로 건드리지 않음 */
+        }
+
+        /* UI Overlays */
+        .ui-overlay {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            z-index: 100;
+            pointer-events: none;
+        }
+        .ui-overlay h1 {
+            font-size: 1.2rem;
+            letter-spacing: 5px;
+            margin: 0;
+            font-weight: 200;
+            color: rgba(255,255,255,0.9);
+        }
+        .ui-overlay p {
+            font-size: 0.75rem;
+            color: rgba(0,255,200,0.6);
+            letter-spacing: 2px;
+            margin-top: 8px;
+            text-transform: uppercase;
+        }
+        
+        /* 십자선 (Aim) 레퍼런스 스타일 */
+        .crosshair {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 40px; height: 40px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.3;
+        }
+        .crosshair::before, .crosshair::after {
+            content: '';
+            position: absolute;
+            background: #fff;
+        }
+        .crosshair::before { top: 50%; left: 0; width: 100%; height: 1px; }
+        .crosshair::after { top: 0; left: 50%; width: 1px; height: 100%; }
+
+    </style>
+</head>
+<body>
+
+    <div class="ui-overlay">
+        <h1>EXP 05 / FLYING SPIRAL</h1>
+        <p>Infinite Z-Depth Tunnel Rigid-Body</p>
+    </div>
+    
+    <div class="crosshair"></div>
+
+    <!-- MAIN COMPOSITION -->
+    <div id="MainComp">
+        <!-- MASTER NULL (틸팅 담당) -->
+        <div id="MasterNull">
+            <!-- 3D LAYERS 들이 JS로 여기에 나선형 정렬되어 날아옵니다 -->
+        </div>
+    </div>
+
+    <script>
+        /* 
+        ========================================================================
+        💻 5. INFINITE SPIRAL TUNNEL RIGGING (무한 나선 비행 리깅)
+        ========================================================================
+        카메라 렌즈(내 시야)는 가만히 있고, 
+        나선형으로 배치된 40개의 레이어가 통째로 Z축을 타고 내 쪽으로 날아옵니다.
+        내 뒤로 지나친 레이어는 다시 터널의 맨 끝(깊은 암흑 속)으로 이동하여 무한 비행을 연출합니다.
+        */
+
+        const masterNull = document.getElementById('MasterNull');
+        
+        // --- 셋업 변수 (에펙 컴포지션 세팅) ---
+        const numLayers = 40;            // 레이어 개수 (터널의 길이/밀도)
+        const angleStep = 25;            // 레이어 간 회전 각도 차이 (이 값이 작을수록 촘촘한 코일 형태)
+        const depthStep = 200;           // 레이어 간 Z축 깊이 간격
+        const radius = 600;              // 터널(원기둥)의 반지름 넓이
+        
+        const totalDepth = numLayers * depthStep; // 터널의 총 깊이
+        
+        // 고해상도 더미 이미지
+        const imageUrls = [
+            'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=800&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1550684376-efcbd6e3f031?q=80&w=800&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1518640467707-6811f4a6ab73?q=80&w=800&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?q=80&w=800&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=800&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1550859492-d5da9d8e45f3?q=80&w=800&auto=format&fit=crop',
+            'https://images.unsplash.com/photo-1618172193763-c511deb635ca?q=80&w=800&auto=format&fit=crop'
+        ];
+
+        // 각 레이어의 Data (초기 상태) 배열
+        const layerDataList = [];
+
+        // DOM 생성 및 Data 세팅
+        for (let i = 0; i < numLayers; i++) {
+            const layer = document.createElement('div');
+            layer.className = 'layer-card';
+            layer.style.backgroundImage = `url(${imageUrls[i % imageUrls.length]})`;
+            
+            masterNull.appendChild(layer);
+            
+            // 각 레이어는 자신만의 각도(고유한 Y축 회전)와 고유한 출발 Z값(초기 깊이)을 가집니다.
+            layerDataList.push({
+                el: layer,
+                angle: i * angleStep,       
+                baseZ: -i * depthStep       // 인덱스가 높을수록 화면 안쪽(저 멀리 -Z)에 위치
+            });
+        }
+
+        /* 
+        ========================================================================
+        ⚙️ 6. FLY-IN ANIMATION & MOUSE TRACKING (비행 모션 & 인터랙션)
+        ========================================================================
+        에펙의 타임 익스프레션(time * speed)과 마우스 리깅 데이터 보간(Lerp)입니다.
+        */
+        
+        let globalScrollZ = 0;           // 전진하는 누적 비행 거리
+        const flySpeed = 5;              // 자동 전진 속도 (클수록 터널을 빠르게 통과함)
+        
+        // 뷰어 인터랙션 (마우스 패닝/틸팅용)
+        let targetTiltX = 0;
+        let targetTiltY = 0;
+        let currentTiltX = 0;
+        let currentTiltY = 0;
+        const ease = 0.05; // 부드러운 카메라 텐션
+
+        let mouseX = 0, mouseY = 0;
+        const windowHalfX = window.innerWidth / 2;
+        const windowHalfY = window.innerHeight / 2;
+
+        document.addEventListener('mousemove', (event) => {
+            mouseX = (event.clientX - windowHalfX);
+            mouseY = (event.clientY - windowHalfY);
+            
+            // 마우스를 상하로 움직이면 터널 공간 자체가 위아래로 기울고(Tilt X),
+            // 마우스를 좌우로 움직이면 터널이 좌우로 틀어집니다(Tilt Y)
+            targetTiltX = (mouseY * 0.05);
+            targetTiltY = (mouseX * 0.08) - 15; // 약간 틀어진 채 렌더링 (-15)하여 역동성 강조
+        });
+
+        // Loop Expression (requestAnimationFrame) - 매 1/60초 연산
+        function animate() {
+            // 1. 끝없는 전진 거리 누적
+            // 마우스 Y 위치에 따라 비행 속도(엑셀)를 올릴 수도 있습니다. (레퍼런스 적용)
+            const dynamicSpeed = flySpeed + (mouseY / 200 * flySpeed); 
+            globalScrollZ += dynamicSpeed;
+            
+            // 2. 터널 전체 틸팅(카메라 패닝) 보간
+            currentTiltX += (targetTiltX - currentTiltX) * ease;
+            currentTiltY += (targetTiltY - currentTiltY) * ease;
+            
+            masterNull.style.transform = `rotateX(${currentTiltX}deg) rotateY(${currentTiltY}deg)`;
+
+            // 3. 개별 레이어 Z값 연산 (Tunnel Looping)
+            for (let i = 0; i < numLayers; i++) {
+                const data = layerDataList[i];
+                
+                // 전진 거리를 더해 현재 이 레이어의 Z 위치를 구함
+                let currentZ = data.baseZ + globalScrollZ;
+                
+                // [무한 루프 핵심 수식]
+                // 내 시야(카메라 뒤쪽 +200)를 지나친 경우, 터널 맨 끝(-totalDepth 쪽)으로 강제로 되돌림
+                // 나머지 연산자(%)를 활용하여 Z값이 특정 범위(-totalDepth ~ 일정 양수)를 순환하게 만듭니다.
+                // 래핑 트릭: 양수값이 너무 커지면 -totalDepth 쪽으로 오프셋을 뺌
+                let wrapZ = (currentZ % totalDepth);
+                if (wrapZ > 400) { 
+                    wrapZ -= totalDepth; 
+                } else if (wrapZ < -totalDepth + 400) {
+                    wrapZ += totalDepth;
+                }
+                
+                // 4. 깊이(Depth)에 따른 안개(Fog/Opacity) 처리 연산
+                // 멀리서 나타날 땐 서서히 스르륵 나타나고(Fade-in),
+                // 너무 가까워져서 지나갈 땐 카메라를 찌르기 직전 완전히 사라지게(Fade-out) 만듭니다.
+                let opacity = 1;
+                let blurTarget = 0;
+                
+                const backPlane = -totalDepth + 1000; // 저 멀리 생성되는 소실점 부근
+                const frontPlane = 200;               // 내 눈 앞
+
+                if (wrapZ < backPlane) {
+                    // 멀리 생성되어 나에게 다가오는 중 (페이드 인 구간)
+                    opacity = 1 - Math.abs((wrapZ - backPlane) / 800); 
+                    blurTarget = 5;
+                } else if (wrapZ > frontPlane) {
+                    // 눈앞을 지나쳐 렌즈 밖으로 나가는 중 (페이드 아웃 구간)
+                    opacity = 1 - Math.abs((wrapZ - frontPlane) / 200);
+                    blurTarget = 10;
+                }
+
+                if(opacity < 0) opacity = 0;
+                if(opacity > 1) opacity = 1;
+
+                // 5. 프론트엔드 DOM 주입 (Transform Order: Z방향 뎁스 -> Y회전 -> 반지름 밀어내기)
+                // 이 순서가 에픽 컴포지션의 스파이럴(나선/토네이도)을 만듭니다.
+                data.el.style.transform = `translateZ(${wrapZ}px) rotateY(${data.angle}deg) translateZ(${radius}px)`;
+                data.el.style.opacity = opacity.toFixed(2);
+                
+                // 블러 처리 최적화 (가까워지거나 멀 때 심도 조절)
+                // data.el.style.filter = `blur(${blurTarget}px) grayscale(0.5)`; // 필요 시 활성화 (성능 주의)
+            }
+
+            requestAnimationFrame(animate); 
+        }
+
+        // 렌더링 시작
+        animate();
+
+    </script>
+</body>
+</html>
