@@ -7,6 +7,13 @@
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Anton&family=JetBrains+Mono:wght@400;500;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Silkscreen:wght@400;700&family=VT323&family=Space+Mono:wght@400;700&family=IBM+Plex+Mono:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap');
+        
+        :root {
+            --accent-primary: #0000FF;
+            --accent-container: rgba(0, 0, 255, 0.1);
+            --on-accent-container: #0000FF;
+        }
+
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         body, html {
             width: 100%; height: 100%;
@@ -38,18 +45,29 @@
             position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             z-index: 100; color: #000; text-align: center;
-            background: rgba(255,255,255,0.97);
-            padding: 40px 50px; border: 2px solid #0000FF;
+            background: rgba(255,255,255,1);
+            padding: 50px 70px; border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 30px 60px -12px rgba(0,0,0,0.1);
         }
-        #ui-layer h2 { font-size: 1.1em; letter-spacing: 4px; margin-bottom: 8px; }
-        #ui-layer p { font-size: 0.7em; opacity: 0.4; margin-bottom: 20px; letter-spacing: 2px; }
+        #ui-layer h2 { 
+            font-size: 1.0em; letter-spacing: 5px; margin-bottom: 12px; 
+            font-weight: 500; text-transform: uppercase;
+        }
+        #ui-layer p { 
+            font-size: 0.65em; opacity: 0.3; margin-bottom: 30px; letter-spacing: 3px; 
+            font-weight: 400; text-transform: uppercase;
+        }
         #ui-layer button {
-            background: transparent; color: #0000FF;
-            border: 2px solid #0000FF; padding: 10px 28px;
-            font-family: inherit; font-size: 0.85em; font-weight: 500;
-            cursor: pointer; letter-spacing: 2px; transition: all 0.2s; margin: 5px;
+            background: transparent; color: #000;
+            border: 1px solid rgba(0,0,0,0.1); padding: 12px 32px;
+            font-family: inherit; font-size: 10px; font-weight: 400;
+            cursor: pointer; letter-spacing: 2px; transition: all 0.3s; margin: 6px;
+            text-transform: uppercase;
         }
-        #ui-layer button:hover { background: #0000FF; color: #FFF; }
+        #ui-layer button:hover { 
+            background: #000; color: #FFF; border-color: #000;
+            transform: translateY(-2px);
+        }
         #ui-layer input[type="file"] { display: none; }
         #hud {
             position: fixed; bottom: 16px; left: 16px; z-index: 10;
@@ -57,14 +75,26 @@
             pointer-events: none;
         }
         #controls-container {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
-            display: flex; gap: 10px; z-index: 1000;
+            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%) translateY(120px);
+            display: flex; gap: 12px; z-index: 1000;
             opacity: 0;
-            transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+            transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
             pointer-events: none;
+            /* Apple-Style Glassmorphism */
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.12);
         }
-        /* Reveal bottom menu on viewport bottom hover */
-        body:hover #controls-container, 
+        #bottom-hover-trigger {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 120px;
+            z-index: 999; pointer-events: auto;
+        }
+        /* Reveal bottom menu ONLY on bottom hover trigger */
+        #bottom-hover-trigger:hover + #controls-container,
         #controls-container:hover {
             opacity: 1;
             transform: translateX(-50%) translateY(0);
@@ -76,15 +106,26 @@
             transform: translateX(-50%) translateY(0);
             pointer-events: auto;
         }
-        #webcam-toggle, #record-btn {
-            background: #FFF; padding: 10px 20px; font-family: inherit; font-size: 11px;
-            font-weight: 700; cursor: pointer; letter-spacing: 1px; transition: all 0.3s;
+        #webcam-toggle, #record-btn, #back-btn {
+            background: var(--accent-container);
+            padding: 12px 28px;
+            font-family: inherit; font-size: 11px;
+            font-weight: 500; cursor: pointer; letter-spacing: 2px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 12px;
+            display: flex; align-items: center; gap: 8px;
+            text-transform: uppercase;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--on-accent-container);
         }
-        #webcam-toggle { border: 2px solid #0000FF; color: #0000FF; }
-        #webcam-toggle:hover, #webcam-toggle.active { background: #0000FF; color: #FFF; }
+        #webcam-toggle:hover { background: var(--accent-primary); color: #FFF; border-color: var(--accent-primary); transform: translateY(-2px); }
+        #webcam-toggle.active { background: #000; color: #FFF; border-color: #000; }
         
-        #record-btn { border: 2px solid #FF0000; color: #FF0000; }
-        #record-btn:hover, #record-btn.active { background: #FF0000; color: #FFF; }
+        #record-btn:hover { background: #FF0000; color: #FFF; border-color: #FF0000; transform: translateY(-2px); }
+        #record-btn.active { background: #FF0000; color: #FFF; border-color: #FF0000; }
+        
+        #back-btn { background: rgba(0, 0, 0, 0.05); color: #000; border-color: transparent; }
+        #back-btn:hover { background: #000; color: #FFF; transform: translateY(-2px); }
         
         #tutorial-toast {
             position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
@@ -350,8 +391,8 @@ WE ARE COSMIC</textarea>
         <div class="ctrl-section">
             <span class="ctrl-label">Blue Zone</span>
             <div class="ctrl-inline">
-                <input type="range" id="ctrl-zone1" min="0" max="0.6" step="0.01" value="0.15" oninput="applyZone1(this.value)">
-                <span class="ctrl-val" id="zone1-val">15%</span>
+                <input type="range" id="ctrl-zone1" min="0" max="0.6" step="0.01" value="0.35" oninput="applyZone1(this.value)">
+                <span class="ctrl-val" id="zone1-val">35%</span>
             </div>
         </div>
 
@@ -399,24 +440,24 @@ WE ARE COSMIC</textarea>
             <div class="ctrl-inline" style="flex-wrap:wrap; gap:8px;">
                 <div style="display:flex; flex-direction:column; align-items:center;">
                     <input type="color" id="ctrl-col-z2" value="#ffffff" oninput="applyPalette('z2', this.value)">
-                    <span style="font-size:8px; letter-spacing:1px; opacity:0.5;">LIGHT</span>
+                    <span style="font-size:6px; letter-spacing:3px; opacity:0.3; text-transform:uppercase;">Light</span>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:center;">
                     <input type="color" id="ctrl-col-z3" value="#808080" oninput="applyPalette('z3', this.value)">
-                    <span style="font-size:8px; letter-spacing:1px; opacity:0.5;">MID</span>
+                    <span style="font-size:6px; letter-spacing:3px; opacity:0.3; text-transform:uppercase;">Mid</span>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:center;">
                     <input type="color" id="ctrl-col-z4" value="#000000" oninput="applyPalette('z4', this.value)">
-                    <span style="font-size:8px; letter-spacing:1px; opacity:0.5;">DEEP</span>
+                    <span style="font-size:6px; letter-spacing:3px; opacity:0.3; text-transform:uppercase;">Deep</span>
                 </div>
-                <div style="width:1px; height:18px; background:rgba(0,0,0,0.1); margin:0 2px;"></div>
+                <div style="width:1px; height:16px; background:rgba(0,0,0,0.06); margin:0 2px;"></div>
                 <div style="display:flex; flex-direction:column; align-items:center;">
-                    <input type="color" id="ctrl-col-txt" value="#000000" oninput="applyPalette('txt', this.value)" style="border:1px solid #0000ff !important;">
-                    <span style="font-size:7px; letter-spacing:1px; opacity:0.6; font-weight:900; color:#0000ff;">CHAR</span>
+                    <input type="color" id="ctrl-col-txt" value="#000000" oninput="applyPalette('txt', this.value)" style="border:1px solid var(--accent-primary) !important;">
+                    <span style="font-size:6.5px; letter-spacing:3px; opacity:0.8; font-weight:700; color:var(--accent-primary); text-transform:uppercase;">Char</span>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:center;">
                     <input type="color" id="ctrl-col-sym" value="#000000" oninput="applyPalette('sym', this.value)">
-                    <span style="font-size:7px; letter-spacing:1px; opacity:0.5; font-weight:900;">SYMBOL</span>
+                    <span style="font-size:6px; letter-spacing:3px; opacity:0.3; text-transform:uppercase;">Symbol</span>
                 </div>
             </div>
         </div>
@@ -465,7 +506,7 @@ WE ARE COSMIC</textarea>
     let keyColor = '#0000FF';
     let darknessThreshold = 0.12;
     let contrastPow = 2.0;
-    let zone1Limit = 0.05; // Tighten default for sharp outlines
+    let zone1Limit = 0.35; // Standard default 35%
     let bluePhase = 0.0;
     let autoPhase = false;
     let basePhase = 0.0;
@@ -608,7 +649,8 @@ WE ARE COSMIC</textarea>
     }
 
     function tryLocalVideo() {
-        document.querySelector('button[onclick="tryLocalVideo()"]').innerText = "LOADING...";
+        let btn = document.querySelector('button[onclick="tryLocalVideo()"]');
+        if (btn) btn.innerText = "LOADING...";
         loadVideo('choi_insta.mp4');
     }
 
@@ -619,7 +661,7 @@ WE ARE COSMIC</textarea>
         
         // --- 🎥 Camera Initial Preset ---
         updatePhaseUI(0.30); // Start at 30% for better facial details
-        applyZone1(0.08);    // Width 8%
+        applyZone1(0.35);    // Width 35% (Default)
         contrastPow = 2.0;   // High contrast for camera
         // -------------------------------
 
@@ -716,7 +758,7 @@ WE ARE COSMIC</textarea>
         
         // --- 🎬 Video Initial Preset (Image 1 Style) ---
         updatePhaseUI(0.0);  // Phase 0% (Leftmost)
-        applyZone1(0.05);    // Width 5% (Sharp Outlines)
+        applyZone1(0.35);    // Width 35% (Default)
         contrastPow = 1.2;   // Natural contrast for video
         // -------------------------------
 
@@ -916,8 +958,8 @@ WE ARE COSMIC</textarea>
                 
                 let darkness = cellHistory[cellIdx];
 
-                let x = offsetX + i * CELL_SIZE;
-                let y = offsetY + j * CELL_SIZE;
+                let x = Math.floor(offsetX + i * CELL_SIZE);
+                let y = Math.floor(offsetY + j * CELL_SIZE);
                 let cx = x + CELL_SIZE / 2;
                 let cy = y + CELL_SIZE / 2;
                 let vy = cy + CELL_SIZE * 0.045; // Optical vertical center adjustment
@@ -1268,11 +1310,22 @@ WE ARE COSMIC</textarea>
         keyColor = val;
         document.getElementById('color-hex').textContent = val.toUpperCase();
         document.getElementById('color-hex').style.color = val;
+        
+        // --- Material 3 Dynamic UI Hook ---
+        let [r,g,b] = hexToRgb(val);
+        let [h,s,l] = rgbToHsl(r,g,b);
+        let accentContainer = hslToHex(h, Math.min(s, 25), 92); // M3 Container Tint
+        document.documentElement.style.setProperty('--accent-primary', val);
+        document.documentElement.style.setProperty('--accent-container', accentContainer);
+        document.documentElement.style.setProperty('--on-accent-container', val);
+        
         updateBgSwatches();
     }
     function applyZone1(val) {
         zone1Limit = parseFloat(val);
         document.getElementById('zone1-val').textContent = Math.round(val * 100) + '%';
+        let slider = document.getElementById('ctrl-zone1');
+        if (slider) slider.value = val;
     }
     function applyContrast(val) {
         updatePhaseUI(val);
@@ -1368,5 +1421,12 @@ WE ARE COSMIC</textarea>
 
     window.addEventListener('DOMContentLoaded', () => { init(); updateBgSwatches(); });
     </script>
+
+    <div id="bottom-hover-trigger"></div>
+    <div id="controls-container">
+        <button id="back-btn" class="premium-ctrl-btn" onclick="location.reload()">← BACK</button>
+        <button id="webcam-toggle" onclick="startCameraSource()">⚡ HAND CONTROL: OFF</button>
+        <button id="record-btn" onclick="startRecording()">⏺ REC VIDEO</button>
+    </div>
 </body>
 </html>
