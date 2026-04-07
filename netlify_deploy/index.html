@@ -779,11 +779,32 @@ WE ARE COSMIC</textarea>
 
     const CANVAS_W = 1080;
     const CANVAS_H = 1350;
+    let currentVideoW = CANVAS_W, currentVideoH = CANVAS_H;
 
-    function resizeCanvas() {
-        canvas.width = CANVAS_W;
-        canvas.height = CANVAS_H;
+    function resizeCanvas(vw, vh) {
+        // Store video dimensions for responsive resize events
+        if (vw && vh) { currentVideoW = vw; currentVideoH = vh; }
+        let srcW = currentVideoW, srcH = currentVideoH;
+
+        // object-fit: contain — fit inside viewport preserving aspect ratio
+        let screenW = window.innerWidth, screenH = window.innerHeight;
+        let scale = Math.min(screenW / srcW, screenH / srcH);
+        let displayW = Math.round(srcW * scale);
+        let displayH = Math.round(srcH * scale);
+
+        // Internal canvas resolution (DPR-aware for crisp text)
+        let dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width  = displayW * dpr;
+        canvas.height = displayH * dpr;
+
+        // CSS: exact display size, centered in viewport
+        canvas.style.width  = displayW + 'px';
+        canvas.style.height = displayH + 'px';
+        canvas.style.left   = Math.round((screenW - displayW) / 2) + 'px';
+        canvas.style.top    = Math.round((screenH - displayH) / 2) + 'px';
+
         calcGrid();
+        if (window.positionZoneHandle) window.positionZoneHandle();
     }
 
     function calcGrid() {
