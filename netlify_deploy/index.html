@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -49,12 +49,12 @@
         }
 
         #ascii-canvas {
-            width: 1080px; height: 1350px;
-            max-width: 100vw; max-height: 100vh;
-            object-fit: contain;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            display: block;
             touch-action: none;
             z-index: 1;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
         }
 
         /* LANDING — M3 Dialog Surface */
@@ -1241,7 +1241,9 @@ WE ARE COSMIC</textarea>
                         // Text uses user's selected text color, fading opacity towards core
                         let rowOffset = Math.floor(j) * 17;
                         let charIdx = (Math.floor(i) + rowOffset) % TEXT_FLOW.length;
-                        let char = TEXT_FLOW[charIdx % TEXT_FLOW.length];
+                        let char = mosaicMode
+                            ? activeSymbols[((Math.floor(i) * 5381 + Math.floor(j) * 2749 + Math.floor(globalFrame/90) * 7919) % activeSymbols.length + activeSymbols.length) % activeSymbols.length]
+                            : TEXT_FLOW[charIdx % TEXT_FLOW.length];
 
                         // --- ?렞 Color Logic: Letters vs Symbols ---
                         let isLetter = /[a-zA-Z]/.test(char);
