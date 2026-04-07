@@ -841,6 +841,7 @@ WE ARE COSMIC</textarea>
                 video.addEventListener('canplay', () => {
                     document.getElementById('ui-layer').style.display = 'none';
                     document.getElementById('controls-container').style.display = 'flex';
+            setTimeout(() => { if(window.positionZoneHandle) window.positionZoneHandle(); }, 100);
                     if (window.innerWidth > 767) {
                         document.getElementById('settings-panel').classList.add('open');
                         let _st=document.getElementById('settings-toggle'); if(_st) _st.style.setProperty('display','none','important');
@@ -901,7 +902,8 @@ WE ARE COSMIC</textarea>
         let v = parseFloat(val);
         basePhase = v;
         bluePhase = v;
-        window.bluePhase = v; // Force global scope for reliability
+        window.bluePhase = v;
+        if (window.positionZoneHandle) window.positionZoneHandle(); // Force global scope for reliability
         console.log("?렓 Phase Updated:", v);
         
         let slider = document.getElementById('ctrl-contrast');
@@ -955,6 +957,7 @@ WE ARE COSMIC</textarea>
             }
             document.getElementById('ui-layer').style.display = 'none';
             document.getElementById('controls-container').style.display = 'flex';
+            setTimeout(() => { if(window.positionZoneHandle) window.positionZoneHandle(); }, 100);
             if (window.innerWidth > 767) {
                 document.getElementById('settings-panel').classList.add('open');
                 let _st=document.getElementById('settings-toggle'); if(_st) _st.style.setProperty('display','none','important');
@@ -1649,6 +1652,65 @@ WE ARE COSMIC</textarea>
             }, {passive: false});
         });
     })();
+    
+    // ═══ ZONE DRAG: drag the blue zone boundary directly on canvas ═══
+    (function() {
+        let handle = null, isDragging = false;
+
+        function positionHandle() {
+            handle = handle || document.getElementById('zone-drag-handle');
+            if (!handle || !canvas) return;
+            let rect = canvas.getBoundingClientRect();
+            let phase = window.bluePhase || 0;
+            // Zone is horizontal: phaseLimit controls left-to-right width
+            // Map phase (0-1) to canvas x position
+            handle.style.display = 'block';
+            handle.style.top = 'auto';
+            handle.style.bottom = 'auto';
+            // Actually phase controls the LEFT zone width (column-based)
+            // Show as vertical line at x = phase * canvas width
+            handle.style.height = rect.height + 'px';
+            handle.style.width = '6px';
+            handle.style.top = rect.top + 'px';
+            handle.style.left = (rect.left + phase * rect.width) + 'px';
+        }
+
+        function startDrag(clientX, clientY) {
+            isDragging = true;
+            moveDrag(clientX, clientY);
+        }
+
+        function moveDrag(clientX, clientY) {
+            if (!isDragging || !canvas) return;
+            let rect = canvas.getBoundingClientRect();
+            let relX = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+            updatePhaseUI(relX);
+            positionHandle();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            handle = document.getElementById('zone-drag-handle');
+            if (!handle) return;
+
+            // Mouse
+            handle.addEventListener('mousedown', (e) => { startDrag(e.clientX, e.clientY); e.preventDefault(); }, {passive:false});
+            document.addEventListener('mousemove', (e) => { if (isDragging) moveDrag(e.clientX, e.clientY); });
+            document.addEventListener('mouseup', () => { isDragging = false; });
+
+            // Touch
+            handle.addEventListener('touchstart', (e) => { startDrag(e.touches[0].clientX, e.touches[0].clientY); }, {passive:true});
+            document.addEventListener('touchmove', (e) => { if (isDragging) moveDrag(e.touches[0].clientX, e.touches[0].clientY); }, {passive:true});
+            document.addEventListener('touchend', () => { isDragging = false; });
+        });
+
+        // Expose for renderLoop to call after resize
+        window.positionZoneHandle = positionHandle;
+    })();
     </script>
+    <!-- Zone Drag Handle: drag to set blue zone boundary -->
+    <div id="zone-drag-handle" style="display:none; position:fixed; z-index:50; left:0; width:100%; height:6px; background:rgba(30,100,255,0.55); cursor:ns-resize; box-shadow:0 0 8px rgba(0,80,255,0.4); transition:background 0.15s;">
+        <div style="position:absolute; right:12px; top:-18px; font-size:10px; font-weight:700; letter-spacing:1px; color:rgba(30,100,255,0.9); background:rgba(255,255,255,0.85); padding:2px 8px; border-radius:8px; pointer-events:none; backdrop-filter:blur(8px);">← DRAG ZONE →</div>
+    </div>
+
 </body>
 </html>
