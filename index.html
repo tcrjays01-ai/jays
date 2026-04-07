@@ -610,9 +610,20 @@ WE ARE COSMIC</textarea>
             </div>
         </div>
 
-        <div id="pixel-info">
-            GRID: <b id="info-res">0 x 0</b><br>
-            UNIT: <b id="info-size">0px</b>
+        <div id="pixel-info" style="padding:10px 0 4px;">
+            <span class="ctrl-label">VIDEO SIZE</span>
+            <div id="info-vidsize" style="font-size:12px;font-weight:600;letter-spacing:0.5px;margin:2px 0 10px;color:#2a2a3a;">— × —</div>
+
+            <span class="ctrl-label">GRID</span>
+            <div id="info-res" style="font-size:12px;font-weight:600;letter-spacing:0.5px;margin:2px 0 10px;color:#2a2a3a;">0 × 0</div>
+
+            <span class="ctrl-label">UNIT SIZE</span>
+            <div style="display:flex;align-items:center;gap:10px;margin:6px 0 2px;">
+                <input type="range" id="unit-slider" min="8" max="120" value="12"
+                    style="flex:1;-webkit-appearance:none;appearance:none;height:2px;background:rgba(0,0,0,0.12);border-radius:1px;outline:none;cursor:ew-resize;"
+                    oninput="targetCellSize=parseInt(this.value);document.getElementById('info-size').textContent=this.value+'px'">
+                <span id="info-size" style="font-size:11px;font-weight:700;color:#2a2a3a;min-width:36px;text-align:right;">12px</span>
+            </div>
         </div>
 
         <hr class="ctrl-divider">
