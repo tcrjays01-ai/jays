@@ -1207,7 +1207,7 @@ WE ARE COSMIC</textarea>
                 let y = Math.floor(offsetY + j * CELL_SIZE);
                 let cx = x + CELL_SIZE / 2;
                 let cy = y + CELL_SIZE / 2;
-                let vy = cy; // Vertically centered
+                let vy = cy + (CELL_SIZE * 0.06); // Vertically centered, nudged down slightly for visual balance
 
                 // 吏?뺣맂 諛앷린(Threshold)蹂대떎 諛앹? ?쎌?? ?뚮뜑留?臾댁떆 (?쇰? ?덇났 利앸컻)
                 let currentThreshold = darknessThreshold; // 0.12
