@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1317,7 +1317,9 @@ WE ARE COSMIC</textarea>
                     ctx.beginPath(); ctx.rect(fx, fy, fw, fh); ctx.clip();
                     let rowOffset = Math.floor(j) * 17;
                     let charIdx = (Math.floor(i) + rowOffset) % TEXT_FLOW.length;
-                    let char = TEXT_FLOW[charIdx % TEXT_FLOW.length];
+                    let char = mosaicMode
+                        ? activeSymbols[((Math.floor(i) * 6271 + Math.floor(j) * 3181 + Math.floor(globalFrame/90) * 7919) % activeSymbols.length + activeSymbols.length) % activeSymbols.length]
+                        : TEXT_FLOW[charIdx % TEXT_FLOW.length];
 
                     // --- ?렞 Color Logic: Letters vs Symbols ---
                     ctx.fillStyle = /[a-zA-Z]/.test(char) ? colorText : colorSymbol;
