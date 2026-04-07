@@ -949,6 +949,10 @@ WE ARE COSMIC</textarea>
         video.autoplay = true; video.loop = true; video.muted = true; video.playsInline = true;
 
         video.addEventListener('canplay', () => {
+            // Adapt canvas to uploaded video resolution
+            if (video.videoWidth && video.videoHeight) {
+                resizeCanvas(video.videoWidth, video.videoHeight);
+            }
             document.getElementById('ui-layer').style.display = 'none';
             document.getElementById('controls-container').style.display = 'flex';
             if (window.innerWidth > 767) {
