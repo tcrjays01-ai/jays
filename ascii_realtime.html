@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -761,7 +761,7 @@ WE ARE COSMIC</textarea>
         canvas = document.getElementById('ascii-canvas');
         ctx = canvas.getContext('2d');
         resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('resize', () => resizeCanvas(currentVideoW, currentVideoH));
 
         // --- ?렞 Clear Canvas to White Initially ---
         ctx.fillStyle = '#FFFFFF';
