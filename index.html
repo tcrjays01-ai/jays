@@ -840,10 +840,14 @@ WE ARE COSMIC</textarea>
         let newRows = Math.floor(canvas.height / CELL_SIZE);
 
         // Update real-time pixel/grid info in the left menu
-        let infoRes = document.getElementById('info-res');
+                let infoRes = document.getElementById('info-res');
         let infoSize = document.getElementById('info-size');
-        if (infoRes) infoRes.textContent = `${newCols} x ${newRows}`;
-        if (infoSize) infoSize.textContent = `${Math.round(CELL_SIZE)}px`;
+        let infoVid = document.getElementById('info-vidsize');
+        let unitSlider = document.getElementById('unit-slider');
+        if (infoRes) infoRes.textContent = ` × `;
+        if (infoSize) infoSize.textContent = `px`;
+        if (unitSlider) unitSlider.value = Math.round(CELL_SIZE);
+        if (infoVid) infoVid.textContent = currentVideoW && currentVideoH ? ` × ` : '— × —';
 
         if (!offCanvas) {
             offCanvas = document.createElement('canvas');
