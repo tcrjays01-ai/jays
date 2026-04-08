@@ -456,8 +456,9 @@
         <input type="file" id="videoUpload" accept="video/mp4,video/webm,video/*">
         <div id="ui-btns" style="display:flex;flex-direction:column;gap:10px;align-items:stretch;width:100%;">
             <button onclick="document.getElementById('videoUpload').click()">SELECT VIDEO</button>
-            <button id="ai-extract-btn" class="premium-ctrl-btn" style="display:none; background:var(--md-primary); border-color:var(--md-primary); color:var(--md-on-primary);" onclick="startVideoAI()">🤖 AI VIDEO INFO EXTRACT (BETA)</button>
+            
             <button onclick="tryLocalVideo()">PLAY CHOI</button>
+            <button onclick="tryExperienceVideo()">EXPERIENCE</button>
             <button onclick="startCameraSource()">CAM</button>
         </div>
     </div>
@@ -1857,33 +1858,39 @@ WE ARE COSMIC</textarea>
     // ═══ WHISPER AI VIDEO SYNC ═══
     window.videoTranscripts = [];
     let whisperWorker = null;
+    function showAIToast(text) {
+        let toast = document.getElementById("ai-toast");
+        if (!toast) {
+            toast = document.createElement("div");
+            toast.id = "ai-toast";
+            toast.style.cssText = "position:absolute; top:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:#fff; padding:10px 20px; border-radius:30px; font-size:12px; font-weight:700; z-index:9999; letter-spacing:1px; font-family:'JetBrains Mono', monospace;";
+            document.body.appendChild(toast);
+        }
+        toast.innerText = text;
+        toast.style.display = 'block';
+    }
     
     async function extractAudioFloat32Array(file) {
         let audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
         let arrayBuffer = await file.arrayBuffer();
         let audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-        return audioBuffer.getChannelData(0); // Mono channel
+        return audioBuffer.getChannelData(0); 
     }
 
-    async function startVideoAI() {
-        if (!window.lastUploadedVideoFile) return;
-        let btn = document.getElementById("ai-extract-btn");
-        btn.disabled = true;
-        btn.innerText = "⏳ EXTRACTING AUDIO...";
-        
-        // 1. Extract audio array
+    async function startVideoAI(file) {
+        window.videoTranscripts = [];
+        showAIToast("⏳ EXTRACTING AUDIO...");
         let audioArray;
         try {
-            audioArray = await extractAudioFloat32Array(window.lastUploadedVideoFile);
+            audioArray = await extractAudioFloat32Array(file);
         } catch(e) {
-            alert("비디오에서 오디오를 추출할 수 없습니다.");
-            btn.innerText = "🤖 AI VIDEO SYNC";
-            btn.disabled = false;
+            console.error("Audio extraction failed", e);
+            let toast = document.getElementById("ai-toast");
+            if(toast) toast.style.display = 'none';
             return;
         }
 
-        // 2. Start worker
-        btn.innerText = "⏳ LOADING AI MODEL (40MB)...";
+        showAIToast("⏳ LOADING AI MODEL (40MB)...");
         if (!whisperWorker) {
             whisperWorker = new Worker('whisper_worker.js', { type: 'module' });
         }
@@ -1891,22 +1898,35 @@ WE ARE COSMIC</textarea>
         whisperWorker.onmessage = (e) => {
             let msg = e.data;
             if (msg.status === 'ready') {
-                btn.innerText = "⏳ TRANSCRIBING...";
+                showAIToast("⏳ TRANSCRIBING AUDIO...");
                 whisperWorker.postMessage({ type: 'transcribe', audio: audioArray });
             } else if (msg.status === 'progress') {
-                if(msg.progress && msg.progress.progress) btn.innerText = `⏳ DOWNLOADING: ${Math.round(msg.progress.progress)}%`;
+                if(msg.progress && msg.progress.progress) showAIToast(`⏳ DOWNLOADING: ${Math.round(msg.progress.progress)}%`);
             } else if (msg.status === 'complete') {
                 window.videoTranscripts = msg.result.chunks || [];
-                btn.innerText = "✅ AI SYNC COMPLETE";
-                setTimeout(() => { btn.style.display = 'none'; }, 2000);
+                showAIToast("✅ AI SYNC COMPLETE");
+                setTimeout(() => { document.getElementById("ai-toast").style.display = 'none'; }, 2000);
             } else if (msg.status === 'error') {
-                alert("AI 분석 오류: " + msg.error);
-                btn.innerText = "🤖 AI VIDEO SYNC";
-                btn.disabled = false;
+                showAIToast("❌ AI ERROR: " + msg.error);
+                setTimeout(() => { document.getElementById("ai-toast").style.display = 'none'; }, 3000);
             }
         };
 
         whisperWorker.postMessage({ type: 'load' });
+    }
+
+    async function tryExperienceVideo() {
+        let btn = document.querySelector('button[onclick="tryExperienceVideo()"]');
+        if (btn) btn.innerText = "LOADING...";
+        try {
+            let res = await fetch('./experience.mp4');
+            let blob = await res.blob();
+            let file = new File([blob], 'experience.mp4', {type: 'video/mp4'});
+            loadVideo(file);
+        } catch (e) {
+            alert("EXPERIENCE VIDEO FAILED TO LOAD");
+            if (btn) btn.innerText = "EXPERIENCE";
+        }
     }
 </script>
     </div>
