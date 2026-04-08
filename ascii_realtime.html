@@ -997,6 +997,13 @@ WE ARE COSMIC</textarea>
     }
 
     function loadVideo(src) {
+        if (typeof src !== "string") {
+            window.lastUploadedVideoFile = src;
+            let btn = document.getElementById("ai-extract-btn");
+            if (btn) btn.style.display = "block";
+            window.videoTranscripts = [];
+        }
+
         console.log("?렗 Loading video:", src);
         
         // --- ?렗 Video Initial Preset (Image 1 Style) ---

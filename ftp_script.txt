@@ -1,6 +1,7 @@
-open cosmicray.ipdisk.co.kr
+﻿open cosmicray.ipdisk.co.kr
 admin
 !zhtmalrfpdl
 cd VOL1/ascii_engine
 put ascii_realtime.html index.html
+put whisper_worker.js
 quit
