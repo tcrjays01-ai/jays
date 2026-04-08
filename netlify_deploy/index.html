@@ -1304,8 +1304,8 @@ WE ARE COSMIC</textarea>
 
                 if (isNonTypoV2) {
                     ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
-                    // Scale width from 1px to full CELL_SIZE based on intensity
-                    let barWidth = Math.max(1, Math.min(CELL_SIZE, CELL_SIZE * vLinear));
+                    // Use 'v' (exponential contrast) to control the "gap" between thin and thick
+                    let barWidth = Math.max(1.5, Math.min(CELL_SIZE, CELL_SIZE * v));
                     ctx.fillRect(cx - barWidth/2, y, barWidth, CELL_SIZE);
                     continue; 
                 }
