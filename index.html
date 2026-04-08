@@ -1004,19 +1004,23 @@ WE ARE COSMIC</textarea>
 
     function calcGrid() {
         if (!canvas || !CELL_SIZE || CELL_SIZE <= 0) return;
-        // DEFENSIVE: Minimum 1 column/row to prevent crashes
         let newCols = Math.max(1, Math.ceil(canvas.width / CELL_SIZE));
         let newRows = Math.max(1, Math.ceil(canvas.height / CELL_SIZE));
         
+        // Only re-allocate if dimensions actually changed to avoid memory spikes
         if (!offCanvas || cols !== newCols || rows !== newRows) {
+            let newSize = newCols * newRows;
             cols = newCols; rows = newRows;
+            
             if (!offCanvas) offCanvas = document.createElement('canvas');
             offCanvas.width = cols; 
             offCanvas.height = rows;
             offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
-            cellHistory = new Float32Array(cols * rows);
+            
+            // Re-allocate buffers only when needed
+            cellHistory = new Float32Array(newSize);
             cellHistory.fill(-1);
-            dotLife = new Float32Array(cols * rows);
+            dotLife = new Float32Array(newSize);
             dotLife.fill(0);
             
             let infoVid = document.getElementById('info-vidsize');
@@ -1220,25 +1224,14 @@ WE ARE COSMIC</textarea>
             offCtx.fillStyle = isOriginalTheme ? '#000' : '#FFF';
             offCtx.fillRect(0, 0, cols, rows);
         }
-        let imageData;
-        try { imageData = offCtx.getImageData(0, 0, cols, rows); }
-        catch(e) { requestAnimationFrame(renderLoop); return; }
+        if (cols <= 0 || rows <= 0 || !offCtx) { requestAnimationFrame(renderLoop); return; }
+        let imageData = offCtx.getImageData(0, 0, cols, rows);
         let pixels = imageData.data;
         // Always fill background to prevent gaps at edges on awkward resolutions
         ctx.fillStyle = isOriginalTheme ? '#000000' : bgColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        if (isOriginalTheme && video && video.readyState >= 2) {
-            ctx.save();
-            ctx.filter = 'brightness(0.6)';
-            let vW = video.videoWidth, vH = video.videoHeight;
-            // Center Cover Logic for Background
-            let vScale = Math.max(canvas.width / vW, canvas.height / vH);
-            let dW = vW * vScale, dH = vH * vScale;
-            let dX = (canvas.width - dW) / 2, dY = (canvas.height - dH) / 2;
-            ctx.drawImage(video, dX, dY, dW, dH);
-            ctx.restore();
-        }
+        
+        // STABILITY FIX: Stopped drawing the same video twice as background to save mobile GPU
         let offsetX = 0;
         let offsetY = 0;
         let fontSize = Math.max(6, CELL_SIZE * 0.90);
@@ -1358,7 +1351,7 @@ WE ARE COSMIC</textarea>
                 }
             }
         }
-        requestAnimationFrame(renderLoop);
+        if (isPlaying) requestAnimationFrame(renderLoop);
     }
 
     function toggleWebcam() {
@@ -1456,8 +1449,8 @@ WE ARE COSMIC</textarea>
         
         let options = {
             mimeType: selectedType,
-            // STABLE HQ BITRATE (15Mbps)
-            videoBitsPerSecond: hqMode ? 15000000 : 6000000 
+            // STABLE BITRATE LIMIT (12Mbps) to prevent encoder hang
+            videoBitsPerSecond: hqMode ? 12000000 : 5000000 
         };
         
         recordedChunks = [];
