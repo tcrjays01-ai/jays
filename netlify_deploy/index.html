@@ -1004,8 +1004,9 @@ WE ARE COSMIC</textarea>
 
     function calcGrid() {
         if (!canvas || !CELL_SIZE || CELL_SIZE <= 0) return;
-        let newCols = Math.ceil(canvas.width / CELL_SIZE);
-        let newRows = Math.ceil(canvas.height / CELL_SIZE);
+        // DEFENSIVE: Minimum 1 column/row to prevent crashes
+        let newCols = Math.max(1, Math.ceil(canvas.width / CELL_SIZE));
+        let newRows = Math.max(1, Math.ceil(canvas.height / CELL_SIZE));
         
         if (!offCanvas || cols !== newCols || rows !== newRows) {
             cols = newCols; rows = newRows;
@@ -1455,7 +1456,8 @@ WE ARE COSMIC</textarea>
         
         let options = {
             mimeType: selectedType,
-            videoBitsPerSecond: hqMode ? 50000000 : 8000000 
+            // STABLE HQ BITRATE (15Mbps)
+            videoBitsPerSecond: hqMode ? 15000000 : 6000000 
         };
         
         recordedChunks = [];
