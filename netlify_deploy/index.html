@@ -880,10 +880,18 @@ WE ARE COSMIC</textarea>
         } else {
             let srcW = currentVideoW, srcH = currentVideoH;
             let scale = Math.min(screenW / srcW, screenH / srcH);
-            let displayW = Math.round(srcW * scale);
-            let displayH = Math.round(srcH * scale);
-            canvas.width = displayW * dpr;
-            canvas.height = displayH * dpr;
+            let rawW = srcW * scale;
+            let rawH = srcH * scale;
+
+            // SNAP to whole grid cells to ensure 100% sharpness and no gaps
+            let colsCount = Math.floor((rawW * dpr) / CELL_SIZE);
+            let rowsCount = Math.floor((rawH * dpr) / CELL_SIZE);
+            
+            let displayW = (colsCount * CELL_SIZE) / dpr;
+            let displayH = (rowsCount * CELL_SIZE) / dpr;
+
+            canvas.width = colsCount * CELL_SIZE;
+            canvas.height = rowsCount * CELL_SIZE;
             canvas.style.width = displayW + 'px';
             canvas.style.height = displayH + 'px';
             canvas.style.left = Math.round((screenW - displayW) / 2) + 'px';
@@ -1110,14 +1118,15 @@ WE ARE COSMIC</textarea>
             ctx.save();
             ctx.filter = 'brightness(0.6)';
             let vW = video.videoWidth, vH = video.videoHeight;
-            let vScale = isIntro ? Math.max(canvas.width / vW, canvas.height / vH) : Math.min(canvas.width / vW, canvas.height / vH);
+            let vScale = isIntro ? Math.max(canvas.width / vW, canvas.height / vH) : Math.max(canvas.width / vW, canvas.height / vH);
             let dW = vW * vScale, dH = vH * vScale;
             let dX = (canvas.width - dW) / 2, dY = (canvas.height - dH) / 2;
             ctx.drawImage(video, dX, dY, dW, dH);
             ctx.restore();
         }
-        let offsetX = (canvas.width - cols * CELL_SIZE) / 2;
-        let offsetY = (canvas.height - rows * CELL_SIZE) / 2;
+        // Offset is now 0 since canvas is locked to grid multiples
+        let offsetX = 0;
+        let offsetY = 0;
         let fontSize = Math.max(6, CELL_SIZE * 0.88);
         ctx.font = `400 ${fontSize}px '${currentFont}', 'Consolas', monospace`;
         ctx.textAlign = 'center';
