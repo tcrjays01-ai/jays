@@ -696,8 +696,8 @@ WE ARE COSMIC</textarea>
     
     let currentFont = 'Pretendard Variable';
     let keyColor = '#0000FF';
-    let darknessThreshold = 0.12;
-    let contrastPow = 2.0;
+    let darknessThreshold = 0.08, contrastPow = 1.0;
+    let lastGridCellSize = -1;
     let zone1Limit = 0.35;
     let bluePhase = 0.0;
     let autoPhase = false;
@@ -866,18 +866,16 @@ WE ARE COSMIC</textarea>
 
     function resizeCanvas(vw, vh) {
         if (vw && vh) { currentVideoW = vw; currentVideoH = vh; }
-        let srcW = currentVideoW, srcH = currentVideoH;
         let screenW = window.innerWidth, screenH = window.innerHeight;
-        let scale = Math.min(screenW / srcW, screenH / srcH);
-        let displayW = Math.round(srcW * scale);
-        let displayH = Math.round(srcH * scale);
         let dpr = Math.min(window.devicePixelRatio || 1, 2);
-        canvas.width  = displayW * dpr;
-        canvas.height = displayH * dpr;
-        canvas.style.width  = displayW + 'px';
-        canvas.style.height = displayH + 'px';
-        canvas.style.left   = Math.round((screenW - displayW) / 2) + 'px';
-        canvas.style.top    = Math.round((screenH - displayH) / 2) + 'px';
+        
+        canvas.width = screenW * dpr;
+        canvas.height = screenH * dpr;
+        canvas.style.width = screenW + 'px';
+        canvas.style.height = screenH + 'px';
+        canvas.style.left = '0px';
+        canvas.style.top = '0px';
+        
         calcGrid();
         if (window.positionZoneHandle) window.positionZoneHandle();
     }
@@ -886,11 +884,6 @@ WE ARE COSMIC</textarea>
         let newCols = Math.floor(canvas.width / CELL_SIZE);
         let newRows = Math.floor(canvas.height / CELL_SIZE);
         let infoVid = document.getElementById('info-vidsize');
-        let unitSlider = document.getElementById('unit-slider');
-        if (unitSlider) {
-            let scaleVal = Math.round(((CELL_SIZE - 8) / 112) * 100);
-            unitSlider.value = Math.max(0, Math.min(100, scaleVal));
-        }
         if (infoVid) infoVid.textContent = (currentVideoW && currentVideoH) ? currentVideoW + ' × ' + currentVideoH : '— × —';
         if (!offCanvas) {
             offCanvas = document.createElement('canvas');
@@ -1060,8 +1053,11 @@ WE ARE COSMIC</textarea>
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.filter = 'none';
         ctx.globalCompositeOperation = 'source-over';
-        CELL_SIZE = Math.max(12, Math.min(150, CELL_SIZE));
-        calcGrid();
+        CELL_SIZE = Math.max(8, Math.min(150, CELL_SIZE));
+        if (Math.abs(lastGridCellSize - CELL_SIZE) > 0.5) {
+            lastGridCellSize = CELL_SIZE;
+            calcGrid();
+        }
         if (video && video.readyState >= 2 && !video.seeking) {
             let vR = video.videoWidth / video.videoHeight;
             let cR = cols / rows;
@@ -1184,7 +1180,7 @@ WE ARE COSMIC</textarea>
                         ctx.fillStyle = `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${intensity})`; 
                         ctx.fillText(activeSymbols[((Math.floor(i) * 6271 + Math.floor(j) * 3181 + Math.floor(globalFrame/90) * 7919) % activeSymbols.length + activeSymbols.length) % activeSymbols.length], cx, vy);
                     } else {
-                        let char = mosaicMode ? activeSymbols[((Math.floor(i) * 5381 + Math.floor(j) * 2749 + Math.floor(globalFrame/90) * 7919) % activeSymbols.length + activeSymbols.length) % activeSymbols.length] : TEXT_FLOW[((Math.floor(i) + Math.floor(j) * 17) % TEXT_FLOW.length + TEXT_FLOW.length) % TEXT_FLOW.length];
+                        let char = mosaicMode ? activeSymbols[((Math.floor(i) * 6271 + Math.floor(j) * 3181 + Math.floor(globalFrame/90) * 7919) % activeSymbols.length + activeSymbols.length) % activeSymbols.length] : TEXT_FLOW[((Math.floor(i) + Math.floor(j) * 17) % TEXT_FLOW.length + TEXT_FLOW.length) % TEXT_FLOW.length];
                         ctx.fillStyle = /[a-zA-Z]/.test(char) ? `rgba(${rgbText[0]}, ${rgbText[1]}, ${rgbText[2]}, ${1.0 - intensity * 0.85})` : `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${1.0 - intensity * 0.85})`;
                         ctx.fillText(char, cx, vy);
                     }
