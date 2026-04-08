@@ -1060,15 +1060,13 @@ WE ARE COSMIC</textarea>
             calcGrid();
         }
         if (video && video.readyState >= 2 && !video.seeking) {
-            let vR = video.videoWidth / video.videoHeight;
-            let cR = cols / rows;
-            let dW, dH, dX, dY;
-            // Use Math.max (Cover) for overscan/crop
-            if (cR > vR) { dW = cols; dH = cols / vR; dX = 0; dY = (rows - dH) / 2; }
-            else { dH = rows; dW = rows * vR; dY = 0; dX = (cols - dW) / 2; }
-            offCtx.fillStyle = '#FFF';
-            if (dY > 0) { offCtx.fillRect(0, 0, cols, dY); offCtx.fillRect(0, rows - dY, cols, dY); }
-            if (dX > 0) { offCtx.fillRect(0, 0, dX, rows); offCtx.fillRect(cols - dX, 0, dX, rows); }
+            let vW = video.videoWidth, vH = video.videoHeight;
+            let vScale = Math.max(cols / vW, rows / vH);
+            let dW = vW * vScale, dH = vH * vScale;
+            let dX = (cols - dW) / 2, dY = (rows - dH) / 2;
+            
+            offCtx.fillStyle = isOriginalTheme ? '#000' : '#FFF';
+            offCtx.fillRect(0, 0, cols, rows);
             offCtx.drawImage(video, dX, dY, dW, dH);
             if (isCamera && selfieSegmentation) {
                 if (!isSegmenting && video.readyState >= 2) {
@@ -1098,17 +1096,10 @@ WE ARE COSMIC</textarea>
         if (isOriginalTheme && video && video.readyState >= 2) {
             ctx.save();
             ctx.filter = 'brightness(0.6)';
-            let vR = video.videoWidth / video.videoHeight;
-            let screenR = canvas.width / canvas.height;
-            let dW, dH, dX, dY;
-            // Use Math.max (Cover) for the main context drawing too
-            if (screenR > vR) {
-                dW = canvas.width; dH = canvas.width / vR;
-                dX = 0; dY = (canvas.height - dH) / 2;
-            } else {
-                dH = canvas.height; dW = canvas.height * vR;
-                dY = 0; dX = (canvas.width - dW) / 2;
-            }
+            let vW = video.videoWidth, vH = video.videoHeight;
+            let vScale = Math.max(canvas.width / vW, canvas.height / vH);
+            let dW = vW * vScale, dH = vH * vScale;
+            let dX = (canvas.width - dW) / 2, dY = (canvas.height - dH) / 2;
             ctx.drawImage(video, dX, dY, dW, dH);
             ctx.restore();
         }
