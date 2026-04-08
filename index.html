@@ -482,6 +482,27 @@
             padding: 14px; border-radius: var(--md-shape-full); font-weight: 700;
             border: none; cursor: pointer; font-size: 13px;
         }
+        .guide-img {
+            width: 100%; border-radius: var(--md-shape-md); margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* FLOATING POINTER */
+        #floating-guide-pointer {
+            position: fixed; z-index: 10001; pointer-events: none;
+            display: none; flex-direction: column; align-items: center; gap: 8px;
+        }
+        #floating-guide-pointer.open { display: flex; animation: pointer-bounce 0.8s infinite alternate ease-in-out; }
+        .pointer-arrow { font-size: 40px; filter: drop-shadow(0 4px 12px rgba(0,0,255,0.4)); }
+        .pointer-text {
+            background: #0000FF; color: #FFF; padding: 6px 14px;
+            border-radius: var(--md-shape-full); font-size: 11px; font-weight: 700;
+            white-space: nowrap;
+        }
+        @keyframes pointer-bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-15px); }
+        }
 
         #unit-slider::-webkit-slider-thumb, .ctrl-section input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
@@ -549,13 +570,19 @@
     <!-- Permission Guide Modal -->
     <div id="permission-guide">
         <div class="guide-card">
-            <div id="guide-icon" class="guide-icon">🎙️</div>
-            <div id="guide-title" class="guide-title">MIC ACCESS REQUIRED</div>
+            <img id="guide-illustration" class="guide-img" src="" alt="Permission Guide">
+            <div id="guide-title" class="guide-title">마이크 권한 허용이 필요합니다</div>
             <div id="guide-content" class="guide-body">
                 <!-- Dynamic Content -->
             </div>
-            <button class="guide-btn" onclick="closePermissionGuide()">I UNDERSTAND</button>
+            <button class="guide-btn" onclick="closePermissionGuide()">알겠습니다, 확인했습니다</button>
         </div>
+    </div>
+
+    <!-- Floating Pointer -->
+    <div id="floating-guide-pointer">
+        <div class="pointer-arrow">👆</div>
+        <div class="pointer-text">여기를 클릭하세요</div>
     </div>
 
     <div id="settings-panel">
@@ -1545,38 +1572,49 @@ WE ARE COSMIC</textarea>
         const guide = document.getElementById('permission-guide');
         const title = document.getElementById('guide-title');
         const content = document.getElementById('guide-content');
-        const icon = document.getElementById('guide-icon');
+        const illust = document.getElementById('guide-illustration');
+        const pointer = document.getElementById('floating-guide-pointer');
         
         let isSafari = /Safari/i.test(navigator.userAgent) && !/Chrome/i.test(navigator.userAgent);
         let isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
         
+        // Use the high-fidelity AI illustration - make sure the path is correct
+        illust.src = "permission_guide_illustration_1775637190141.png";
+
         if (type === 'mic') {
-            icon.innerText = '🎙️';
-            title.innerText = '마이크 권한 허용이 필요합니다';
+            title.innerText = '더 멋진 경험을 위해 마이크가 필요합니다';
             content.innerHTML = isSafari || isIOS ? `
-                <div class="guide-step"><span class="step-num">1</span> <div>주소창 왼쪽의 <b>'Aa'</b> 또는 <b>'설정'</b> 버튼을 누릅니다.</div></div>
-                <div class="guide-step"><span class="step-num">2</span> <div><b>'웹사이트 설정'</b>에 들어갑니다.</div></div>
-                <div class="guide-step"><span class="step-num">3</span> <div><b>'마이크'</b> 항목을 <b>'허용'</b>으로 바꿉니다.</div></div>
+                <p style="margin-bottom:12px;font-weight:600;color:var(--md-primary);">AI가 당신의 목소리를 분석하여 예술로 바꿉니다.</p>
+                <div class="guide-step"><span class="step-num">1</span> <div>주소창의 <b>'Aa'</b> 버튼을 눌러주세요.</div></div>
+                <div class="guide-step"><span class="step-num">2</span> <div><b>'웹사이트 설정'</b>에서 <b>'마이크'</b>를 <b>'허용'</b>으로 바꿔주세요.</div></div>
             ` : `
-                <div class="guide-step"><span class="step-num">1</span> <div>주소창 왼쪽의 <b>자물쇠(🔐)</b> 아이콘을 누릅니다.</div></div>
-                <div class="guide-step"><span class="step-num">2</span> <div><b>'마이크'</b> 스위치를 <b>'허용'</b>으로 켭니다.</div></div>
+                <p style="margin-bottom:12px;font-weight:600;color:var(--md-primary);">AI가 당신의 목소리를 분석하여 예술로 바꿉니다.</p>
+                <div class="guide-step"><span class="step-num">1</span> <div>주소창 왼쪽의 <b>자물쇠(🔐)</b> 아이콘을 눌러주세요.</div></div>
+                <div class="guide-step"><span class="step-num">2</span> <div><b>'마이크'</b>를 <b>'허용'</b>으로 켜주세요.</div></div>
             `;
+            
+            // Position floating pointer
+            if (isIOS) {
+                pointer.style.top = 'auto'; pointer.style.bottom = '80px'; pointer.style.left = '60px';
+                pointer.innerHTML = '<div class="pointer-text">아래 Aa를 누르세요</div><div class="pointer-arrow" style="transform:rotate(180deg)">👇</div>';
+            } else {
+                pointer.style.top = '12px'; pointer.style.left = '12px'; pointer.style.bottom = 'auto';
+                pointer.innerHTML = '<div class="pointer-arrow">👆</div><div class="pointer-text">여기를 클릭하세요</div>';
+            }
         } else {
-            icon.innerText = '📷';
-            title.innerText = '카메라 권한 허용이 필요합니다';
-            content.innerHTML = isSafari || isIOS ? `
-                <div class="guide-step"><span class="step-num">1</span> <div>주소창 왼쪽의 <b>'Aa'</b> 버튼을 누릅니다.</div></div>
-                <div class="guide-step"><span class="step-num">2</span> <div><b>'웹사이트 설정'</b>에 들어갑니다.</div></div>
-                <div class="guide-step"><span class="step-num">3</span> <div><b>'카메라'</b> 항목을 <b>'허용'</b>으로 바꿉니다.</div></div>
-            ` : `
-                <div class="guide-step"><span class="step-num">1</span> <div>주소창 왼쪽의 <b>자물쇠(🔐)</b> 아이콘을 누릅니다.</div></div>
-                <div class="guide-step"><span class="step-num">2</span> <div><b>'카메라'</b> 스위치를 <b>'허용'</b>으로 켭니다.</div></div>
+            title.innerText = '카메라 연결이 필요합니다';
+            content.innerHTML = `
+                <div class="guide-step"><span class="step-num">1</span> <div>브라우저 주소창 설정에서 <b>카메라</b> 접근을 <b>'허용'</b>해 주세요.</div></div>
             `;
+            pointer.style.top = '12px'; pointer.style.left = '12px';
         }
+        
         guide.classList.add('open');
+        pointer.classList.add('open');
     }
     function closePermissionGuide() {
         document.getElementById('permission-guide').classList.remove('open');
+        document.getElementById('floating-guide-pointer').classList.remove('open');
     }
     let recognition, sttActive = false, sttFinalBuffer = "WE ARE COSMIC ";
     function initSTT() {
