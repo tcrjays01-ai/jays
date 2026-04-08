@@ -937,9 +937,11 @@ WE ARE COSMIC</textarea>
         canvas = document.getElementById('ascii-canvas');
         ctx = canvas.getContext('2d');
         resizeCanvas();
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+        
+        // Immediate start for background animation
+        isPlaying = true;
+        requestAnimationFrame(renderLoop);
+        
         document.getElementById('videoUpload').addEventListener('change', (e) => {
             let f = e.target.files[0];
             if (f) {
@@ -984,15 +986,16 @@ WE ARE COSMIC</textarea>
     function resizeCanvas(vw, vh) {
         if (vw && vh) { currentVideoW = vw; currentVideoH = vh; }
         let screenW = window.innerWidth, screenH = window.innerHeight;
-        let dpr = window.devicePixelRatio || 1;
         
-        // Final Fix: Always Full Screen Canvas
+        // STABLE PREVIEW: Cap DPR at 1.5 - 2.0 for mobile to prevent 'too big' UI
+        let dpr = Math.min(window.devicePixelRatio || 1, 2.0);
+        
         canvas.width = screenW * dpr;
         canvas.height = screenH * dpr;
         canvas.style.width = screenW + 'px';
         canvas.style.height = screenH + 'px';
         canvas.style.left = '0px';
-        canvas.style.top = '1px'; // Micro-scroll prevention
+        canvas.style.top = '0px';
         
         calcGrid();
         if (window.positionZoneHandle) window.positionZoneHandle();
@@ -1205,6 +1208,10 @@ WE ARE COSMIC</textarea>
                     offCtx.globalCompositeOperation = 'source-over';
                 }
             }
+        } else {
+            // Idle State: Blank offscreen for text flow
+            offCtx.fillStyle = isOriginalTheme ? '#000' : '#FFF';
+            offCtx.fillRect(0, 0, cols, rows);
         }
         let imageData;
         try { imageData = offCtx.getImageData(0, 0, cols, rows); }
@@ -1227,8 +1234,8 @@ WE ARE COSMIC</textarea>
         }
         let offsetX = 0;
         let offsetY = 0;
-        let fontSize = Math.max(6, CELL_SIZE * 0.88);
-        ctx.font = `400 ${fontSize}px '${currentFont}', 'Consolas', monospace`;
+        let fontSize = Math.max(6, CELL_SIZE * 0.90);
+        ctx.font = `600 ${fontSize}px '${currentFont}', 'Consolas', monospace`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         if (autoPhase) {
@@ -1425,19 +1432,24 @@ WE ARE COSMIC</textarea>
         else stopRecording();
     }
     function startRecording() {
-        // High Bitrate (20Mbps) + High Frame Rate for Professional Feel
+        // PROFESSIONAL 4K BITRATE (50Mbps) + MP4 PRIORITY
         let stream = canvas.captureStream(60);
         const hqMode = document.getElementById('ctrl-hq-rec')?.checked;
         
-        let options = {
-            mimeType: 'video/webm;codecs=vp9',
-            videoBitsPerSecond: hqMode ? 20000000 : 5000000 // 20Mbps for HQ, 5Mbps for standard
-        };
+        const types = [
+            'video/mp4;codecs=hvc1', 
+            'video/mp4;codecs=avc1', 
+            'video/mp4',
+            'video/webm;codecs=vp9',
+            'video/webm'
+        ];
         
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-            options.mimeType = 'video/webm';
-            if (!MediaRecorder.isTypeSupported(options.mimeType)) options.mimeType = 'video/mp4'; // iOS Support
-        }
+        let selectedType = types.find(t => MediaRecorder.isTypeSupported(t)) || 'video/webm';
+        
+        let options = {
+            mimeType: selectedType,
+            videoBitsPerSecond: hqMode ? 50000000 : 8000000 
+        };
         
         recordedChunks = [];
         mediaRecorder = new MediaRecorder(stream, options);
@@ -1446,11 +1458,12 @@ WE ARE COSMIC</textarea>
         
         mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
         mediaRecorder.onstop = () => {
-            let mimeType = options.mimeType;
-            let blob = new Blob(recordedChunks, { type: mimeType });
+            let blob = new Blob(recordedChunks, { type: selectedType });
             recordedChunks = [];
             let url = URL.createObjectURL(blob);
-            let a = document.createElement('a'); a.style.display = 'none'; a.href = url; a.download = `cosmic_${hqMode?'HQ_':''}${Date.now()}.${mimeType.includes('mp4')?'mp4':'webm'}`;
+            let ext = selectedType.includes('mp4') ? 'mp4' : 'webm';
+            let a = document.createElement('a'); a.style.display = 'none'; a.href = url;
+            a.download = `cosmic_${hqMode?'4K_':''}${Date.now()}.${ext}`;
             document.body.appendChild(a); a.click();
             setTimeout(() => { if (recBtn) recBtn.classList.remove('recording-active'); window.URL.revokeObjectURL(url); a.remove(); }, 100);
         };
