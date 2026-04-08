@@ -454,6 +454,35 @@
             #settings-toggle { display: none !important; }
         }
 
+        /* PERMISSION GUIDE MODAL */
+        #permission-guide {
+            position: fixed; inset: 0; z-index: 10000;
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(12px);
+            display: none; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        #permission-guide.open { display: flex; opacity: 1; }
+        .guide-card {
+            background: #FFF; width: 90%; max-width: 400px;
+            border-radius: var(--md-shape-xl); padding: 32px;
+            box-shadow: var(--md-elevation-3); text-align: center;
+            color: #1C1B1F; border: 1px solid rgba(0,0,0,0.05);
+        }
+        .guide-icon { font-size: 40px; margin-bottom: 20px; }
+        .guide-title { font-size: 20px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px; }
+        .guide-body { font-size: 14px; line-height: 1.6; color: #49454F; margin-bottom: 24px; text-align: left; }
+        .guide-step { display: flex; gap: 12px; margin-bottom: 12px; align-items: start; }
+        .step-num { 
+            background: var(--md-primary); color: #FFF; width: 20px; height: 20px; 
+            border-radius: 50%; font-size: 11px; font-weight: 800; 
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;
+        }
+        .guide-btn {
+            background: var(--md-primary); color: #FFF; width: 100%;
+            padding: 14px; border-radius: var(--md-shape-full); font-weight: 700;
+            border: none; cursor: pointer; font-size: 13px;
+        }
+
         #unit-slider::-webkit-slider-thumb, .ctrl-section input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             width: 8px; /* Larger for touch */
@@ -516,6 +545,18 @@
     </div>
     <!-- Desktop settings toggle -->
     <button id="settings-toggle-desktop" onclick="toggleSettings()" style="display:none;">SETTINGS</button>
+
+    <!-- Permission Guide Modal -->
+    <div id="permission-guide">
+        <div class="guide-card">
+            <div id="guide-icon" class="guide-icon">🎙️</div>
+            <div id="guide-title" class="guide-title">MIC ACCESS REQUIRED</div>
+            <div id="guide-content" class="guide-body">
+                <!-- Dynamic Content -->
+            </div>
+            <button class="guide-btn" onclick="closePermissionGuide()">I UNDERSTAND</button>
+        </div>
+    </div>
 
     <div id="settings-panel">
         <div id="settings-title">
@@ -966,6 +1007,7 @@ WE ARE COSMIC</textarea>
             audio: false 
         })
         .then(stream => {
+            // ... success handling
             if (video) { video.pause(); video.srcObject = null; video.remove(); }
             video = document.createElement('video');
             video.srcObject = stream;
@@ -997,9 +1039,13 @@ WE ARE COSMIC</textarea>
         })
         .catch(err => {
             btn.innerText = 'CAM';
-            let ui = document.getElementById('ui-layer');
-            ui.querySelector('h2').textContent = 'ACCESS ERROR';
-            alert("카메라를 시작할 수 없습니다. 브라우저 설정에서 카메라 접근을 허용해 주세요.");
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                showPermissionGuide('camera');
+            } else {
+                let ui = document.getElementById('ui-layer');
+                ui.querySelector('h2').textContent = 'ACCESS ERROR';
+                alert("카메라를 시작할 수 없습니다. 브라우저 설정에서 카메라 접근을 허용해 주세요.");
+            }
         });
     }
 
@@ -1494,6 +1540,44 @@ WE ARE COSMIC</textarea>
         });
         window.positionZoneHandle = positionHandle;
     })();
+
+    function showPermissionGuide(type) {
+        const guide = document.getElementById('permission-guide');
+        const title = document.getElementById('guide-title');
+        const content = document.getElementById('guide-content');
+        const icon = document.getElementById('guide-icon');
+        
+        let isSafari = /Safari/i.test(navigator.userAgent) && !/Chrome/i.test(navigator.userAgent);
+        let isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        
+        if (type === 'mic') {
+            icon.innerText = '🎙️';
+            title.innerText = '마이크 권한 허용이 필요합니다';
+            content.innerHTML = isSafari || isIOS ? `
+                <div class="guide-step"><span class="step-num">1</span> <div>주소창 왼쪽의 <b>'Aa'</b> 또는 <b>'설정'</b> 버튼을 누릅니다.</div></div>
+                <div class="guide-step"><span class="step-num">2</span> <div><b>'웹사이트 설정'</b>에 들어갑니다.</div></div>
+                <div class="guide-step"><span class="step-num">3</span> <div><b>'마이크'</b> 항목을 <b>'허용'</b>으로 바꿉니다.</div></div>
+            ` : `
+                <div class="guide-step"><span class="step-num">1</span> <div>주소창 왼쪽의 <b>자물쇠(🔐)</b> 아이콘을 누릅니다.</div></div>
+                <div class="guide-step"><span class="step-num">2</span> <div><b>'마이크'</b> 스위치를 <b>'허용'</b>으로 켭니다.</div></div>
+            `;
+        } else {
+            icon.innerText = '📷';
+            title.innerText = '카메라 권한 허용이 필요합니다';
+            content.innerHTML = isSafari || isIOS ? `
+                <div class="guide-step"><span class="step-num">1</span> <div>주소창 왼쪽의 <b>'Aa'</b> 버튼을 누릅니다.</div></div>
+                <div class="guide-step"><span class="step-num">2</span> <div><b>'웹사이트 설정'</b>에 들어갑니다.</div></div>
+                <div class="guide-step"><span class="step-num">3</span> <div><b>'카메라'</b> 항목을 <b>'허용'</b>으로 바꿉니다.</div></div>
+            ` : `
+                <div class="guide-step"><span class="step-num">1</span> <div>주소창 왼쪽의 <b>자물쇠(🔐)</b> 아이콘을 누릅니다.</div></div>
+                <div class="guide-step"><span class="step-num">2</span> <div><b>'카메라'</b> 스위치를 <b>'허용'</b>으로 켭니다.</div></div>
+            `;
+        }
+        guide.classList.add('open');
+    }
+    function closePermissionGuide() {
+        document.getElementById('permission-guide').classList.remove('open');
+    }
     let recognition, sttActive = false, sttFinalBuffer = "WE ARE COSMIC ";
     function initSTT() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1514,7 +1598,17 @@ WE ARE COSMIC</textarea>
 
         recognition.onerror = (event) => {
             console.error("STT Error:", event.error);
-            if (event.error === 'not-allowed') alert("마이크 권한이 거부되었습니다. 설정에서 허용해 주세요.");
+            if (event.error === 'not-allowed') {
+                sttActive = false;
+                showPermissionGuide('mic');
+                const toggle = document.getElementById("stt-toggle");
+                if (toggle) toggle.checked = false;
+                const hudBtn = document.getElementById("stt-hud-btn");
+                if (hudBtn) {
+                    hudBtn.innerHTML = "<span>🎙️</span> VOICE: OFF";
+                    hudBtn.classList.remove('active-stt');
+                }
+            }
             else if (event.error === 'network') alert("네트워크 연결이 불안정합니다.");
         };
 
