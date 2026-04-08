@@ -498,7 +498,13 @@
             ">BLACK</button>
         </div>
 
-        <span class="ctrl-label">TEXT</span>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="ctrl-label" style="margin:0;">TEXT</span>
+            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:10px; font-weight:700; color:var(--md-primary);">
+                <input type="checkbox" id="stt-toggle" onchange="toggleSTT(this.checked)" style="width:14px; height:14px; accent-color:var(--md-primary);">
+                🎙️ STT MIC
+            </label>
+        </div>
         <div class="ctrl-section">
             <textarea id="ctrl-text" rows="3" placeholder="단어를 줄바꿈으로 입력" onchange="applyText(this.value)">WE ARE NOT RAY
 WE ARE COSMIC</textarea>
@@ -1763,7 +1769,98 @@ WE ARE COSMIC</textarea>
         // Expose for renderLoop to call after resize
         window.positionZoneHandle = positionHandle;
     })();
-    </script>
+    
+    // ═══ SPEECH-TO-TEXT (STT) ═══
+    let recognition;
+    let sttActive = false;
+    let sttFinalBuffer = "WE ARE COSMIC "; // initial backup string
+
+    function initSTT() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("이 브라우저에서는 음성 인식(Web Speech API)을 지원하지 않습니다. Chrome을 사용해주세요.");
+            document.getElementById("stt-toggle").checked = false;
+            return false;
+        }
+
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = "ko-KR"; // Default language: Korean
+
+        recognition.onstart = () => {
+            sttActive = true;
+            document.getElementById("ctrl-text").disabled = true;
+            document.getElementById("ctrl-text").style.opacity = "0.5";
+            document.getElementById("ctrl-text").value = "마이크 듣는 중... 🎙️";
+        };
+
+        recognition.onresult = (event) => {
+            let interimTranscript = "";
+            let finalTranscript = "";
+
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript + " ";
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+
+            // If final words detected, update our rolling buffer
+            if (finalTranscript) {
+                sttFinalBuffer = finalTranscript;
+            }
+
+            // Current speech being spoken
+            let activeSpeech = interimTranscript.trim() ? interimTranscript : sttFinalBuffer;
+            if (activeSpeech.trim().length > 0) {
+                // Pad it to make it look like a flow
+                let unit = activeSpeech.toUpperCase() + "        ";
+                TEXT_FLOW = unit + unit + unit; // Keep enough string length to flow across canvas
+                document.getElementById("ctrl-text").value = activeSpeech; // visually show what is being spoken
+            }
+        };
+
+        recognition.onerror = (event) => {
+            console.error("Speech recognition error:", event.error);
+            if (event.error === "not-allowed") {
+                alert("마이크 권한이 거부되었습니다.");
+                toggleSTT(false);
+            }
+        };
+
+        recognition.onend = () => {
+            // Auto restart if it crashes or stops while actively toggled
+            if (sttActive) {
+                recognition.start();
+            }
+        };
+
+        return true;
+    }
+
+    function toggleSTT(activate) {
+        if (activate) {
+            if (!recognition) {
+                if (!initSTT()) return;
+            }
+            try { 
+                recognition.start();
+                sttActive = true;
+            } catch(e) { }
+        } else {
+            sttActive = false;
+            if (recognition) recognition.stop();
+            document.getElementById("ctrl-text").disabled = false;
+            document.getElementById("ctrl-text").style.opacity = "1";
+            
+            // Restore actual text to textarea and apply to text flow
+            document.getElementById("ctrl-text").value = "WE ARE NOT RAY\nWE ARE COSMIC";
+            applyText(document.getElementById("ctrl-text").value);
+        }
+    }
+</script>
     </div>
 
 </body>
