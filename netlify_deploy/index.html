@@ -983,8 +983,9 @@ WE ARE COSMIC</textarea>
 
     function resizeCanvas(vw, vh) {
         if (vw && vh) { currentVideoW = vw; currentVideoH = vh; }
+        // STABLE PREVIEW: Cap DPR at 1.5 for mobile to prevent memory/GPU overload
+        let dpr = Math.min(window.devicePixelRatio || 1, 1.5);
         let screenW = window.innerWidth, screenH = window.innerHeight;
-        let dpr = Math.min(window.devicePixelRatio || 1, 2);
         
         if (isIntro) {
             canvas.width = screenW * dpr;
@@ -1229,6 +1230,10 @@ WE ARE COSMIC</textarea>
                     offCtx.globalCompositeOperation = 'source-over';
                 }
             }
+        } else {
+            // IDLE STATE: Ensure offscreen is filled so ASCII flows even without video
+            offCtx.fillStyle = isOriginalTheme ? '#000' : '#FFF';
+            offCtx.fillRect(0, 0, cols, rows);
         }
         let imageData;
         try { imageData = offCtx.getImageData(0, 0, cols, rows); }
@@ -1295,6 +1300,12 @@ WE ARE COSMIC</textarea>
                 let v = Math.pow(vLinear, contrastPow);
                 let dist = Math.abs(vLinear - bluePhase);
 
+                if (isNonTypoV2) {
+                    ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : '#000000';
+                    let barWidth = Math.max(1, CELL_SIZE * darkness * 1.1);
+                    ctx.fillRect(cx - barWidth/2, y, barWidth, CELL_SIZE);
+                    continue; 
+                }
                 if (v >= 0.88) { 
                     ctx.fillStyle = colorZ4; 
                     ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); 
@@ -1449,19 +1460,24 @@ WE ARE COSMIC</textarea>
         else stopRecording();
     }
     function startRecording() {
-        // High Bitrate (20Mbps) + High Frame Rate for Professional Feel
+        // High Bitrate (25Mbps) + High Frame Rate for 4K-like Professional Feel
         let stream = canvas.captureStream(60);
         const hqMode = document.getElementById('ctrl-hq-rec')?.checked;
         
-        let options = {
-            mimeType: 'video/webm;codecs=vp9',
-            videoBitsPerSecond: hqMode ? 20000000 : 5000000 // 20Mbps for HQ, 5Mbps for standard
-        };
-        
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-            options.mimeType = 'video/webm';
-            if (!MediaRecorder.isTypeSupported(options.mimeType)) options.mimeType = 'video/mp4'; // iOS Support
+        let selectedType = 'video/mp4;codecs=avc1'; // Top Priority for Mobile Gallery
+        if (!MediaRecorder.isTypeSupported(selectedType)) {
+            selectedType = 'video/mp4'; 
+            if (!MediaRecorder.isTypeSupported(selectedType)) {
+                selectedType = 'video/webm;codecs=vp9'; // Fallback
+                if (!MediaRecorder.isTypeSupported(selectedType)) selectedType = 'video/webm';
+            }
         }
+
+        let options = {
+            mimeType: selectedType,
+            // 25Mbps for 4K Clarity, 6Mbps for standard
+            videoBitsPerSecond: hqMode ? 25000000 : 6000000 
+        };
         
         recordedChunks = [];
         mediaRecorder = new MediaRecorder(stream, options);
@@ -1470,11 +1486,11 @@ WE ARE COSMIC</textarea>
         
         mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
         mediaRecorder.onstop = () => {
-            let mimeType = options.mimeType;
-            let blob = new Blob(recordedChunks, { type: mimeType });
+            let blob = new Blob(recordedChunks, { type: selectedType });
             recordedChunks = [];
             let url = URL.createObjectURL(blob);
-            let a = document.createElement('a'); a.style.display = 'none'; a.href = url; a.download = `cosmic_${hqMode?'HQ_':''}${Date.now()}.${mimeType.includes('mp4')?'mp4':'webm'}`;
+            let ext = selectedType.includes('mp4') ? 'mp4' : 'webm';
+            let a = document.createElement('a'); a.style.display = 'none'; a.href = url; a.download = `cosmic_${hqMode?'4K_':''}${Date.now()}.${ext}`;
             document.body.appendChild(a); a.click();
             setTimeout(() => { if (recBtn) recBtn.classList.remove('recording-active'); window.URL.revokeObjectURL(url); a.remove(); }, 100);
         };
