@@ -1300,6 +1300,7 @@ WE ARE COSMIC</textarea>
                     continue;
                 }
                 // PEAK NORMALIZATION: Ensure we reach full square even if video isn't perfectly 0 or 255
+                let vLinear = Math.min(1.0, Math.max(0.0, (darkness - darknessThreshold) / (1.0 - darknessThreshold)));
                 let v = Math.pow(vLinear, contrastPow);
                 if (v > 0.92) v = 1.0; 
                 if (v < 0.02) v = 0.0;
