@@ -851,7 +851,7 @@ WE ARE COSMIC</textarea>
         let unitSlider = document.getElementById('unit-slider');
         if (unitSlider) {
             let scaleVal = Math.round(((CELL_SIZE - 8) / 112) * 100);
-            unitSlider.value = Math.max(0, Math.min(10, scaleVal));
+            unitSlider.value = Math.max(0, Math.min(100, scaleVal));
         }
         if (infoVid) {
             infoVid.textContent = (currentVideoW && currentVideoH) ? currentVideoW + ' × ' + currentVideoH : '— × —';
