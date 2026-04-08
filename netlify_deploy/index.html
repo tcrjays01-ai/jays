@@ -1222,29 +1222,6 @@ WE ARE COSMIC</textarea>
                     }
                 }
             }
-            let r_acc = 0, g_acc = 0, b_acc = 0, count = 0;
-            if (pixels && pixels.length > 0) {
-                for (let i = 0; i < pixels.length; i += 32) {
-                    r_acc += pixels[i]; g_acc += pixels[i+1]; b_acc += pixels[i+2];
-                    count++;
-                }
-                if (count > 0) {
-                    let r_avg = r_acc / count, g_avg = g_acc / count, b_avg = b_acc / count;
-                    let lerpFactor = 0.05;
-                    let currentRGB = hexToRgb(keyColor);
-                    let newRGB = [currentRGB[0] * (1 - lerpFactor) + r_avg * lerpFactor, currentRGB[1] * (1 - lerpFactor) + g_avg * lerpFactor, currentRGB[2] * (1 - lerpFactor) + b_avg * lerpFactor];
-                    keyColor = '#' + newRGB.map(x => Math.round(x).toString(16).padStart(2,'0')).join('');
-                    let cp = document.getElementById('ctrl-color'); if (cp) cp.value = keyColor;
-                    let ch = document.getElementById('color-hex'); if (ch) ch.textContent = keyColor.toUpperCase();
-                    if (gradientMode) {
-                        let gFrom = keyColor;
-                        let gTo = '#' + newRGB.map(x => Math.min(255, Math.round(x * 1.6)).toString(16).padStart(2,'0')).join('');
-                        let gf = document.getElementById('ctrl-grad-from'); let gt = document.getElementById('ctrl-grad-to');
-                        if (gf) gf.value = gFrom; if (gt) gt.value = gTo;
-                        applyGradientColors();
-                    }
-                }
-            }
         }
         requestAnimationFrame(renderLoop);
     }
