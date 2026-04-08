@@ -1959,7 +1959,7 @@ WE ARE COSMIC</textarea>
         let btn = document.querySelector('button[onclick="tryExperienceVideo()"]');
         if (btn) btn.innerText = "LOADING...";
         try {
-            let res = await fetch('./experience.mp4');
+            let res = await fetch('./experience.mp4?v=' + Date.now());
             let blob = await res.blob();
             let file = new File([blob], 'experience.mp4', {type: 'video/mp4'});
             loadVideo(file);
