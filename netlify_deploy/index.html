@@ -917,6 +917,7 @@ WE ARE COSMIC</textarea>
     function tryLocalVideo() {
         let btn = document.querySelector('button[onclick="tryLocalVideo()"]');
         if (btn) btn.innerText = "LOADING...";
+        setTimeout(() => { if (btn) btn.innerText = "PLAY CHOI"; }, 1500);
         loadVideo('choi_insta.mp4');
     }
 

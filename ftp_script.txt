@@ -3,5 +3,7 @@ admin
 !zhtmalrfpdl
 cd VOL1/ascii_engine
 binary
+put ascii_realtime.html index.html
+put whisper_worker.js
 put experience.mp4
 quit
