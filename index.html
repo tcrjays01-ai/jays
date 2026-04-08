@@ -525,6 +525,24 @@
             height: 32px; /* Thicker track area for hit-box */
             touch-action: none; /* Critical: prevent panel scrolling while dragging */
         }
+        #zone-drag-handle {
+            position: fixed;
+            width: 20px; /* Thicker touch target for mobile */
+            height: 100%;
+            cursor: ew-resize;
+            background: transparent;
+            z-index: 10002; /* Higher than controls-container */
+            display: none;
+            touch-action: none;
+        }
+        #zone-drag-handle::after {
+            content: '';
+            position: absolute;
+            left: 7px; top: 0; bottom: 0; width: 6px;
+            background: #0000FF;
+            box-shadow: 0 0 15px rgba(0,0,255,0.4);
+            opacity: 0.8;
+        }
         @media (max-width: 767px) {
             .ctrl-section input[type="range"]::-webkit-slider-thumb {
                 width: 14px; /* Even larger for mobile fingers */
@@ -762,6 +780,12 @@ WE ARE COSMIC</textarea>
             </div>
             <div id="bg-swatches" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
         </div>
+        <div class="ctrl-section">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:11px; font-weight:700; color:var(--md-on-surface);">
+                <input type="checkbox" id="ctrl-hq-rec" style="width:16px; height:16px;">
+                HQ RECORDING (20Mbps)
+            </label>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.min.js"></script>
@@ -960,7 +984,10 @@ WE ARE COSMIC</textarea>
     function resizeCanvas(vw, vh) {
         if (vw && vh) { currentVideoW = vw; currentVideoH = vh; }
         let screenW = window.innerWidth, screenH = window.innerHeight;
+        
+        const hqMode = document.getElementById('ctrl-hq-rec')?.checked;
         let dpr = Math.min(window.devicePixelRatio || 1, 2);
+        if (hqMode) dpr = Math.max(dpr, 1.5); // Boost internal resolution for HQ
         
         if (isIntro) {
             canvas.width = screenW * dpr;
@@ -1425,17 +1452,34 @@ WE ARE COSMIC</textarea>
         else stopRecording();
     }
     function startRecording() {
+        // High Bitrate (20Mbps) + High Frame Rate for Professional Feel
         let stream = canvas.captureStream(60);
-        let mimeType = 'video/webm';
-        mediaRecorder = new MediaRecorder(stream, { mimeType: mimeType });
+        const hqMode = document.getElementById('ctrl-hq-rec')?.checked;
+        
+        let options = {
+            mimeType: 'video/webm;codecs=vp9',
+            videoBitsPerSecond: hqMode ? 20000000 : 5000000 // 20Mbps for HQ, 5Mbps for standard
+        };
+        
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options.mimeType = 'video/webm';
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) options.mimeType = 'video/mp4'; // iOS Support
+        }
+        
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(stream, options);
+        let recBtn = document.getElementById('record-btn');
+        if (recBtn) recBtn.classList.add('recording-active');
+        
         mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
         mediaRecorder.onstop = () => {
+            let mimeType = options.mimeType;
             let blob = new Blob(recordedChunks, { type: mimeType });
             recordedChunks = [];
             let url = URL.createObjectURL(blob);
-            let a = document.createElement('a'); a.style.display = 'none'; a.href = url; a.download = `cosmic_ascii_${Date.now()}.webm`;
+            let a = document.createElement('a'); a.style.display = 'none'; a.href = url; a.download = `cosmic_${hqMode?'HQ_':''}${Date.now()}.${mimeType.includes('mp4')?'mp4':'webm'}`;
             document.body.appendChild(a); a.click();
-            setTimeout(() => { window.URL.revokeObjectURL(url); a.remove(); }, 100);
+            setTimeout(() => { if (recBtn) recBtn.classList.remove('recording-active'); window.URL.revokeObjectURL(url); a.remove(); }, 100);
         };
         mediaRecorder.start();
         let btn = document.getElementById('record-btn'); btn.textContent = '⏺ REC (CLICK TO SAVE)'; btn.classList.add('active');
