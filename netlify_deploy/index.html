@@ -1303,8 +1303,9 @@ WE ARE COSMIC</textarea>
                 let dist = Math.abs(vLinear - bluePhase);
 
                 if (isNonTypoV2) {
-                    ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : '#000000';
-                    let barWidth = Math.max(1, CELL_SIZE * darkness * 1.1);
+                    ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
+                    // Scale width from 1px to full CELL_SIZE based on intensity
+                    let barWidth = Math.max(1, Math.min(CELL_SIZE, CELL_SIZE * vLinear));
                     ctx.fillRect(cx - barWidth/2, y, barWidth, CELL_SIZE);
                     continue; 
                 }
