@@ -59,20 +59,11 @@
 
         /* LANDING — M3 Dialog Surface */
         #ui-layer {
-            position: fixed; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 1000;
-            text-align: center;
-            color: var(--md-on-surface);
-            background: rgba(255, 255, 255, 0.52);
-            backdrop-filter: blur(60px) saturate(200%);
-            -webkit-backdrop-filter: blur(60px) saturate(200%);
-            border: 1px solid rgba(255, 255, 255, 0.85);
-            border-radius: var(--md-shape-xl);
-            padding: 56px 72px 52px;
-            box-shadow: var(--md-elevation-3), inset 0 1px 0 rgba(255,255,255,0.85);
-            min-width: 400px;
-            position: fixed;
+            position: fixed; inset: 0; z-index: 999;
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
         #ui-layer::before {
             content: '';
@@ -409,7 +400,13 @@
             .premium-ctrl-btn { padding: 10px 14px; min-width: 90px; font-size: 9px; }
             .ctrl-section select, .ctrl-section textarea { font-size: 14px; min-height: 44px; }
             .ctrl-section textarea { min-height: 72px; }
-            #ui-layer { padding: 40px 28px 36px; min-width: unset; width: 88vw; }
+            #ui-layer {
+            position: fixed; inset: 0; z-index: 999;
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
             #ui-layer h2 { font-size: 20px; }
             #ui-layer p { font-size: 10px; margin-bottom: 28px; }
             #ui-btns {
@@ -645,9 +642,12 @@ WE ARE COSMIC</textarea>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.min.js">    initBackgroundVideo();
+</script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.min.js">    initBackgroundVideo();
+</script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js">    initBackgroundVideo();
+</script>
 
     <script>
     // ==========================================================
@@ -796,7 +796,31 @@ WE ARE COSMIC</textarea>
         canvas = document.getElementById('ascii-canvas');
         ctx = canvas.getContext('2d');
         resizeCanvas();
-        window.addEventListener('resize', () => resizeCanvas(currentVideoW, currentVideoH));
+            function initBackgroundVideo() {
+        if (video) { video.pause(); video.remove(); }
+        video = document.createElement('video');
+        video.src = './sample1.mp4';
+        video.autoplay = true; video.loop = true; video.muted = true; video.playsInline = true;
+        
+        video.addEventListener('canplay', () => {
+            if (video.videoWidth && video.videoHeight) {
+                resizeCanvas(video.videoWidth, video.videoHeight);
+            }
+            updatePhaseUI(0.0);
+            applyZone1(0.35);
+            contrastPow = 1.2;
+            isPlaying = true;
+            video.play().catch(e => console.warn("Background autoplay blocked by browser", e));
+            // Trigger loop if not active
+            if (!document.getElementById('ui-layer').dataset.loopstarted) {
+                document.getElementById('ui-layer').dataset.loopstarted = 'true';
+                requestAnimationFrame(renderLoop);
+            }
+        }, {once: true});
+        video.load();
+    }
+
+    window.addEventListener('resize', () => resizeCanvas(currentVideoW, currentVideoH));
 
         // --- ?렞 Clear Canvas to White Initially ---
         ctx.fillStyle = '#FFFFFF';
@@ -1927,6 +1951,7 @@ WE ARE COSMIC</textarea>
             if (btn) btn.innerText = "EXPERIENCE";
         }
     }
+    initBackgroundVideo();
 </script>
     </div>
 </body>
