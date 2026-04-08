@@ -1004,20 +1004,22 @@ WE ARE COSMIC</textarea>
 
     function calcGrid() {
         if (!canvas || !CELL_SIZE || CELL_SIZE <= 0) return;
-        cols = Math.ceil(canvas.width / CELL_SIZE);
-        rows = Math.ceil(canvas.height / CELL_SIZE);
+        let newCols = Math.ceil(canvas.width / CELL_SIZE);
+        let newRows = Math.ceil(canvas.height / CELL_SIZE);
         
-        let infoVid = document.getElementById('info-vidsize');
-        if (infoVid) infoVid.textContent = `${cols} x ${rows}`;
-
-        if (!offCanvas || offCanvas.width !== cols || offCanvas.height !== rows) {
-            offCanvas = document.createElement('canvas');
-            offCanvas.width = cols; offCanvas.height = rows;
+        if (!offCanvas || cols !== newCols || rows !== newRows) {
+            cols = newCols; rows = newRows;
+            if (!offCanvas) offCanvas = document.createElement('canvas');
+            offCanvas.width = cols; 
+            offCanvas.height = rows;
             offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
             cellHistory = new Float32Array(cols * rows);
             cellHistory.fill(-1);
             dotLife = new Float32Array(cols * rows);
             dotLife.fill(0);
+            
+            let infoVid = document.getElementById('info-vidsize');
+            if (infoVid) infoVid.textContent = `${cols} x ${rows}`;
         }
     }
 
