@@ -1299,28 +1299,43 @@ WE ARE COSMIC</textarea>
                     }
                     continue;
                 }
-                let vLinear = Math.min(1.0, Math.max(0.0, (darkness - darknessThreshold) / (1.0 - darknessThreshold)));
+                // PEAK NORMALIZATION: Ensure we reach full square even if video isn't perfectly 0 or 255
                 let v = Math.pow(vLinear, contrastPow);
+                if (v > 0.92) v = 1.0; 
+                if (v < 0.02) v = 0.0;
+                
                 let dist = Math.abs(vLinear - bluePhase);
 
                 if (isNonTypoV2) {
                     ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
                     // Use 'v' (exponential contrast) to control the "gap" between thin and thick
-                    let barWidth = Math.max(1.5, Math.min(CELL_SIZE, CELL_SIZE * v));
-                    ctx.fillRect(cx - barWidth/2, y, barWidth, CELL_SIZE);
+                    let barWidth = Math.min(CELL_SIZE, CELL_SIZE * v);
+                    if (barWidth > CELL_SIZE - 0.5) barWidth = CELL_SIZE; // Snap to full
+                    ctx.fillRect(x, y, barWidth, CELL_SIZE); // Left aligned or centered? 
+                    // Let's use centered for artistic rhythm but snap to edges when full
+                    if (barWidth < CELL_SIZE) {
+                        ctx.clearRect(x, y, CELL_SIZE, CELL_SIZE); // Clear background if theme needs it?
+                        ctx.fillStyle = isOriginalTheme ? '#000' : bgColor;
+                        ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                        ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
+                        ctx.fillRect(cx - barWidth/2, y, barWidth, CELL_SIZE);
+                    } else {
+                        ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                    }
                     continue; 
                 }
                 if (isNonTypoV3) {
                     ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
-                    // Two-phase growth: Line -> Triangle -> Square
+                    // Two-phase growth with snap-to-full
                     let bottomWidth = Math.min(CELL_SIZE, v * 2 * CELL_SIZE);
                     let topWidth = Math.max(0, (v - 0.5) * 2 * CELL_SIZE);
-                    
+                    if (v > 0.98) { topWidth = CELL_SIZE; bottomWidth = CELL_SIZE; }
+
                     ctx.beginPath();
-                    ctx.moveTo(x, y); // Top Left (Fixed)
-                    ctx.lineTo(x + topWidth, y); // Top Right (Moving 50-100%)
-                    ctx.lineTo(x + bottomWidth, y + CELL_SIZE); // Bottom Right (Moving 0-50%)
-                    ctx.lineTo(x, y + CELL_SIZE); // Bottom Left (Fixed)
+                    ctx.moveTo(x, y); // Top Left
+                    ctx.lineTo(x + topWidth, y); // Top Right
+                    ctx.lineTo(x + bottomWidth, y + CELL_SIZE); // Bottom Right
+                    ctx.lineTo(x, y + CELL_SIZE); // Bottom Left
                     ctx.closePath();
                     ctx.fill();
                     continue;
