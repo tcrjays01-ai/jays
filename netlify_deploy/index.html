@@ -870,33 +870,20 @@ WE ARE COSMIC</textarea>
         let screenW = window.innerWidth, screenH = window.innerHeight;
         let dpr = Math.min(window.devicePixelRatio || 1, 2);
         
-        if (isIntro) {
-            canvas.width = screenW * dpr;
-            canvas.height = screenH * dpr;
-            canvas.style.width = screenW + 'px';
-            canvas.style.height = screenH + 'px';
-            canvas.style.left = '0px';
-            canvas.style.top = '0px';
-        } else {
-            let srcW = currentVideoW, srcH = currentVideoH;
-            let scale = Math.min(screenW / srcW, screenH / srcH);
-            let displayW = Math.round(srcW * scale);
-            let displayH = Math.round(srcH * scale);
-            canvas.width = displayW * dpr;
-            canvas.height = displayH * dpr;
-            canvas.style.width = displayW + 'px';
-            canvas.style.height = displayH + 'px';
-            canvas.style.left = Math.round((screenW - displayW) / 2) + 'px';
-            canvas.style.top = Math.round((screenH - displayH) / 2) + 'px';
-        }
+        canvas.width = screenW * dpr;
+        canvas.height = screenH * dpr;
+        canvas.style.width = screenW + 'px';
+        canvas.style.height = screenH + 'px';
+        canvas.style.left = '0px';
+        canvas.style.top = '0px';
         
         calcGrid();
         if (window.positionZoneHandle) window.positionZoneHandle();
     }
 
     function calcGrid() {
-        let newCols = Math.floor(canvas.width / CELL_SIZE);
-        let newRows = Math.floor(canvas.height / CELL_SIZE);
+        let newCols = Math.ceil(canvas.width / CELL_SIZE);
+        let newRows = Math.ceil(canvas.height / CELL_SIZE);
         let infoVid = document.getElementById('info-vidsize');
         if (infoVid) infoVid.textContent = (currentVideoW && currentVideoH) ? currentVideoW + ' × ' + currentVideoH : '— × —';
         if (!offCanvas) {
@@ -1076,6 +1063,7 @@ WE ARE COSMIC</textarea>
             let vR = video.videoWidth / video.videoHeight;
             let cR = cols / rows;
             let dW, dH, dX, dY;
+            // Use Math.max (Cover) for overscan/crop
             if (cR > vR) { dW = cols; dH = cols / vR; dX = 0; dY = (rows - dH) / 2; }
             else { dH = rows; dW = rows * vR; dY = 0; dX = (cols - dW) / 2; }
             offCtx.fillStyle = '#FFF';
@@ -1113,6 +1101,7 @@ WE ARE COSMIC</textarea>
             let vR = video.videoWidth / video.videoHeight;
             let screenR = canvas.width / canvas.height;
             let dW, dH, dX, dY;
+            // Use Math.max (Cover) for the main context drawing too
             if (screenR > vR) {
                 dW = canvas.width; dH = canvas.width / vR;
                 dX = 0; dY = (canvas.height - dH) / 2;
