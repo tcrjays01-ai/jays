@@ -984,54 +984,29 @@ WE ARE COSMIC</textarea>
     function resizeCanvas(vw, vh) {
         if (vw && vh) { currentVideoW = vw; currentVideoH = vh; }
         let screenW = window.innerWidth, screenH = window.innerHeight;
-        let dpr = Math.min(window.devicePixelRatio || 1, 2);
+        let dpr = window.devicePixelRatio || 1;
         
-        if (isIntro) {
-            canvas.width = screenW * dpr;
-            canvas.height = screenH * dpr;
-            canvas.style.width = screenW + 'px';
-            canvas.style.height = screenH + 'px';
-            canvas.style.left = '0px';
-            canvas.style.top = '0px';
-        } else {
-            let srcW = currentVideoW, srcH = currentVideoH;
-            let scale = Math.min(screenW / srcW, screenH / srcH);
-            let rawDW = srcW * scale;
-            let rawDH = srcH * scale;
-
-            // SNAP 캔버스 크기를 CELL_SIZE의 배수로 강제 고정하여 '칼상태' 해상도 구현
-            let colsCount = Math.floor((rawDW * dpr) / CELL_SIZE);
-            let rowsCount = Math.floor((rawDH * dpr) / CELL_SIZE);
-            
-            let finalW = (colsCount * CELL_SIZE) / dpr;
-            let finalH = (rowsCount * CELL_SIZE) / dpr;
-
-            canvas.width = colsCount * CELL_SIZE;
-            canvas.height = rowsCount * CELL_SIZE;
-            canvas.style.width = finalW + 'px';
-            canvas.style.height = finalH + 'px';
-            canvas.style.left = Math.round((screenW - finalW) / 2) + 'px';
-            canvas.style.top = Math.round((screenH - finalH) / 2) + 'px';
-        }
+        // Final Fix: Always Full Screen Canvas
+        canvas.width = screenW * dpr;
+        canvas.height = screenH * dpr;
+        canvas.style.width = screenW + 'px';
+        canvas.style.height = screenH + 'px';
+        canvas.style.left = '0px';
+        canvas.style.top = '1px'; // Micro-scroll prevention
         
         calcGrid();
         if (window.positionZoneHandle) window.positionZoneHandle();
     }
 
     function calcGrid() {
-        let newCols = Math.round(canvas.width / CELL_SIZE);
-        let newRows = Math.round(canvas.height / CELL_SIZE);
-        let infoVid = document.getElementById('info-vidsize');
-        if (infoVid) infoVid.textContent = (currentVideoW && currentVideoH) ? currentVideoW + ' × ' + currentVideoH : '— × —';
-        if (!offCanvas) {
+        // Calculate integer cols/rows based on canvas dimensions to ensure perfect tiling
+        cols = Math.ceil(canvas.width / CELL_SIZE);
+        rows = Math.ceil(canvas.height / CELL_SIZE);
+        
+        if (!offCanvas || offCanvas.width !== cols) {
             offCanvas = document.createElement('canvas');
+            offCanvas.width = cols; offCanvas.height = rows;
             offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
-        }
-        if (newCols !== cols || newRows !== rows) {
-            cols = newCols;
-            rows = newRows;
-            offCanvas.width = cols;
-            offCanvas.height = rows;
             cellHistory = new Float32Array(cols * rows);
             cellHistory.fill(-1);
             dotLife = new Float32Array(cols * rows);
@@ -1206,7 +1181,8 @@ WE ARE COSMIC</textarea>
         }
         if (video && video.readyState >= 2 && !video.seeking) {
             let vW = video.videoWidth, vH = video.videoHeight;
-            let vScale = isIntro ? Math.max(cols / vW, rows / vH) : Math.min(cols / vW, rows / vH);
+            // Center Cover Logic for Sampler
+            let vScale = Math.max(cols / vW, rows / vH);
             let dW = vW * vScale, dH = vH * vScale;
             let dX = (cols - dW) / 2, dY = (rows - dH) / 2;
             
@@ -1242,15 +1218,15 @@ WE ARE COSMIC</textarea>
             ctx.save();
             ctx.filter = 'brightness(0.6)';
             let vW = video.videoWidth, vH = video.videoHeight;
-            let vScale = isIntro ? Math.max(canvas.width / vW, canvas.height / vH) : Math.min(canvas.width / vW, canvas.height / vH);
+            // Center Cover Logic for Background
+            let vScale = Math.max(canvas.width / vW, canvas.height / vH);
             let dW = vW * vScale, dH = vH * vScale;
             let dX = (canvas.width - dW) / 2, dY = (canvas.height - dH) / 2;
             ctx.drawImage(video, dX, dY, dW, dH);
             ctx.restore();
         }
-        // Offset is now guaranteed to be 0 or perfectly aligned with integer grid
-        let offsetX = (canvas.width - cols * CELL_SIZE) / 2;
-        let offsetY = (canvas.height - rows * CELL_SIZE) / 2;
+        let offsetX = 0;
+        let offsetY = 0;
         let fontSize = Math.max(6, CELL_SIZE * 0.88);
         ctx.font = `400 ${fontSize}px '${currentFont}', 'Consolas', monospace`;
         ctx.textAlign = 'center';
