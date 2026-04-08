@@ -870,12 +870,25 @@ WE ARE COSMIC</textarea>
         let screenW = window.innerWidth, screenH = window.innerHeight;
         let dpr = Math.min(window.devicePixelRatio || 1, 2);
         
-        canvas.width = screenW * dpr;
-        canvas.height = screenH * dpr;
-        canvas.style.width = screenW + 'px';
-        canvas.style.height = screenH + 'px';
-        canvas.style.left = '0px';
-        canvas.style.top = '0px';
+        if (isIntro) {
+            canvas.width = screenW * dpr;
+            canvas.height = screenH * dpr;
+            canvas.style.width = screenW + 'px';
+            canvas.style.height = screenH + 'px';
+            canvas.style.left = '0px';
+            canvas.style.top = '0px';
+        } else {
+            let srcW = currentVideoW, srcH = currentVideoH;
+            let scale = Math.min(screenW / srcW, screenH / srcH);
+            let displayW = Math.round(srcW * scale);
+            let displayH = Math.round(srcH * scale);
+            canvas.width = displayW * dpr;
+            canvas.height = displayH * dpr;
+            canvas.style.width = displayW + 'px';
+            canvas.style.height = displayH + 'px';
+            canvas.style.left = Math.round((screenW - displayW) / 2) + 'px';
+            canvas.style.top = Math.round((screenH - displayH) / 2) + 'px';
+        }
         
         calcGrid();
         if (window.positionZoneHandle) window.positionZoneHandle();
@@ -1061,7 +1074,7 @@ WE ARE COSMIC</textarea>
         }
         if (video && video.readyState >= 2 && !video.seeking) {
             let vW = video.videoWidth, vH = video.videoHeight;
-            let vScale = Math.max(cols / vW, rows / vH);
+            let vScale = isIntro ? Math.max(cols / vW, rows / vH) : Math.min(cols / vW, rows / vH);
             let dW = vW * vScale, dH = vH * vScale;
             let dX = (cols - dW) / 2, dY = (rows - dH) / 2;
             
@@ -1097,7 +1110,7 @@ WE ARE COSMIC</textarea>
             ctx.save();
             ctx.filter = 'brightness(0.6)';
             let vW = video.videoWidth, vH = video.videoHeight;
-            let vScale = Math.max(canvas.width / vW, canvas.height / vH);
+            let vScale = isIntro ? Math.max(canvas.width / vW, canvas.height / vH) : Math.min(canvas.width / vW, canvas.height / vH);
             let dW = vW * vScale, dH = vH * vScale;
             let dX = (canvas.width - dW) / 2, dY = (canvas.height - dH) / 2;
             ctx.drawImage(video, dX, dY, dW, dH);
