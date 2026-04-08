@@ -1481,10 +1481,27 @@ WE ARE COSMIC</textarea>
     let recognition, sttActive = false, sttFinalBuffer = "WE ARE COSMIC ";
     function initSTT() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) { alert("음성 인식은 Chrome 브라우저에서 지원됩니다."); document.getElementById("stt-toggle").checked = false; return false; }
+        if (!SpeechRecognition) { alert("음성 인식은 Chrome/Safari 브라우저에서 지원됩니다."); document.getElementById("stt-toggle").checked = false; return false; }
+        
+        const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
         recognition = new SpeechRecognition();
-        recognition.continuous = true; recognition.interimResults = true; recognition.lang = "ko-KR";
-        recognition.onstart = () => { sttActive = true; document.getElementById("ctrl-text").disabled = true; document.getElementById("ctrl-text").value = "마이크 듣는 중... 🎙️"; };
+        // Mobile browsers often fail with 'continuous: true'. We use false + auto-restart for stability.
+        recognition.continuous = !isMobile;
+        recognition.interimResults = true;
+        recognition.lang = "ko-KR";
+
+        recognition.onstart = () => { 
+            sttActive = true; 
+            document.getElementById("ctrl-text").disabled = true; 
+            document.getElementById("ctrl-text").value = "마이크 듣는 중... 🎙️"; 
+        };
+
+        recognition.onerror = (event) => {
+            console.error("STT Error:", event.error);
+            if (event.error === 'not-allowed') alert("마이크 권한이 거부되었습니다. 설정에서 허용해 주세요.");
+            else if (event.error === 'network') alert("네트워크 연결이 불안정합니다.");
+        };
+
         recognition.onresult = (event) => {
             let interimTranscript = "", finalTranscript = "";
             for (let i = event.resultIndex; i < event.results.length; ++i) {
@@ -1499,13 +1516,30 @@ WE ARE COSMIC</textarea>
                 document.getElementById("ctrl-text").value = activeSpeech;
             }
         };
-        recognition.onend = () => { if (sttActive) setTimeout(() => { try { recognition.start(); } catch(e){} }, 300); };
+
+        recognition.onend = () => { 
+            if (sttActive) {
+                // Auto-Restart for mobile/safari compatibility
+                setTimeout(() => { if (sttActive) { try { recognition.start(); } catch(e){} } }, 400); 
+            }
+        };
         return true;
     }
     function toggleSTT(activate) {
         const toggle = document.getElementById("stt-toggle");
-        if (activate) { if (!recognition && !initSTT()) return; try { recognition.start(); sttActive = true; } catch(e) {} }
-        else { sttActive = false; if (recognition) { try { recognition.stop(); } catch(e) {} } if (toggle) toggle.checked = false; document.getElementById("ctrl-text").disabled = false; document.getElementById("ctrl-text").value = "WE ARE NOT RAY\nWE ARE COSMIC"; applyText(document.getElementById("ctrl-text").value); }
+        if (activate) { 
+            if (!recognition && !initSTT()) return; 
+            sttActive = true;
+            try { recognition.start(); } catch(e) { console.warn("STT Start Error:", e); } 
+        }
+        else { 
+            sttActive = false; 
+            if (recognition) { try { recognition.stop(); } catch(e) {} } 
+            if (toggle) toggle.checked = false; 
+            document.getElementById("ctrl-text").disabled = false; 
+            document.getElementById("ctrl-text").value = "WE ARE NOT RAY\nWE ARE COSMIC"; 
+            applyText(document.getElementById("ctrl-text").value); 
+        }
     }
     window.videoTranscripts = [];
     let whisperWorker = null;
