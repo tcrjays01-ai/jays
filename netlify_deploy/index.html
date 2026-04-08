@@ -1340,9 +1340,14 @@ WE ARE COSMIC</textarea>
                         let rgb = hexToRgb(keyColor);
                         ctx.fillStyle = `rgb(${Math.round(rgb[0] * intensity + rgbZ2[0] * (1 - intensity))}, ${Math.round(rgb[1] * intensity + rgbZ2[1] * (1 - intensity))}, ${Math.round(rgb[2] * intensity + rgbZ2[2] * (1 - intensity))})`;
                         ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                        
+                        // RESTORE TEXT INSIDE COLOR ZONE
+                        ctx.fillStyle = (/[a-zA-Z]/.test(char) && !mosaicMode) ? `rgba(${rgbText[0]}, ${rgbText[1]}, ${rgbText[2]}, ${1.0 - intensity * 0.85})` : `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${1.0 - intensity * 0.85})`;
+                        ctx.font = `${CELL_SIZE * 1.0}px ${currentFont}`;
+                        ctx.fillText(char, cx, vy);
                     } else {
                         ctx.fillStyle = (/[a-zA-Z]/.test(char) && !mosaicMode) ? colorText : colorSymbol;
-                        ctx.font = `${v > 0.35 ? 900 : 400} ${CELL_SIZE * (v > 0.35 ? 1.05 : 0.9)}px ${currentFont}`;
+                        ctx.font = `${CELL_SIZE * 1.0}px ${currentFont}`;
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
                         ctx.fillText(char, cx, vy);
