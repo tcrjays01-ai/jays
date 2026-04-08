@@ -1507,12 +1507,14 @@ WE ARE COSMIC</textarea>
             setTheme('original');
             applyAutoPhase(true);
             applyGradient(true);
+            applyZone1(0.15);
             applyColor('#0000FF');
             
-            // Sync UI Checkboxes
+            // Sync UI Checkboxes & Sliders
             let oc = document.getElementById('ctrl-original-chk'); if (oc) oc.checked = true;
             let cap = document.getElementById('ctrl-auto-phase'); if (cap) cap.checked = true;
             let cg = document.getElementById('ctrl-gradient'); if (cg) cg.checked = true;
+            let z1 = document.getElementById('ctrl-zone1'); if (z1) z1.value = 0.15;
             let gctrl = document.getElementById('gradient-controls'); if (gctrl) gctrl.style.display = 'block';
 
             let res = await fetch('./experience.mp4?v=' + Date.now());
