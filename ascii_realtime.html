@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -464,8 +464,8 @@
 
     <canvas id="ascii-canvas"></canvas>
     <div id="ui-layer">
-        <h2>WE ARE NOT RAY</h2>
-        <p>SELECT VIDEO SOURCE TO BEGIN</p>
+        <h2>hey. we need to talk. we need to another talk.</h2>
+        <p></p>
         <input type="file" id="videoUpload" accept="video/mp4,video/webm,video/*">
         <div id="ui-btns" style="display:flex;flex-direction:column;gap:10px;align-items:stretch;width:100%;">
             <button onclick="document.getElementById('videoUpload').click()">SELECT VIDEO</button>
@@ -658,12 +658,9 @@ WE ARE COSMIC</textarea>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.min.js">    initBackgroundVideo();
-</script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.min.js">    initBackgroundVideo();
-</script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js">    initBackgroundVideo();
-</script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"></script>
 
     <script>
     // ==========================================================
@@ -1112,6 +1109,18 @@ WE ARE COSMIC</textarea>
     function renderLoop() {
         if (!isPlaying) return;
         let now = performance.now();
+
+        // Sync AI Transcripts with current video playback time
+        if (window.videoTranscripts && window.videoTranscripts.length > 0 && !sttActive && video && !video.paused) {
+            let activeChunk = window.videoTranscripts.find(c => c.timestamp && c.timestamp.length === 2 && video.currentTime >= c.timestamp[0] && (c.timestamp[1] === null || video.currentTime < c.timestamp[1]));
+            if (activeChunk && activeChunk.text && activeChunk.text.trim() && activeChunk.text.trim() !== window.lastAICheck) {
+                window.lastAICheck = activeChunk.text.trim();
+                let unit = activeChunk.text.toUpperCase() + "        ";
+                TEXT_FLOW = unit + unit + unit;
+                let textElem = document.getElementById("ctrl-text");
+                if(textElem && textElem.value !== activeChunk.text) textElem.value = activeChunk.text.trim();
+            }
+        }
 
 
         let targetFrameDelay = 16;
