@@ -568,11 +568,19 @@
     </div>
     
     <div id="bottom-hover-trigger"></div>
-    <div id="controls-container" style="display:none;">
+    <div id="controls-container" style="display:none; align-items:center; gap:8px;">
         <button id="btn-home" class="premium-ctrl-btn" onclick="returnToMenu()"><span>←</span> BACK</button>
         <button id="stt-hud-btn" class="premium-ctrl-btn" onclick="toggleSTTHUD()"><span>🎙️</span> VOICE: OFF</button>
         <button id="webcam-toggle" class="premium-ctrl-btn" onclick="toggleWebcam()"><span>⚡</span> HANDS: OFF</button>
-        <button id="record-btn" class="premium-ctrl-btn" onclick="toggleRecording()"><span>⏺</span> REC</button>
+        <div style="display:flex; align-items:center; background:rgba(0,0,0,0.6); border-radius:12px; padding:2px 10px; gap:8px; border:1px solid rgba(255,255,255,0.2);">
+             <span style="font-size:9px; color:white; font-weight:800; letter-spacing:1px; opacity:0.8;">4K HQ</span>
+             <label class="switch" style="transform:scale(0.75);">
+                 <input type="checkbox" id="ctrl-hq-rec">
+                 <span class="slider round"></span>
+             </label>
+             <div style="width:1px; height:14px; background:rgba(255,255,255,0.2); margin:0 2px;"></div>
+             <button id="record-btn" class="premium-ctrl-btn" onclick="toggleRecording()" style="background:transparent; border:none; padding:8px 0; color:#ff4444; font-weight:900;"><span>⏺</span> REC</button>
+        </div>
     </div>
 
     <div id="tutorial-toast">🖱️ SCROLL TO ZOOM GRID</div>
@@ -638,17 +646,6 @@
             </div>
             <textarea id="ctrl-text" rows="3" placeholder="단어를 줄바꿈으로 입력" onchange="applyText(this.value)">WE ARE NOT RAY
 WE ARE COSMIC</textarea>
-        </div>
-
-        <div class="ctrl-section" style="background:var(--accent-container); border-radius:var(--md-shape-m); padding:12px; margin-bottom:15px; border:1px solid var(--accent-primary);">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="ctrl-label" style="margin:0; color:var(--accent-primary); font-weight:800;">★ PRO 4K RECORDING ★</span>
-                <label class="switch">
-                    <input type="checkbox" id="ctrl-hq-rec">
-                    <span class="slider round"></span>
-                </label>
-            </div>
-            <div style="font-size:9px; color:var(--accent-primary); font-weight:700; opacity:0.7; margin-top:4px; letter-spacing:0.5px;">25MBPS / HIGH-FIDELITY MP4 ENABLED</div>
         </div>
 
         <div class="ctrl-section">
@@ -793,11 +790,6 @@ WE ARE COSMIC</textarea>
             </div>
             <div id="bg-swatches" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
         </div>
-
-        <button id="record-btn" onclick="toggleRecording()" style="width:100%; padding:14px; margin-top:15px; background:var(--md-primary); color:white; border:none; border-radius:var(--md-shape-m); font-weight:800; font-size:13px; letter-spacing:1px; cursor:pointer; box-shadow:var(--md-shadow-1); transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); display:flex; align-items:center; justify-content:center; gap:8px;">
-            <span style="display:inline-block; width:10px; height:10px; background:#ff4444; border-radius:50%; box-shadow:0 0 8px rgba(255,68,68,0.5);"></span>
-            ⏺ REC VIDEO
-        </button>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.min.js"></script>
