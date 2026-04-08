@@ -1009,7 +1009,7 @@ WE ARE COSMIC</textarea>
         if (video) { video.pause(); video.remove(); }
         video = document.createElement('video');
         video.src = typeof src === 'string' ? src : URL.createObjectURL(src);
-        video.autoplay = true; video.loop = true; video.muted = true; video.playsInline = true;
+        video.autoplay = true; video.loop = true; video.muted = false; video.playsInline = true;
 
         video.addEventListener('canplay', () => {
             // Adapt canvas to uploaded video resolution
