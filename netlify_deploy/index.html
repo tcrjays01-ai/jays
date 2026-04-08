@@ -456,6 +456,7 @@
         <input type="file" id="videoUpload" accept="video/mp4,video/webm,video/*">
         <div id="ui-btns" style="display:flex;flex-direction:column;gap:10px;align-items:stretch;width:100%;">
             <button onclick="document.getElementById('videoUpload').click()">SELECT VIDEO</button>
+            <button id="ai-extract-btn" style="display:none; background:var(--md-primary); border-color:var(--md-primary); color:var(--md-on-primary);" onclick="startVideoAI()">🤖 AI VIDEO SYNC</button>
             <button onclick="tryLocalVideo()">PLAY CHOI</button>
             <button onclick="startCameraSource()">CAM</button>
         </div>
@@ -1849,6 +1850,60 @@ WE ARE COSMIC</textarea>
         }
     }
 </script>
+    // ═══ WHISPER AI VIDEO SYNC ═══
+    window.videoTranscripts = [];
+    let whisperWorker = null;
+    
+    async function extractAudioFloat32Array(file) {
+        let audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+        let arrayBuffer = await file.arrayBuffer();
+        let audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        return audioBuffer.getChannelData(0); // Mono channel
+    }
+
+    async function startVideoAI() {
+        if (!window.lastUploadedVideoFile) return;
+        let btn = document.getElementById("ai-extract-btn");
+        btn.disabled = true;
+        btn.innerText = "⏳ EXTRACTING AUDIO...";
+        
+        // 1. Extract audio array
+        let audioArray;
+        try {
+            audioArray = await extractAudioFloat32Array(window.lastUploadedVideoFile);
+        } catch(e) {
+            alert("비디오에서 오디오를 추출할 수 없습니다.");
+            btn.innerText = "🤖 AI VIDEO SYNC";
+            btn.disabled = false;
+            return;
+        }
+
+        // 2. Start worker
+        btn.innerText = "⏳ LOADING AI MODEL (40MB)...";
+        if (!whisperWorker) {
+            whisperWorker = new Worker('whisper_worker.js', { type: 'module' });
+        }
+        
+        whisperWorker.onmessage = (e) => {
+            let msg = e.data;
+            if (msg.status === 'ready') {
+                btn.innerText = "⏳ TRANSCRIBING...";
+                whisperWorker.postMessage({ type: 'transcribe', audio: audioArray });
+            } else if (msg.status === 'progress') {
+                if(msg.progress && msg.progress.progress) btn.innerText = `⏳ DOWNLOADING: ${Math.round(msg.progress.progress)}%`;
+            } else if (msg.status === 'complete') {
+                window.videoTranscripts = msg.result.chunks || [];
+                btn.innerText = "✅ AI SYNC COMPLETE";
+                setTimeout(() => { btn.style.display = 'none'; }, 2000);
+            } else if (msg.status === 'error') {
+                alert("AI 분석 오류: " + msg.error);
+                btn.innerText = "🤖 AI VIDEO SYNC";
+                btn.disabled = false;
+            }
+        };
+
+        whisperWorker.postMessage({ type: 'load' });
+    }
     </div>
 
 </body>
