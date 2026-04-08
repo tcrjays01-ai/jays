@@ -610,20 +610,21 @@ WE ARE COSMIC</textarea>
             </div>
         </div>
 
-        <div id="pixel-info">
-            <span class="ctrl-label">VIDEO SIZE</span>
-            <div id="info-vidsize" style="font-size:12px;font-weight:600;letter-spacing:0.5px;margin:4px 0 16px;color:#2a2a3a;">— × —</div>
+                <div id="pixel-info">
+            <span class="ctrl-label" style="display:block; margin-bottom:8px;">VIDEO SIZE</span>
+            <div id="info-vidsize" style="font-size:13px;font-weight:600;letter-spacing:0.5px;margin-bottom:20px;color:#2a2a3a;">— × —</div>
 
-            <span class="ctrl-label">GRID</span>
-            <div id="info-res" style="font-size:12px;font-weight:600;letter-spacing:0.5px;margin:4px 0 16px;color:#2a2a3a;">0 × 0</div>
-
-            <span class="ctrl-label">UNIT SIZE</span>
-            <div style="display:flex;align-items:center;gap:12px;margin:8px 0 2px;">
-                <input type="range" id="unit-slider" min="8" max="120" value="12"
-                    style="flex:1;-webkit-appearance:none;appearance:none;height:2px;background:rgba(0,0,0,0.12);border-radius:1px;outline:none;cursor:ew-resize;"
-                    oninput="targetCellSize=parseInt(this.value);document.getElementById('info-size').textContent=this.value+'px'">
-                <span id="info-size" style="font-size:13px;font-weight:700;color:#2a2a3a;min-width:36px;text-align:right;">12px</span>
+            <span class="ctrl-label" style="display:block; margin-bottom:8px;">UNIT SCALE</span>
+            <div style="margin-top:4px;">
+                <input type="range" id="unit-slider" min="0" max="10" value="0"
+                    style="width:100%;-webkit-appearance:none;appearance:none;height:2px;background:rgba(0,0,0,0.12);border-radius:1px;outline:none;cursor:ew-resize;"
+                    oninput="targetCellSize=Math.round(8+(parseInt(this.value)/10)*112);">
+                <div style="display:flex; justify-content:space-between; margin-top:10px; font-size:10px; font-weight:700; color:#9595a0; font-family:'JetBrains Mono', monospace;">
+                    <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+                </div>
             </div>
+        </div>
+
         </div>
 
         <hr class="ctrl-divider">
@@ -840,14 +841,15 @@ WE ARE COSMIC</textarea>
         let newRows = Math.floor(canvas.height / CELL_SIZE);
 
         // Update real-time pixel/grid info in the left menu
-                let infoRes = document.getElementById('info-res');
-        let infoSize = document.getElementById('info-size');
-        let infoVid = document.getElementById('info-vidsize');
+                        let infoVid = document.getElementById('info-vidsize');
         let unitSlider = document.getElementById('unit-slider');
-        if (infoRes) infoRes.textContent = ` × `;
-        if (infoSize) infoSize.textContent = `px`;
-        if (unitSlider) unitSlider.value = Math.round(CELL_SIZE);
-        if (infoVid) infoVid.textContent = currentVideoW && currentVideoH ? ` × ` : '— × —';
+        if (unitSlider) {
+            let scaleVal = Math.round(((CELL_SIZE - 8) / 112) * 10);
+            unitSlider.value = Math.max(0, Math.min(10, scaleVal));
+        }
+        if (infoVid) {
+            infoVid.textContent = (currentVideoW && currentVideoH) ? currentVideoW + ' × ' + currentVideoH : '— × —';
+        }
 
         if (!offCanvas) {
             offCanvas = document.createElement('canvas');
