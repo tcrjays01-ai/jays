@@ -667,6 +667,7 @@ WE ARE COSMIC</textarea>
                 <option value="chaos">CHAOS (GLITCH SYMBOLS)</option>
                 <option value="mosaic">MOSAIC (NON-TYPO)</option>
                 <option value="mosaic2">MOSAIC 2 (VERTICAL BAR)</option>
+                <option value="mosaic3">MOSAIC 3 (SLANT TRIANGLE)</option>
             </select>
         </div>
 
@@ -846,7 +847,7 @@ WE ARE COSMIC</textarea>
     let hasPlayedIntro = false;
     let isOriginalTheme = false;
     let isExperienceMode = false;
-    let isNonTypoV2 = false;
+    let isNonTypoV2 = false, isNonTypoV3 = false;
 
     let TEXT_FLOW = 'WE ARE NOT RAY        WE ARE COSMIC        WE ARE NOT RAY        WE ARE COSMIC        ';
     
@@ -1309,6 +1310,17 @@ WE ARE COSMIC</textarea>
                     ctx.fillRect(cx - barWidth/2, y, barWidth, CELL_SIZE);
                     continue; 
                 }
+                if (isNonTypoV3) {
+                    ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
+                    let barWidth = Math.max(1, Math.min(CELL_SIZE, CELL_SIZE * v));
+                    ctx.beginPath();
+                    ctx.moveTo(x, y); // Top Left
+                    ctx.lineTo(x + barWidth, y + CELL_SIZE); // Bottom Right(moving)
+                    ctx.lineTo(x, y + CELL_SIZE); // Bottom Left
+                    ctx.closePath();
+                    ctx.fill();
+                    continue;
+                }
                 if (v >= 0.88) { 
                     ctx.fillStyle = colorZ4; 
                     ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); 
@@ -1512,6 +1524,7 @@ WE ARE COSMIC</textarea>
     function applyFont(val) { currentFont = val; }
     function applyCharSet(val) { 
         isNonTypoV2 = (val === 'mosaic2');
+        isNonTypoV3 = (val === 'mosaic3');
         if (CHAR_SETS[val]) { activeSymbols = CHAR_SETS[val]; mosaicMode = (val === 'mosaic'); } 
     }
     function applyText(val) {
