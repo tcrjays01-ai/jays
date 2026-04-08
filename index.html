@@ -1505,12 +1505,15 @@ WE ARE COSMIC</textarea>
         try {
             isExperienceMode = true;
             setTheme('original');
+            applyAutoPhase(true);
+            applyGradient(true);
             applyColor('#0000FF');
-            applyGradient(false);
-            let cg = document.getElementById('ctrl-gradient');
-            if (cg) cg.checked = false;
-            let oc = document.getElementById('ctrl-original-chk');
-            if (oc) oc.checked = true;
+            
+            // Sync UI Checkboxes
+            let oc = document.getElementById('ctrl-original-chk'); if (oc) oc.checked = true;
+            let cap = document.getElementById('ctrl-auto-phase'); if (cap) cap.checked = true;
+            let cg = document.getElementById('ctrl-gradient'); if (cg) cg.checked = true;
+            let gctrl = document.getElementById('gradient-controls'); if (gctrl) gctrl.style.display = 'block';
 
             let res = await fetch('./experience.mp4?v=' + Date.now());
             let blob = await res.blob();
