@@ -640,8 +640,19 @@
 WE ARE COSMIC</textarea>
         </div>
 
+        <div class="ctrl-section" style="background:var(--accent-container); border-radius:var(--md-shape-m); padding:12px; margin-bottom:15px; border:1px solid var(--accent-primary);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="ctrl-label" style="margin:0; color:var(--accent-primary); font-weight:800;">★ PRO 4K RECORDING ★</span>
+                <label class="switch">
+                    <input type="checkbox" id="ctrl-hq-rec">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            <div style="font-size:9px; color:var(--accent-primary); font-weight:700; opacity:0.7; margin-top:4px; letter-spacing:0.5px;">25MBPS / HIGH-FIDELITY MP4 ENABLED</div>
+        </div>
+
         <div class="ctrl-section">
-            <span class="ctrl-label">FONT</span>
+            <span class="ctrl-label">FONT FAMILY</span>
             <select id="ctrl-font" onchange="applyFont(this.value)">
                 <option value="Pretendard Variable" selected>Pretendard (Standard)</option>
                 <option value="Anton">Anton (Brutalist Block)</option>
@@ -782,12 +793,11 @@ WE ARE COSMIC</textarea>
             </div>
             <div id="bg-swatches" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
         </div>
-        <div class="ctrl-section">
-            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:11px; font-weight:700; color:var(--md-on-surface);">
-                <input type="checkbox" id="ctrl-hq-rec" style="width:16px; height:16px;">
-                HQ RECORDING (20Mbps)
-            </label>
-        </div>
+
+        <button id="record-btn" onclick="toggleRecording()" style="width:100%; padding:14px; margin-top:15px; background:var(--md-primary); color:white; border:none; border-radius:var(--md-shape-m); font-weight:800; font-size:13px; letter-spacing:1px; cursor:pointer; box-shadow:var(--md-shadow-1); transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1); display:flex; align-items:center; justify-content:center; gap:8px;">
+            <span style="display:inline-block; width:10px; height:10px; background:#ff4444; border-radius:50%; box-shadow:0 0 8px rgba(255,68,68,0.5);"></span>
+            ⏺ REC VIDEO
+        </button>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.min.js"></script>
