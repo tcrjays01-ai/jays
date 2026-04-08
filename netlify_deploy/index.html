@@ -572,15 +572,7 @@
         <button id="btn-home" class="premium-ctrl-btn" onclick="returnToMenu()"><span>←</span> BACK</button>
         <button id="stt-hud-btn" class="premium-ctrl-btn" onclick="toggleSTTHUD()"><span>🎙️</span> VOICE: OFF</button>
         <button id="webcam-toggle" class="premium-ctrl-btn" onclick="toggleWebcam()"><span>⚡</span> HANDS: OFF</button>
-        <div style="display:flex; align-items:center; background:rgba(0,0,0,0.6); border-radius:12px; padding:2px 10px; gap:8px; border:1px solid rgba(255,255,255,0.2);">
-             <span style="font-size:9px; color:white; font-weight:800; letter-spacing:1px; opacity:0.8;">4K HQ</span>
-             <label class="switch" style="transform:scale(0.75);">
-                 <input type="checkbox" id="ctrl-hq-rec">
-                 <span class="slider round"></span>
-             </label>
-             <div style="width:1px; height:14px; background:rgba(255,255,255,0.2); margin:0 2px;"></div>
-             <button id="record-btn" class="premium-ctrl-btn" onclick="toggleRecording()" style="background:transparent; border:none; padding:8px 0; color:#ff4444; font-weight:900;"><span>⏺</span> REC</button>
-        </div>
+        <button id="record-btn" class="premium-ctrl-btn" onclick="toggleRecording()" style="color:#ff4444; font-weight:900;"><span>⏺</span> REC</button>
     </div>
 
     <div id="tutorial-toast">🖱️ SCROLL TO ZOOM GRID</div>
@@ -768,12 +760,22 @@ WE ARE COSMIC</textarea>
                     <span style="font-size:9px; font-weight:700; color:#9595a0;">LVL</span>
                 </div>
             </div>
-            <div style="margin-top:4px;">
+            <div style="margin-bottom:15px;">
                 <input type="range" id="unit-slider" min="1" max="10" step="0.1" value="10"
                     style="width:100%;-webkit-appearance:none;appearance:none;height:2px;background:rgba(0,0,0,0.12);border-radius:1px;outline:none;cursor:ew-resize;"
                     oninput="applyUnitScale(this.value, 'slider')">
-                <div style="display:flex; justify-content:space-between; margin-top:10px; font-size:10px; font-weight:700; color:#9595a0; font-family:'JetBrains Mono', monospace;">
-                    <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+            </div>
+
+            <div class="ctrl-section" style="background:#1a1a24; border-radius:var(--md-shape-m); padding:12px; border:1px solid rgba(255,255,255,0.1); box-shadow:0 4px 15px rgba(0,0,0,0.2);">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; flex-direction:column;">
+                        <span class="ctrl-label" style="margin:0; color:#ffffff; font-weight:800; font-size:10px; letter-spacing:1.5px;">PRO 4K RENDER</span>
+                        <span style="font-size:8px; color:#9595a0; font-weight:700; margin-top:2px;">3840×2160 UPSCALING</span>
+                    </div>
+                    <label class="switch" style="transform:scale(0.85);">
+                        <input type="checkbox" id="ctrl-hq-rec">
+                        <span class="slider round"></span>
+                    </label>
                 </div>
             </div>
         </div>
@@ -806,6 +808,7 @@ WE ARE COSMIC</textarea>
     let selfieSegmentation = null;
     let canvas, ctx;
     let offCanvas, offCtx;
+    let recordCanvas, recordCtx; // High-Res Recording Proxy
     let cols = 0, rows = 0;
     let isPlaying = false;
     let segMask = false;
@@ -1238,7 +1241,6 @@ WE ARE COSMIC</textarea>
                 }
             }
         } else {
-            // IDLE STATE: Ensure offscreen is filled so ASCII flows even without video
             offCtx.fillStyle = isOriginalTheme ? '#000' : '#FFF';
             offCtx.fillRect(0, 0, cols, rows);
         }
@@ -1246,9 +1248,9 @@ WE ARE COSMIC</textarea>
         try { imageData = offCtx.getImageData(0, 0, cols, rows); }
         catch(e) { requestAnimationFrame(renderLoop); return; }
         let pixels = imageData.data;
-        // Always fill background to prevent gaps at edges on awkward resolutions
         ctx.fillStyle = isOriginalTheme ? '#000000' : bgColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (recordCtx) { recordCtx.fillStyle = isOriginalTheme ? '#000000' : bgColor; recordCtx.fillRect(0, 0, 3840, 2160); }
 
         if (isOriginalTheme && video && video.readyState >= 2) {
             ctx.save();
@@ -1260,13 +1262,8 @@ WE ARE COSMIC</textarea>
             ctx.drawImage(video, dX, dY, dW, dH);
             ctx.restore();
         }
-        // Offset is now guaranteed to be 0 or perfectly aligned with integer grid
         let offsetX = (canvas.width - cols * CELL_SIZE) / 2;
         let offsetY = (canvas.height - rows * CELL_SIZE) / 2;
-        let fontSize = Math.max(6, CELL_SIZE * 0.88);
-        ctx.font = `400 ${fontSize}px '${currentFont}', 'Consolas', monospace`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
         if (autoPhase) {
             bluePhase = (Math.sin(globalFrame * 0.04) * 0.5 + 0.5) * 0.85;
             let slider = document.getElementById('ctrl-contrast');
@@ -1303,93 +1300,23 @@ WE ARE COSMIC</textarea>
                     }
                     continue;
                 }
-                // PEAK NORMALIZATION: Ensure we reach full square even if video isn't perfectly 0 or 255
                 let vLinear = Math.min(1.0, Math.max(0.0, (darkness - darknessThreshold) / (1.0 - darknessThreshold)));
                 let v = Math.pow(vLinear, contrastPow);
                 if (v > 0.92) v = 1.0; 
                 if (v < 0.02) v = 0.0;
+                let char = activeSymbols[Math.floor(v * (activeSymbols.length - 1))];
                 
-                let dist = Math.abs(vLinear - bluePhase);
+                // 1. Draw to Display (Preview)
+                drawCell(ctx, x, y, cx, vy, char, v, vLinear, CELL_SIZE, colorZ4, colorSymbol, colorText);
 
-                if (isNonTypoV2) {
-                    ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
-                    // Use 'v' (exponential contrast) to control the "gap" between thin and thick
-                    let barWidth = Math.min(CELL_SIZE, CELL_SIZE * v);
-                    if (barWidth > CELL_SIZE - 0.5) barWidth = CELL_SIZE; // Snap to full
-                    ctx.fillRect(x, y, barWidth, CELL_SIZE); // Left aligned or centered? 
-                    // Let's use centered for artistic rhythm but snap to edges when full
-                    if (barWidth < CELL_SIZE) {
-                        ctx.clearRect(x, y, CELL_SIZE, CELL_SIZE); // Clear background if theme needs it?
-                        ctx.fillStyle = isOriginalTheme ? '#000' : bgColor;
-                        ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-                        ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
-                        ctx.fillRect(cx - barWidth/2, y, barWidth, CELL_SIZE);
-                    } else {
-                        ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                // 2. Draw to 4K Recording Canvas (if active)
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    const hqMode = document.getElementById('ctrl-hq-rec')?.checked;
+                    if (hqMode && recordCtx) {
+                        const sX = 3840 / canvas.width, sY = 2160 / canvas.height;
+                        const rx = x * sX, ry = y * sY, rcx = cx * sX, rvy = vy * sY, rCS = CELL_SIZE * sX;
+                        drawCell(recordCtx, rx, ry, rcx, rvy, char, v, vLinear, rCS, colorZ4, colorSymbol, colorText);
                     }
-                    continue; 
-                }
-                if (isNonTypoV3) {
-                    ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
-                    // Two-phase growth with snap-to-full
-                    let bottomWidth = Math.min(CELL_SIZE, v * 2 * CELL_SIZE);
-                    let topWidth = Math.max(0, (v - 0.5) * 2 * CELL_SIZE);
-                    if (v > 0.98) { topWidth = CELL_SIZE; bottomWidth = CELL_SIZE; }
-
-                    ctx.beginPath();
-                    ctx.moveTo(x, y); // Top Left
-                    ctx.lineTo(x + topWidth, y); // Top Right
-                    ctx.lineTo(x + bottomWidth, y + CELL_SIZE); // Bottom Right
-                    ctx.lineTo(x, y + CELL_SIZE); // Bottom Left
-                    ctx.closePath();
-                    ctx.fill();
-                    continue;
-                }
-                if (v >= 0.88) { 
-                    ctx.fillStyle = colorZ4; 
-                    ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); 
-                }
-                else if (dist < zone1Limit) {
-                    let intensity = Math.pow(1.0 - (dist / zone1Limit), 2.0);
-                    let baseR, baseG, baseB;
-                    if (gradientMode) {
-                        let cFrom = gradientFrom, cTo = gradientTo;
-                        let t = gradientT;
-                        baseR = Math.round(cFrom[0] + (cTo[0] - cFrom[0]) * t);
-                        baseG = Math.round(cFrom[1] + (cTo[1] - cFrom[1]) * t);
-                        baseB = Math.round(cFrom[2] + (cTo[2] - cFrom[2]) * t);
-                    } else {
-                        let rgb = hexToRgb(keyColor);
-                        baseR = rgb[0]; baseG = rgb[1]; baseB = rgb[2];
-                    }
-                    ctx.fillStyle = `rgb(${Math.round(baseR * intensity + rgbZ2[0] * (1 - intensity))}, ${Math.round(baseG * intensity + rgbZ2[1] * (1 - intensity))}, ${Math.round(baseB * intensity + rgbZ2[2] * (1 - intensity))})`;
-                    ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-
-                    if (intensity > 0.4 && (i * 11 + j * 17 + Math.floor(globalFrame/60)) % 10 < 2) {
-                        ctx.fillStyle = `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${intensity})`; 
-                        ctx.fillText(activeSymbols[((Math.floor(i) * 6271 + Math.floor(j) * 3181 + Math.floor(globalFrame/90) * 7919) % activeSymbols.length + activeSymbols.length) % activeSymbols.length], cx, vy);
-                    } else {
-                        let char = mosaicMode ? activeSymbols[((Math.floor(i) * 6271 + Math.floor(j) * 3181 + Math.floor(globalFrame/90) * 7919) % activeSymbols.length + activeSymbols.length) % activeSymbols.length] : TEXT_FLOW[((Math.floor(i) + Math.floor(j) * 17) % TEXT_FLOW.length + TEXT_FLOW.length) % TEXT_FLOW.length];
-                        ctx.fillStyle = /[a-zA-Z]/.test(char) ? `rgba(${rgbText[0]}, ${rgbText[1]}, ${rgbText[2]}, ${1.0 - intensity * 0.85})` : `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${1.0 - intensity * 0.85})`;
-                        ctx.fillText(char, cx, vy);
-                    }
-                }
-                else if (v < 0.72) {
-                    if (!isOriginalTheme) {
-                        ctx.fillStyle = colorZ2; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); 
-                        if (CELL_SIZE > 18) ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
-                    }
-                    let char = mosaicMode ? activeSymbols[((Math.floor(i) * 6271 + Math.floor(j) * 3181 + Math.floor(globalFrame/90) * 7919) % activeSymbols.length + activeSymbols.length) % activeSymbols.length] : TEXT_FLOW[((Math.floor(i) + Math.floor(j) * 17) % TEXT_FLOW.length + TEXT_FLOW.length) % TEXT_FLOW.length];
-                    ctx.fillStyle = /[a-zA-Z]/.test(char) ? colorText : colorSymbol;
-                    ctx.fillText(char, cx, vy); 
-                }
-                else {
-                    if (!isOriginalTheme) {
-                        ctx.fillStyle = colorZ3; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); 
-                        if (CELL_SIZE > 18) ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
-                    }
-                    ctx.fillStyle = colorSymbol;
-                    ctx.fillText(activeSymbols[((Math.floor(i) * 5381 + Math.floor(j) * 2749 + Math.floor(globalFrame/90) * 7919) % activeSymbols.length + activeSymbols.length) % activeSymbols.length], cx, vy);
                 }
             }
         }
@@ -1557,23 +1484,26 @@ WE ARE COSMIC</textarea>
         else stopRecording();
     }
     function startRecording() {
-        // High Bitrate (25Mbps) + High Frame Rate for 4K-like Professional Feel
-        let stream = canvas.captureStream(60);
         const hqMode = document.getElementById('ctrl-hq-rec')?.checked;
+        if (hqMode && !recordCanvas) initCanvases();
+
+        // Use 4K Record Canvas if HQ Mode is enabled
+        let captureSource = (hqMode && recordCanvas) ? recordCanvas : canvas;
+        let stream = captureSource.captureStream(60);
         
-        let selectedType = 'video/mp4;codecs=avc1'; // Top Priority for Mobile Gallery
+        let selectedType = 'video/mp4;codecs=avc1'; 
         if (!MediaRecorder.isTypeSupported(selectedType)) {
             selectedType = 'video/mp4'; 
             if (!MediaRecorder.isTypeSupported(selectedType)) {
-                selectedType = 'video/webm;codecs=vp9'; // Fallback
+                selectedType = 'video/webm;codecs=vp9'; 
                 if (!MediaRecorder.isTypeSupported(selectedType)) selectedType = 'video/webm';
             }
         }
 
         let options = {
             mimeType: selectedType,
-            // 25Mbps for 4K Clarity, 6Mbps for standard
-            videoBitsPerSecond: hqMode ? 25000000 : 6000000 
+            // 35Mbps for Crystal Clear 4K, 6Mbps for standard
+            videoBitsPerSecond: hqMode ? 35000000 : 7000000 
         };
         
         recordedChunks = [];
