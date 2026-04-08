@@ -848,7 +848,9 @@ WE ARE COSMIC</textarea>
     let isOriginalTheme = false;
     let isExperienceMode = false;
     let isNonTypoV2 = false, isNonTypoV3 = false;
-
+    const SYMBOL_MODES = ['standard', 'botanical', 'matrix', 'geometric', 'chaos', 'mosaic', 'mosaic2', 'mosaic3'];
+    let lastHandX = -1, handVelocity = 0, lastSwipeTime = 0;
+    
     let TEXT_FLOW = 'WE ARE NOT RAY        WE ARE COSMIC        WE ARE NOT RAY        WE ARE COSMIC        ';
     
     const CHAR_SETS = {
@@ -1438,8 +1440,21 @@ WE ARE COSMIC</textarea>
         if (webcamVideo) { webcamVideo.srcObject?.getTracks().forEach(t => t.stop()); webcamVideo.remove(); webcamVideo = null; }
     }
     function onHandResults(results) {
-        if (!results.multiHandLandmarks || !results.multiHandLandmarks.length) { pinchDistance = -1; return; }
+        if (!results.multiHandLandmarks || !results.multiHandLandmarks.length) { pinchDistance = -1; lastHandX = -1; return; }
         let lm = results.multiHandLandmarks[0];
+        
+        // Horizontal Swipe detection: track wrist point (0) or palm mcp (9)
+        let currentX = lm[9].x * 320;
+        let now = performance.now();
+        if (lastHandX !== -1 && now - lastSwipeTime > 1000) {
+            let vx = currentX - lastHandX;
+            if (Math.abs(vx) > 35) { // Rapid movement threshold
+                 cycleSymbolSet(vx > 0 ? -1 : 1);
+                 lastSwipeTime = now;
+            }
+        }
+        lastHandX = currentX;
+
         let dx = (lm[4].x - lm[8].x) * 320, dy = (lm[4].y - lm[8].y) * 240;
         pinchDistance = Math.sqrt(dx * dx + dy * dy);
         targetCellSize = Math.round(lerp(8, 150, clamp((pinchDistance - 15) / 140, 0, 1)));
@@ -1452,18 +1467,16 @@ WE ARE COSMIC</textarea>
         if (e.key === '+' || e.key === '=') { targetCellSize = Math.min(150, targetCellSize + 5); syncUnitUI(); }
         else if (e.key === '-' || e.key === '_') { targetCellSize = Math.max(8, targetCellSize - 5); syncUnitUI(); }
     });
-    document.addEventListener('wheel', (e) => {
-        document.getElementById('tutorial-toast').style.opacity = '0';
-        if (!webcamActive) {
-            if (e.deltaY < 0) { targetCellSize = Math.min(150, targetCellSize + 5); syncUnitUI(); }
-            else if (e.deltaY > 0) { targetCellSize = Math.max(8, targetCellSize - 5); syncUnitUI(); }
-        }
-    }, { passive: true });
+    let initialPinchDist = null, initialCellSize = 150;
+    let touchStartX = 0, touchStartTime = 0;
 
-    let initialPinchDist = null, initialCellSize = 0, lastTouchY = null;
     window.addEventListener('touchstart', (e) => {
         if (!webcamActive) {
-            if (e.touches.length === 1) lastTouchY = e.touches[0].pageY;
+            if (e.touches.length === 1) {
+                lastTouchY = e.touches[0].pageY;
+                touchStartX = e.touches[0].pageX;
+                touchStartTime = performance.now();
+            }
             else if (e.touches.length === 2) {
                 e.preventDefault();
                 let dx = e.touches[0].pageX - e.touches[1].pageX, dy = e.touches[0].pageY - e.touches[1].pageY;
@@ -1474,10 +1487,14 @@ WE ARE COSMIC</textarea>
     window.addEventListener('touchmove', (e) => {
         if (!webcamActive) {
             if (e.touches.length === 1 && lastTouchY !== null) {
-                e.preventDefault();
-                document.getElementById('tutorial-toast').style.opacity = '0';
-                targetCellSize = Math.max(8, Math.min(150, targetCellSize + dy * 0.3));
-                syncUnitUI();
+                let dy = e.touches[0].pageY - lastTouchY;
+                if (Math.abs(dy) > 10) {
+                    e.preventDefault();
+                    document.getElementById('tutorial-toast').style.opacity = '0';
+                    targetCellSize = Math.max(8, Math.min(150, targetCellSize - dy * 0.3));
+                    syncUnitUI();
+                    lastTouchY = e.touches[0].pageY;
+                }
             } else if (e.touches.length === 2 && initialPinchDist !== null) {
                 e.preventDefault();
                 document.getElementById('tutorial-toast').style.opacity = '0';
@@ -1488,7 +1505,17 @@ WE ARE COSMIC</textarea>
             }
         }
     }, { passive: false });
-    window.addEventListener('touchend', (e) => { if (e.touches.length < 2) initialPinchDist = null; if (e.touches.length < 1) lastTouchY = null; });
+    window.addEventListener('touchend', (e) => { 
+        if (!webcamActive && e.changedTouches.length === 1) {
+            let dx = e.changedTouches[0].pageX - touchStartX;
+            let dt = performance.now() - touchStartTime;
+            if (Math.abs(dx) > 100 && dt < 400) {
+                cycleSymbolSet(dx > 0 ? -1 : 1);
+            }
+        }
+        if (e.touches.length < 2) initialPinchDist = null; 
+        if (e.touches.length < 1) lastTouchY = null; 
+    });
 
     function toggleRecording() {
         if (!mediaRecorder || mediaRecorder.state === 'inactive') startRecording();
@@ -1545,7 +1572,23 @@ WE ARE COSMIC</textarea>
     function applyCharSet(val) { 
         isNonTypoV2 = (val === 'mosaic2');
         isNonTypoV3 = (val === 'mosaic3');
-        if (CHAR_SETS[val]) { activeSymbols = CHAR_SETS[val]; mosaicMode = (val === 'mosaic'); } 
+        if (CHAR_SETS[val] || val === 'mosaic2' || val === 'mosaic3') { activeSymbols = CHAR_SETS[val] || CHAR_SETS.standard; mosaicMode = (val === 'mosaic'); } 
+    }
+    function cycleSymbolSet(dir) {
+        let select = document.getElementById('ctrl-charset');
+        let currentIdx = SYMBOL_MODES.indexOf(select.value);
+        let nextIdx = (currentIdx + dir + SYMBOL_MODES.length) % SYMBOL_MODES.length;
+        let nextMode = SYMBOL_MODES[nextIdx];
+        select.value = nextMode;
+        applyCharSet(nextMode);
+        
+        // UI Feedback Toast
+        let toast = document.getElementById('tutorial-toast');
+        if (toast) {
+            toast.textContent = `MODE: ${nextMode.toUpperCase().replace('MOSAIC', 'NON-TYPO ')}`;
+            toast.style.opacity = '1';
+            setTimeout(() => { toast.style.opacity = '0'; }, 1500);
+        }
     }
     function applyText(val) {
         const LINE_GAP = '          ';
