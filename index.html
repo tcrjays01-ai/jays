@@ -947,55 +947,47 @@ WE ARE COSMIC</textarea>
         updatePhaseUI(0.30);
         applyZone1(0.35);
         
-        const launchCamera = (useAudio) => {
-            navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: 'user' }, 
-                audio: useAudio 
-            })
-            .then(stream => {
-                if (video) { video.pause(); video.srcObject = null; video.remove(); }
-                video = document.createElement('video');
-                video.srcObject = stream;
-                video.autoplay = true; video.muted = true; video.playsInline = true;
-                video.addEventListener('canplay', () => {
-                    document.getElementById('ui-layer').style.display = 'none';
-                    document.getElementById('controls-container').style.display = 'flex';
-                    setTimeout(() => { if(window.positionZoneHandle) window.positionZoneHandle(); }, 100);
-                    if (window.innerWidth > 767) {
-                        document.getElementById('settings-panel').classList.add('open');
-                        let _st=document.getElementById('settings-toggle'); if(_st) _st.style.setProperty('display','none','important');
-                    } else {
-                        let mobileBar = document.getElementById('mobile-top-btns'); if (mobileBar) mobileBar.style.display = 'flex';
-                    }
-                    isCamera = true;
-                    initSegmentation();
-                    video.play();
-                    document.body.classList.add('touch-show');
-                    let toast = document.getElementById('tutorial-toast');
-                    if (toast) {
-                        toast.style.opacity = '1';
-                        setTimeout(() => { toast.style.opacity = '0'; document.body.classList.remove('touch-show'); }, 4000);
-                    }
-                    isIntro = true;
-                    introStartTime = performance.now() + 500;
-                    isPlaying = true;
-                    requestAnimationFrame(renderLoop);
-                }, {once: true});
-            })
-            .catch(err => {
-                if (useAudio) {
-                    console.warn("Retrying without audio due to error:", err.name);
-                    launchCamera(false);
+        // Start with video only to avoid intrusive mic prompts
+        navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'user' }, 
+            audio: false 
+        })
+        .then(stream => {
+            if (video) { video.pause(); video.srcObject = null; video.remove(); }
+            video = document.createElement('video');
+            video.srcObject = stream;
+            video.autoplay = true; video.muted = true; video.playsInline = true;
+            video.addEventListener('canplay', () => {
+                document.getElementById('ui-layer').style.display = 'none';
+                document.getElementById('controls-container').style.display = 'flex';
+                setTimeout(() => { if(window.positionZoneHandle) window.positionZoneHandle(); }, 100);
+                if (window.innerWidth > 767) {
+                    document.getElementById('settings-panel').classList.add('open');
+                    let _st=document.getElementById('settings-toggle'); if(_st) _st.style.setProperty('display','none','important');
                 } else {
-                    btn.innerText = 'CAM';
-                    let ui = document.getElementById('ui-layer');
-                    ui.querySelector('h2').textContent = 'ACCESS ERROR';
-                    alert("카메라를 시작할 수 없습니다. (에러: " + (err.name || "Unknown") + ")\n브라우저 설정에서 카메라 권한을 확인해 주세요.");
+                    let mobileBar = document.getElementById('mobile-top-btns'); if (mobileBar) mobileBar.style.display = 'flex';
                 }
-            });
-        };
-
-        launchCamera(true);
+                isCamera = true;
+                initSegmentation();
+                video.play();
+                document.body.classList.add('touch-show');
+                let toast = document.getElementById('tutorial-toast');
+                if (toast) {
+                    toast.style.opacity = '1';
+                    setTimeout(() => { toast.style.opacity = '0'; document.body.classList.remove('touch-show'); }, 4000);
+                }
+                isIntro = true;
+                introStartTime = performance.now() + 500;
+                isPlaying = true;
+                requestAnimationFrame(renderLoop);
+            }, {once: true});
+        })
+        .catch(err => {
+            btn.innerText = 'CAM';
+            let ui = document.getElementById('ui-layer');
+            ui.querySelector('h2').textContent = 'ACCESS ERROR';
+            alert("카메라를 시작할 수 없습니다. 브라우저 설정에서 카메라 접근을 허용해 주세요.");
+        });
     }
 
     function returnToMenu() {
