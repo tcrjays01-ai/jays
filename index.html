@@ -572,7 +572,15 @@
         <button id="btn-home" class="premium-ctrl-btn" onclick="returnToMenu()"><span>←</span> BACK</button>
         <button id="stt-hud-btn" class="premium-ctrl-btn" onclick="toggleSTTHUD()"><span>🎙️</span> VOICE: OFF</button>
         <button id="webcam-toggle" class="premium-ctrl-btn" onclick="toggleWebcam()"><span>⚡</span> HANDS: OFF</button>
-        <button id="record-btn" class="premium-ctrl-btn" onclick="toggleRecording()" style="color:#ff4444; font-weight:900;"><span>⏺</span> REC</button>
+        <div style="display:flex; align-items:center; background:rgba(0,0,0,0.6); border-radius:12px; padding:2px 10px; gap:8px; border:1px solid rgba(255,255,255,0.2);">
+             <span style="font-size:9px; color:white; font-weight:800; letter-spacing:1px; opacity:0.8;">4K HQ</span>
+             <label class="switch" style="transform:scale(0.75);">
+                 <input type="checkbox" id="ctrl-hq-rec">
+                 <span class="slider round"></span>
+             </label>
+             <div style="width:1px; height:14px; background:rgba(255,255,255,0.2); margin:0 2px;"></div>
+             <button id="record-btn" class="premium-ctrl-btn" onclick="toggleRecording()" style="background:transparent; border:none; padding:8px 0; color:#ff4444; font-weight:900;"><span>⏺</span> REC</button>
+        </div>
     </div>
 
     <div id="tutorial-toast">🖱️ SCROLL TO ZOOM GRID</div>
@@ -766,13 +774,10 @@ WE ARE COSMIC</textarea>
                     oninput="applyUnitScale(this.value, 'slider')">
             </div>
 
-            <div class="ctrl-section" style="background:#1a1a24; border-radius:var(--md-shape-m); padding:12px; border:1px solid rgba(255,255,255,0.1); box-shadow:0 4px 15px rgba(0,0,0,0.2);">
+            <div class="ctrl-section" style="margin-bottom:15px; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:10px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div style="display:flex; flex-direction:column;">
-                        <span class="ctrl-label" style="margin:0; color:#ffffff; font-weight:800; font-size:10px; letter-spacing:1.5px;">PRO 4K RENDER</span>
-                        <span style="font-size:8px; color:#9595a0; font-weight:700; margin-top:2px;">3840×2160 UPSCALING</span>
-                    </div>
-                    <label class="switch" style="transform:scale(0.85);">
+                    <span class="ctrl-label" style="margin:0;">PRO 4K RENDER (HQ)</span>
+                    <label class="switch" style="transform:scale(0.8);">
                         <input type="checkbox" id="ctrl-hq-rec">
                         <span class="slider round"></span>
                     </label>
