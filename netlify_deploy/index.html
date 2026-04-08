@@ -948,43 +948,52 @@ WE ARE COSMIC</textarea>
         applyZone1(0.35);
         const contrastPow = 2.0;
         const facingMode = 'user'; // Default to selfie mode for better portrait experience
-        // Enable audio true so STT can work in camera mode
-        navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: true })
-            .then(stream => {
-                if (video) { video.pause(); video.srcObject = null; video.remove(); }
-                video = document.createElement('video');
-                video.srcObject = stream;
-                video.autoplay = true; video.muted = true; video.playsInline = true;
-                video.addEventListener('canplay', () => {
-                    document.getElementById('ui-layer').style.display = 'none';
-                    document.getElementById('controls-container').style.display = 'flex';
-                    setTimeout(() => { if(window.positionZoneHandle) window.positionZoneHandle(); }, 100);
-                    if (window.innerWidth > 767) {
-                        document.getElementById('settings-panel').classList.add('open');
-                        let _st=document.getElementById('settings-toggle'); if(_st) _st.style.setProperty('display','none','important');
+        // Smart Fallback: Try with audio first (for STT), if denied, try video-only
+        function attemptAccess(withAudio) {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: withAudio })
+                .then(stream => {
+                    if (video) { video.pause(); video.srcObject = null; video.remove(); }
+                    video = document.createElement('video');
+                    video.srcObject = stream;
+                    video.autoplay = true; video.muted = true; video.playsInline = true;
+                    video.addEventListener('canplay', () => {
+                        document.getElementById('ui-layer').style.display = 'none';
+                        document.getElementById('controls-container').style.display = 'flex';
+                        setTimeout(() => { if(window.positionZoneHandle) window.positionZoneHandle(); }, 100);
+                        if (window.innerWidth > 767) {
+                            document.getElementById('settings-panel').classList.add('open');
+                            let _st=document.getElementById('settings-toggle'); if(_st) _st.style.setProperty('display','none','important');
+                        } else {
+                            let mobileBar = document.getElementById('mobile-top-btns'); if (mobileBar) mobileBar.style.display = 'flex';
+                        }
+                        isCamera = true;
+                        initSegmentation();
+                        video.play();
+                        document.body.classList.add('touch-show');
+                        let toast = document.getElementById('tutorial-toast');
+                        if (toast) {
+                            toast.style.opacity = '1';
+                            setTimeout(() => { toast.style.opacity = '0'; document.body.classList.remove('touch-show'); }, 4000);
+                        }
+                        isIntro = true;
+                        introStartTime = performance.now() + 500;
+                        isPlaying = true;
+                        requestAnimationFrame(renderLoop);
+                    }, {once: true});
+                })
+                .catch(err => {
+                    if (withAudio) {
+                        console.warn("Audio access denied, falling back to video-only.");
+                        attemptAccess(false);
                     } else {
-                        let mobileBar = document.getElementById('mobile-top-btns'); if (mobileBar) mobileBar.style.display = 'flex';
+                        btn.innerText = 'CAM';
+                        let ui = document.getElementById('ui-layer');
+                        ui.querySelector('h2').textContent = 'CAMERA ACCESS DENIED';
+                        alert("카메라 권한이 거부되었습니다. 브라우저 설정에서 카메라 접근을 허용해 주세요.");
                     }
-                    isCamera = true;
-                    initSegmentation();
-                    video.play();
-                    document.body.classList.add('touch-show');
-                    let toast = document.getElementById('tutorial-toast');
-                    if (toast) {
-                        toast.style.opacity = '1';
-                        setTimeout(() => { toast.style.opacity = '0'; document.body.classList.remove('touch-show'); }, 4000);
-                    }
-                    isIntro = true;
-                    introStartTime = performance.now() + 500;
-                    isPlaying = true;
-                    requestAnimationFrame(renderLoop);
-                }, {once: true});
-            })
-            .catch(err => {
-                btn.innerText = 'CAM';
-                let ui = document.getElementById('ui-layer');
-                ui.querySelector('h2').textContent = 'CAMERA ACCESS DENIED';
-            });
+                });
+        }
+        attemptAccess(true);
     }
 
     function returnToMenu() {
