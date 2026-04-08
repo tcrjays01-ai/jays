@@ -1312,11 +1312,15 @@ WE ARE COSMIC</textarea>
                 }
                 if (isNonTypoV3) {
                     ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
-                    let barWidth = Math.max(1, Math.min(CELL_SIZE, CELL_SIZE * v));
+                    // Two-phase growth: Line -> Triangle -> Square
+                    let bottomWidth = Math.min(CELL_SIZE, v * 2 * CELL_SIZE);
+                    let topWidth = Math.max(0, (v - 0.5) * 2 * CELL_SIZE);
+                    
                     ctx.beginPath();
-                    ctx.moveTo(x, y); // Top Left
-                    ctx.lineTo(x + barWidth, y + CELL_SIZE); // Bottom Right(moving)
-                    ctx.lineTo(x, y + CELL_SIZE); // Bottom Left
+                    ctx.moveTo(x, y); // Top Left (Fixed)
+                    ctx.lineTo(x + topWidth, y); // Top Right (Moving 50-100%)
+                    ctx.lineTo(x + bottomWidth, y + CELL_SIZE); // Bottom Right (Moving 0-50%)
+                    ctx.lineTo(x, y + CELL_SIZE); // Bottom Left (Fixed)
                     ctx.closePath();
                     ctx.fill();
                     continue;
