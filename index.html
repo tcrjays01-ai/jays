@@ -207,6 +207,18 @@
         .premium-ctrl-btn span { font-size: 14px; }
         #record-btn:hover span { transform: scale(1.2); }
         #webcam-toggle:hover span { transform: scale(1.1); }
+        
+        .premium-ctrl-btn.active-stt {
+            background: #0000FF !important;
+            color: #FFFFFF !important;
+            border-color: #0000FF !important;
+            animation: stt-pulse 2s infinite ease-in-out;
+        }
+        @keyframes stt-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 0, 255, 0.4); }
+            70% { box-shadow: 0 0 0 12px rgba(0, 0, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 0, 255, 0); }
+        }
 
         /* TOAST — M3 Snackbar */
         #tutorial-toast {
@@ -490,8 +502,9 @@
     <div id="bottom-hover-trigger"></div>
     <div id="controls-container" style="display:none;">
         <button id="btn-home" class="premium-ctrl-btn" onclick="returnToMenu()"><span>←</span> BACK</button>
-        <button id="webcam-toggle" class="premium-ctrl-btn" onclick="toggleWebcam()"><span>⚡</span> HAND CONTROL: OFF</button>
-        <button id="record-btn" class="premium-ctrl-btn" onclick="toggleRecording()"><span>⏺</span> REC VIDEO</button>
+        <button id="stt-hud-btn" class="premium-ctrl-btn" onclick="toggleSTTHUD()"><span>🎙️</span> VOICE: OFF</button>
+        <button id="webcam-toggle" class="premium-ctrl-btn" onclick="toggleWebcam()"><span>⚡</span> HANDS: OFF</button>
+        <button id="record-btn" class="premium-ctrl-btn" onclick="toggleRecording()"><span>⏺</span> REC</button>
     </div>
 
     <div id="tutorial-toast">🖱️ SCROLL TO ZOOM GRID</div>
@@ -1530,19 +1543,35 @@ WE ARE COSMIC</textarea>
     }
     function toggleSTT(activate) {
         const toggle = document.getElementById("stt-toggle");
+        const hudBtn = document.getElementById("stt-hud-btn");
+        
         if (activate) { 
             if (!recognition && !initSTT()) return; 
             sttActive = true;
-            try { recognition.start(); } catch(e) { console.warn("STT Start Error:", e); } 
+            try { 
+                recognition.start(); 
+                if (toggle) toggle.checked = true;
+                if (hudBtn) {
+                    hudBtn.innerHTML = "<span>🎙️</span> VOICE: ON";
+                    hudBtn.classList.add('active-stt');
+                }
+            } catch(e) { console.warn("STT Start Error:", e); } 
         }
         else { 
             sttActive = false; 
             if (recognition) { try { recognition.stop(); } catch(e) {} } 
             if (toggle) toggle.checked = false; 
+            if (hudBtn) {
+                hudBtn.innerHTML = "<span>🎙️</span> VOICE: OFF";
+                hudBtn.classList.remove('active-stt');
+            }
             document.getElementById("ctrl-text").disabled = false; 
             document.getElementById("ctrl-text").value = "WE ARE NOT RAY\nWE ARE COSMIC"; 
             applyText(document.getElementById("ctrl-text").value); 
         }
+    }
+    function toggleSTTHUD() {
+        toggleSTT(!sttActive);
     }
     window.videoTranscripts = [];
     let whisperWorker = null;
