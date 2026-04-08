@@ -1093,6 +1093,10 @@ WE ARE COSMIC</textarea>
         try { imageData = offCtx.getImageData(0, 0, cols, rows); }
         catch(e) { requestAnimationFrame(renderLoop); return; }
         let pixels = imageData.data;
+        // Always fill background to prevent gaps at edges on awkward resolutions
+        ctx.fillStyle = isOriginalTheme ? '#000000' : bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
         if (isOriginalTheme && video && video.readyState >= 2) {
             ctx.save();
             ctx.filter = 'brightness(0.6)';
@@ -1108,9 +1112,6 @@ WE ARE COSMIC</textarea>
             }
             ctx.drawImage(video, dX, dY, dW, dH);
             ctx.restore();
-        } else {
-            ctx.fillStyle = bgColor;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
         let offsetX = (canvas.width - cols * CELL_SIZE) / 2;
         let offsetY = (canvas.height - rows * CELL_SIZE) / 2;

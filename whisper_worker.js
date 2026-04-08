@@ -9,7 +9,7 @@ self.onmessage = async (e) => {
     if (msg.type === 'load') {
         try {
             self.postMessage({ status: 'loading' });
-            transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-base', {
+            transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-small', {
                 progress_callback: (prog) => {
                     self.postMessage({ status: 'progress', progress: prog });
                 }
