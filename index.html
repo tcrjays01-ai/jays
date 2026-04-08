@@ -1504,13 +1504,10 @@ WE ARE COSMIC</textarea>
         if (btn) btn.innerText = "LOADING...";
         try {
             isExperienceMode = true;
-            // Set defaults for EXPERIENCE MODE
-            applyAutoPhase(true);
-            applyGradient(true);
-            let cap = document.getElementById('ctrl-auto-phase');
-            if (cap) cap.checked = true;
+            applyColor('#0000FF');
+            applyGradient(false);
             let cg = document.getElementById('ctrl-gradient');
-            if (cg) cg.checked = true;
+            if (cg) cg.checked = false;
 
             let res = await fetch('./experience.mp4?v=' + Date.now());
             let blob = await res.blob();
