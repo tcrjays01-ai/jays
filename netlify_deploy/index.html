@@ -808,8 +808,8 @@ WE ARE COSMIC</textarea>
     let selfieSegmentation = null;
     let canvas, ctx;
     let offCanvas, offCtx;
-    let recordCanvas, recordCtx; // High-Res Recording Proxy
     let cols = 0, rows = 0;
+    let savedWidth = 0, savedHeight = 0; // For HQ restore
     let isPlaying = false;
     let segMask = false;
     let isSegmenting = false;
@@ -1250,7 +1250,6 @@ WE ARE COSMIC</textarea>
         let pixels = imageData.data;
         ctx.fillStyle = isOriginalTheme ? '#000000' : bgColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        if (recordCtx) { recordCtx.fillStyle = isOriginalTheme ? '#000000' : bgColor; recordCtx.fillRect(0, 0, 3840, 2160); }
 
         if (isOriginalTheme && video && video.readyState >= 2) {
             ctx.save();
@@ -1306,16 +1305,50 @@ WE ARE COSMIC</textarea>
                 if (v < 0.02) v = 0.0;
                 let char = activeSymbols[Math.floor(v * (activeSymbols.length - 1))];
                 
-                // 1. Draw to Display (Preview)
-                drawCell(ctx, x, y, cx, vy, char, v, vLinear, CELL_SIZE, colorZ4, colorSymbol, colorText);
+                if (isNonTypoV2) {
+                    ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
+                    let barWidth = Math.min(CELL_SIZE, CELL_SIZE * v);
+                    if (barWidth > CELL_SIZE - 0.5) barWidth = CELL_SIZE;
+                    if (barWidth < CELL_SIZE) {
+                        ctx.fillStyle = isOriginalTheme ? '#000' : bgColor;
+                        ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                        ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
+                        ctx.fillRect(cx - barWidth/2, y, barWidth, CELL_SIZE);
+                    } else {
+                        ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                    }
+                    continue;
+                }
+                if (isNonTypoV3) {
+                    ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
+                    let bWidth = Math.min(CELL_SIZE, v * 2 * CELL_SIZE);
+                    let tWidth = Math.max(0, (v - 0.5) * 2 * CELL_SIZE);
+                    if (v > 0.98) { tWidth = bWidth = CELL_SIZE; }
+                    ctx.beginPath();
+                    ctx.moveTo(x, y); 
+                    ctx.lineTo(x + tWidth, y); 
+                    ctx.lineTo(x + bWidth, y + CELL_SIZE); 
+                    ctx.lineTo(x, y + CELL_SIZE); 
+                    ctx.closePath();
+                    ctx.fill();
+                    continue;
+                }
 
-                // 2. Draw to 4K Recording Canvas (if active)
-                if (mediaRecorder && mediaRecorder.state === 'recording') {
-                    const hqMode = document.getElementById('ctrl-hq-rec')?.checked;
-                    if (hqMode && recordCtx) {
-                        const sX = 3840 / canvas.width, sY = 2160 / canvas.height;
-                        const rx = x * sX, ry = y * sY, rcx = cx * sX, rvy = vy * sY, rCS = CELL_SIZE * sX;
-                        drawCell(recordCtx, rx, ry, rcx, rvy, char, v, vLinear, rCS, colorZ4, colorSymbol, colorText);
+                if (v >= 0.88) { 
+                    ctx.fillStyle = colorZ4; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); 
+                } else {
+                    let dist = Math.abs(vLinear - bluePhase);
+                    if (dist < zone1Limit) {
+                        let intensity = Math.pow(1.0 - (dist / zone1Limit), 2.0);
+                        let rgb = hexToRgb(keyColor);
+                        ctx.fillStyle = `rgb(${Math.round(rgb[0] * intensity + rgbZ2[0] * (1 - intensity))}, ${Math.round(rgb[1] * intensity + rgbZ2[1] * (1 - intensity))}, ${Math.round(rgb[2] * intensity + rgbZ2[2] * (1 - intensity))})`;
+                        ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                    } else {
+                        ctx.fillStyle = v > 0.35 ? colorSymbol : colorText;
+                        ctx.font = `${v > 0.35 ? 900 : 400} ${CELL_SIZE * (v > 0.35 ? 1.05 : 0.9)}px ${currentFont}`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(char, cx, vy);
                     }
                 }
             }
@@ -1485,12 +1518,18 @@ WE ARE COSMIC</textarea>
     }
     function startRecording() {
         const hqMode = document.getElementById('ctrl-hq-rec')?.checked;
-        if (hqMode && !recordCanvas) initCanvases();
-
-        // Use 4K Record Canvas if HQ Mode is enabled
-        let captureSource = (hqMode && recordCanvas) ? recordCanvas : canvas;
-        let stream = captureSource.captureStream(60);
         
+        // --- TRUE 4K FORCE RESIZE ---
+        if (hqMode) {
+            savedWidth = canvas.width;
+            savedHeight = canvas.height;
+            canvas.width = 3840;
+            canvas.height = 2160;
+            // Force re-layout for 4K
+            lastGridCellSize = -1; 
+        }
+
+        let stream = canvas.captureStream(60);
         let selectedType = 'video/mp4;codecs=avc1'; 
         if (!MediaRecorder.isTypeSupported(selectedType)) {
             selectedType = 'video/mp4'; 
@@ -1502,8 +1541,8 @@ WE ARE COSMIC</textarea>
 
         let options = {
             mimeType: selectedType,
-            // 35Mbps for Crystal Clear 4K, 6Mbps for standard
-            videoBitsPerSecond: hqMode ? 35000000 : 7000000 
+            // 60Mbps for Pro-Grade 4K Clarity
+            videoBitsPerSecond: hqMode ? 60000000 : 10000000 
         };
         
         recordedChunks = [];
@@ -1513,6 +1552,13 @@ WE ARE COSMIC</textarea>
         
         mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
         mediaRecorder.onstop = () => {
+            // --- RESTORE ORIGINAL SIZE ---
+            if (hqMode) {
+                canvas.width = savedWidth;
+                canvas.height = savedHeight;
+                lastGridCellSize = -1;
+            }
+
             let blob = new Blob(recordedChunks, { type: selectedType });
             recordedChunks = [];
             let url = URL.createObjectURL(blob);
