@@ -984,10 +984,7 @@ WE ARE COSMIC</textarea>
     function resizeCanvas(vw, vh) {
         if (vw && vh) { currentVideoW = vw; currentVideoH = vh; }
         let screenW = window.innerWidth, screenH = window.innerHeight;
-        
-        const hqMode = document.getElementById('ctrl-hq-rec')?.checked;
         let dpr = Math.min(window.devicePixelRatio || 1, 2);
-        if (hqMode) dpr = Math.max(dpr, 1.5); // Boost internal resolution for HQ
         
         if (isIntro) {
             canvas.width = screenW * dpr;
