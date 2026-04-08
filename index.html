@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -733,6 +733,7 @@ WE ARE COSMIC</textarea>
     };
     let activeSymbols = CHAR_SETS.standard; // Default set
     let mosaicMode = false;
+    let isExperienceMode = false;
 
     function rgbToHsl(r, g, b) {
         r /= 255; g /= 255; b /= 255;
@@ -815,7 +816,7 @@ WE ARE COSMIC</textarea>
             function initBackgroundVideo() {
         if (video) { video.pause(); video.remove(); }
         video = document.createElement('video');
-        video.src = './sample1.mp4';
+        video.src = './choi.mp4';
         video.autoplay = true; video.loop = true; video.muted = true; video.playsInline = true;
         
         video.addEventListener('canplay', () => {
@@ -982,6 +983,7 @@ WE ARE COSMIC</textarea>
     }
 
     function returnToMenu() {
+        isExperienceMode = false;
         let _mb2 = document.getElementById('mobile-top-btns'); if(_mb2) _mb2.style.display='none';
         if (webcamActive) stopWebcam();
         if (video) {
@@ -1424,6 +1426,63 @@ WE ARE COSMIC</textarea>
         document.getElementById('hud-fps').textContent = `${fpsDisplay} FPS`;
         document.getElementById('hud-hand').textContent = pinchDistance >= 0
             ? `PINCH: ${Math.round(pinchDistance)}px` : 'NO HAND';
+
+        // --- EXPERIENCE MODE ENHANCEMENTS ---
+        if (isExperienceMode && video && video.readyState >= 2) {
+            // 1. Typography Sync
+            if (window.videoTranscripts && window.videoTranscripts.length > 0) {
+                let ct = video.currentTime;
+                let chunk = window.videoTranscripts.find(c => ct >= c.timestamp[0] && ct <= c.timestamp[1]);
+                if (chunk && chunk.text) {
+                    let unit = chunk.text.trim().toUpperCase() + "        ";
+                    if (TEXT_FLOW !== unit + unit + unit) {
+                        TEXT_FLOW = unit + unit + unit;
+                    }
+                }
+            }
+
+            // 2. Real-time Color Extraction
+            let r_acc = 0, g_acc = 0, b_acc = 0, count = 0;
+            // pixels array from offCtx.getImageData at line 1206
+            if (pixels && pixels.length > 0) {
+                for (let i = 0; i < pixels.length; i += 16) { // sparse sampling
+                    r_acc += pixels[i]; g_acc += pixels[i+1]; b_acc += pixels[i+2];
+                    count++;
+                }
+                if (count > 0) {
+                    let r_avg = r_acc / count, g_avg = g_acc / count, b_avg = b_acc / count;
+                    let lerpFactor = 0.05;
+                    let currentRGB = hexToRgb(keyColor);
+                    let newRGB = [
+                        currentRGB[0] * (1 - lerpFactor) + r_avg * lerpFactor,
+                        currentRGB[1] * (1 - lerpFactor) + g_avg * lerpFactor,
+                        currentRGB[2] * (1 - lerpFactor) + b_avg * lerpFactor
+                    ];
+                    keyColor = '#' + newRGB.map(x => Math.round(x).toString(16).padStart(2,'0')).join('');
+                    
+                    // Update DOM for UI reflection
+                    let cp = document.getElementById('ctrl-color');
+                    if (cp) cp.value = keyColor;
+                    let ch = document.getElementById('color-hex');
+                    if (ch) ch.textContent = keyColor.toUpperCase();
+
+                    if (gradientMode) {
+                        // Dynamically update gradient colors to match
+                        let gFrom = keyColor;
+                        let gTo = '#' + newRGB.map(x => {
+                            let val = Math.round(x * 1.5); // make it 50% brighter
+                            return Math.min(255, val).toString(16).padStart(2,'0');
+                        }).join('');
+                        
+                        let gf = document.getElementById('ctrl-grad-from');
+                        let gt = document.getElementById('ctrl-grad-to');
+                        if (gf) gf.value = gFrom;
+                        if (gt) gt.value = gTo;
+                        applyGradientColors();
+                    }
+                }
+            }
+        }
 
         requestAnimationFrame(renderLoop);
     }
@@ -1959,6 +2018,15 @@ WE ARE COSMIC</textarea>
         let btn = document.querySelector('button[onclick="tryExperienceVideo()"]');
         if (btn) btn.innerText = "LOADING...";
         try {
+            isExperienceMode = true;
+            // Set defaults for EXPERIENCE MODE
+            applyAutoPhase(true);
+            applyGradient(true);
+            let cap = document.getElementById('ctrl-auto-phase');
+            if (cap) cap.checked = true;
+            let cg = document.getElementById('ctrl-gradient');
+            if (cg) cg.checked = true;
+
             let res = await fetch('./experience.mp4?v=' + Date.now());
             let blob = await res.blob();
             let file = new File([blob], 'experience.mp4', {type: 'video/mp4'});
