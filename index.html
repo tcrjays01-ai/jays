@@ -773,14 +773,10 @@ WE ARE COSMIC</textarea>
         <hr class="ctrl-divider">
 
         <div class="ctrl-section">
-            <div class="ctrl-group">
-                <div class="ctrl-label">VISUAL MODE</div>
-                <div id="symbol-buttons" style="display:flex;gap:5px;flex-wrap:wrap;">
-                    <button class="visual-chip active" onclick="setSymbolSet('standard', this)">STANDARD</button>
-                    <button class="visual-chip" onclick="setSymbolSet('geometric', this)">GEOMETRIC</button>
-                    <button class="visual-chip" onclick="setSymbolSet('nontypov2', this)">NON-TYPO 2</button>
-                    <button class="visual-chip" onclick="setSymbolSet('mosaic', this)">MOSAIC</button>
-                </div>
+            <span class="ctrl-label">Background Color</span>
+            <div class="ctrl-inline" style="margin-bottom:6px;">
+                <input type="color" id="ctrl-bg" value="#ffffff" oninput="applyBg(this.value)">
+                <span id="bg-hex">#FFFFFF</span>
             </div>
             <div id="bg-swatches" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
         </div>
@@ -817,6 +813,7 @@ WE ARE COSMIC</textarea>
     let currentFont = 'Pretendard Variable';
     let keyColor = '#0000FF';
     let darknessThreshold = 0.08, contrastPow = 1.0;
+    let lastGridCellSize = -1;
     let zone1Limit = 0.35;
     let bluePhase = 0.0;
     let autoPhase = false;
@@ -832,19 +829,22 @@ WE ARE COSMIC</textarea>
     let colorZ4 = '#000000';
     let colorText = '#000000'; let rgbText = [0, 0, 0];
     let colorSymbol = '#0000FF'; let rgbSymbol = [0, 0, 255];
-    let CELL_SIZE = 12, targetCellSize = 12, lastGridCellSize = 12;
+    let CELL_SIZE = 150;
+    let targetCellSize = 150;
     let frameCounter = 0, globalFrame = 0;
     let lastFpsTime = performance.now();
     let fpsDisplay = 0;
     let lastRenderTime = 0;
     let mpHands = null, mpCamera = null;
     let webcamActive = false, webcamVideo = null;
+    let pinchDistance = -1;
+    let mediaRecorder = null;
+    let recordedChunks = [];
     let isIntro = false;
     let introStartTime = 0;
     let hasPlayedIntro = false;
     let isOriginalTheme = false;
     let isExperienceMode = false;
-    let isNonTypoV2 = false;
 
     let TEXT_FLOW = 'WE ARE NOT RAY        WE ARE COSMIC        WE ARE NOT RAY        WE ARE COSMIC        ';
     
@@ -854,8 +854,7 @@ WE ARE COSMIC</textarea>
         matrix: ['0', '1', '▰', '▱', '◧', '◨', '◩', '◪', '▣', '▤', '▥'],
         geometric: ['●', '○', '■', '□', '▲', '△', '▼', '▽', '◆', '◇', '◈'],
         chaos: ['!', '?', '#', '$', '&', '*', '@', '⊕', '⊗', '☣', '☢'],
-        mosaic: ['●', '○', '+', '⊕', '■', '□', '▬', '◉', '▪', '◆', '⊞', '⊡'],
-        nontypov2: [] // Handled by specialized rendering
+        mosaic: ['●', '○', '+', '⊕', '■', '□', '▬', '◉', '▪', '◆', '⊞', '⊡']
     };
     let activeSymbols = CHAR_SETS.standard;
     let mosaicMode = false;
@@ -938,11 +937,9 @@ WE ARE COSMIC</textarea>
         canvas = document.getElementById('ascii-canvas');
         ctx = canvas.getContext('2d');
         resizeCanvas();
-        
-        // Immediate start for background animation
-        isPlaying = true;
-        requestAnimationFrame(renderLoop);
-        
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
         document.getElementById('videoUpload').addEventListener('change', (e) => {
             let f = e.target.files[0];
             if (f) {
@@ -987,44 +984,58 @@ WE ARE COSMIC</textarea>
     function resizeCanvas(vw, vh) {
         if (vw && vh) { currentVideoW = vw; currentVideoH = vh; }
         let screenW = window.innerWidth, screenH = window.innerHeight;
+        let dpr = Math.min(window.devicePixelRatio || 1, 2);
         
-        // STABLE PREVIEW: Cap DPR at 1.5 - 2.0 for mobile to prevent 'too big' UI
-        let dpr = Math.min(window.devicePixelRatio || 1, 2.0);
-        
-        canvas.width = screenW * dpr;
-        canvas.height = screenH * dpr;
-        canvas.style.width = screenW + 'px';
-        canvas.style.height = screenH + 'px';
-        canvas.style.left = '0px';
-        canvas.style.top = '0px';
+        if (isIntro) {
+            canvas.width = screenW * dpr;
+            canvas.height = screenH * dpr;
+            canvas.style.width = screenW + 'px';
+            canvas.style.height = screenH + 'px';
+            canvas.style.left = '0px';
+            canvas.style.top = '0px';
+        } else {
+            let srcW = currentVideoW, srcH = currentVideoH;
+            let scale = Math.min(screenW / srcW, screenH / srcH);
+            let rawDW = srcW * scale;
+            let rawDH = srcH * scale;
+
+            // SNAP 캔버스 크기를 CELL_SIZE의 배수로 강제 고정하여 '칼상태' 해상도 구현
+            let colsCount = Math.floor((rawDW * dpr) / CELL_SIZE);
+            let rowsCount = Math.floor((rawDH * dpr) / CELL_SIZE);
+            
+            let finalW = (colsCount * CELL_SIZE) / dpr;
+            let finalH = (rowsCount * CELL_SIZE) / dpr;
+
+            canvas.width = colsCount * CELL_SIZE;
+            canvas.height = rowsCount * CELL_SIZE;
+            canvas.style.width = finalW + 'px';
+            canvas.style.height = finalH + 'px';
+            canvas.style.left = Math.round((screenW - finalW) / 2) + 'px';
+            canvas.style.top = Math.round((screenH - finalH) / 2) + 'px';
+        }
         
         calcGrid();
         if (window.positionZoneHandle) window.positionZoneHandle();
     }
 
     function calcGrid() {
-        if (!canvas || !CELL_SIZE || CELL_SIZE <= 0) return;
-        let newCols = Math.max(1, Math.ceil(canvas.width / CELL_SIZE));
-        let newRows = Math.max(1, Math.ceil(canvas.height / CELL_SIZE));
-        
-        // Only re-allocate if dimensions actually changed to avoid memory spikes
-        if (!offCanvas || cols !== newCols || rows !== newRows) {
-            let newSize = newCols * newRows;
-            cols = newCols; rows = newRows;
-            
-            if (!offCanvas) offCanvas = document.createElement('canvas');
-            offCanvas.width = cols; 
-            offCanvas.height = rows;
+        let newCols = Math.round(canvas.width / CELL_SIZE);
+        let newRows = Math.round(canvas.height / CELL_SIZE);
+        let infoVid = document.getElementById('info-vidsize');
+        if (infoVid) infoVid.textContent = (currentVideoW && currentVideoH) ? currentVideoW + ' × ' + currentVideoH : '— × —';
+        if (!offCanvas) {
+            offCanvas = document.createElement('canvas');
             offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
-            
-            // Re-allocate buffers only when needed
-            cellHistory = new Float32Array(newSize);
+        }
+        if (newCols !== cols || newRows !== rows) {
+            cols = newCols;
+            rows = newRows;
+            offCanvas.width = cols;
+            offCanvas.height = rows;
+            cellHistory = new Float32Array(cols * rows);
             cellHistory.fill(-1);
-            dotLife = new Float32Array(newSize);
+            dotLife = new Float32Array(cols * rows);
             dotLife.fill(0);
-            
-            let infoVid = document.getElementById('info-vidsize');
-            if (infoVid) infoVid.textContent = `${cols} x ${rows}`;
         }
     }
 
@@ -1195,8 +1206,7 @@ WE ARE COSMIC</textarea>
         }
         if (video && video.readyState >= 2 && !video.seeking) {
             let vW = video.videoWidth, vH = video.videoHeight;
-            // Center Cover Logic for Sampler
-            let vScale = Math.max(cols / vW, rows / vH);
+            let vScale = isIntro ? Math.max(cols / vW, rows / vH) : Math.min(cols / vW, rows / vH);
             let dW = vW * vScale, dH = vH * vScale;
             let dX = (cols - dW) / 2, dY = (rows - dH) / 2;
             
@@ -1219,23 +1229,30 @@ WE ARE COSMIC</textarea>
                     offCtx.globalCompositeOperation = 'source-over';
                 }
             }
-        } else {
-            // Idle State: Blank offscreen for text flow
-            offCtx.fillStyle = isOriginalTheme ? '#000' : '#FFF';
-            offCtx.fillRect(0, 0, cols, rows);
         }
-        if (cols <= 0 || rows <= 0 || !offCtx) { requestAnimationFrame(renderLoop); return; }
-        let imageData = offCtx.getImageData(0, 0, cols, rows);
+        let imageData;
+        try { imageData = offCtx.getImageData(0, 0, cols, rows); }
+        catch(e) { requestAnimationFrame(renderLoop); return; }
         let pixels = imageData.data;
         // Always fill background to prevent gaps at edges on awkward resolutions
         ctx.fillStyle = isOriginalTheme ? '#000000' : bgColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // STABILITY FIX: Stopped drawing the same video twice as background to save mobile GPU
-        let offsetX = 0;
-        let offsetY = 0;
-        let fontSize = Math.max(6, CELL_SIZE * 0.90);
-        ctx.font = `600 ${fontSize}px '${currentFont}', 'Consolas', monospace`;
+
+        if (isOriginalTheme && video && video.readyState >= 2) {
+            ctx.save();
+            ctx.filter = 'brightness(0.6)';
+            let vW = video.videoWidth, vH = video.videoHeight;
+            let vScale = isIntro ? Math.max(canvas.width / vW, canvas.height / vH) : Math.min(canvas.width / vW, canvas.height / vH);
+            let dW = vW * vScale, dH = vH * vScale;
+            let dX = (canvas.width - dW) / 2, dY = (canvas.height - dH) / 2;
+            ctx.drawImage(video, dX, dY, dW, dH);
+            ctx.restore();
+        }
+        // Offset is now guaranteed to be 0 or perfectly aligned with integer grid
+        let offsetX = (canvas.width - cols * CELL_SIZE) / 2;
+        let offsetY = (canvas.height - rows * CELL_SIZE) / 2;
+        let fontSize = Math.max(6, CELL_SIZE * 0.88);
+        ctx.font = `400 ${fontSize}px '${currentFont}', 'Consolas', monospace`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         if (autoPhase) {
@@ -1277,13 +1294,7 @@ WE ARE COSMIC</textarea>
                 let vLinear = Math.min(1.0, Math.max(0.0, (darkness - darknessThreshold) / (1.0 - darknessThreshold)));
                 let v = Math.pow(vLinear, contrastPow);
                 let dist = Math.abs(vLinear - bluePhase);
-                let char;
-                if (isNonTypoV2) {
-                    ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : '#000000';
-                    let barWidth = Math.max(1, CELL_SIZE * darkness * 1.1);
-                    ctx.fillRect(cx - barWidth/2, y, barWidth, CELL_SIZE);
-                    continue; 
-                }
+
                 if (v >= 0.88) { 
                     ctx.fillStyle = colorZ4; 
                     ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); 
@@ -1303,17 +1314,22 @@ WE ARE COSMIC</textarea>
                     }
                     ctx.fillStyle = `rgb(${Math.round(baseR * intensity + rgbZ2[0] * (1 - intensity))}, ${Math.round(baseG * intensity + rgbZ2[1] * (1 - intensity))}, ${Math.round(baseB * intensity + rgbZ2[2] * (1 - intensity))})`;
                     ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-                    if (CELL_SIZE > 18) ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
-                    char = mosaicMode ? activeSymbols[((Math.floor(i) * 5323 + Math.floor(j) * 2111 + Math.floor(globalFrame/90) * 7919) % activeSymbols.length + activeSymbols.length) % activeSymbols.length] : TEXT_FLOW[((Math.floor(i) + Math.floor(j) * 17) % TEXT_FLOW.length + TEXT_FLOW.length) % TEXT_FLOW.length];
-                    ctx.fillStyle = /[a-zA-Z]/.test(char) ? colorText : colorSymbol;
-                    ctx.fillText(char, cx, vy);
+
+                    if (intensity > 0.4 && (i * 11 + j * 17 + Math.floor(globalFrame/60)) % 10 < 2) {
+                        ctx.fillStyle = `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${intensity})`; 
+                        ctx.fillText(activeSymbols[((Math.floor(i) * 6271 + Math.floor(j) * 3181 + Math.floor(globalFrame/90) * 7919) % activeSymbols.length + activeSymbols.length) % activeSymbols.length], cx, vy);
+                    } else {
+                        let char = mosaicMode ? activeSymbols[((Math.floor(i) * 6271 + Math.floor(j) * 3181 + Math.floor(globalFrame/90) * 7919) % activeSymbols.length + activeSymbols.length) % activeSymbols.length] : TEXT_FLOW[((Math.floor(i) + Math.floor(j) * 17) % TEXT_FLOW.length + TEXT_FLOW.length) % TEXT_FLOW.length];
+                        ctx.fillStyle = /[a-zA-Z]/.test(char) ? `rgba(${rgbText[0]}, ${rgbText[1]}, ${rgbText[2]}, ${1.0 - intensity * 0.85})` : `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${1.0 - intensity * 0.85})`;
+                        ctx.fillText(char, cx, vy);
+                    }
                 }
                 else if (v < 0.72) {
                     if (!isOriginalTheme) {
                         ctx.fillStyle = colorZ2; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); 
                         if (CELL_SIZE > 18) ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
                     }
-                    char = mosaicMode ? activeSymbols[((Math.floor(i) * 6271 + Math.floor(j) * 3181 + Math.floor(globalFrame/90) * 7919) % activeSymbols.length + activeSymbols.length) % activeSymbols.length] : TEXT_FLOW[((Math.floor(i) + Math.floor(j) * 17) % TEXT_FLOW.length + TEXT_FLOW.length) % TEXT_FLOW.length];
+                    let char = mosaicMode ? activeSymbols[((Math.floor(i) * 6271 + Math.floor(j) * 3181 + Math.floor(globalFrame/90) * 7919) % activeSymbols.length + activeSymbols.length) % activeSymbols.length] : TEXT_FLOW[((Math.floor(i) + Math.floor(j) * 17) % TEXT_FLOW.length + TEXT_FLOW.length) % TEXT_FLOW.length];
                     ctx.fillStyle = /[a-zA-Z]/.test(char) ? colorText : colorSymbol;
                     ctx.fillText(char, cx, vy); 
                 }
@@ -1351,7 +1367,7 @@ WE ARE COSMIC</textarea>
                 }
             }
         }
-        if (isPlaying) requestAnimationFrame(renderLoop);
+        requestAnimationFrame(renderLoop);
     }
 
     function toggleWebcam() {
@@ -1433,25 +1449,19 @@ WE ARE COSMIC</textarea>
         else stopRecording();
     }
     function startRecording() {
-        // PROFESSIONAL 4K BITRATE (50Mbps) + MP4 PRIORITY
+        // High Bitrate (20Mbps) + High Frame Rate for Professional Feel
         let stream = canvas.captureStream(60);
         const hqMode = document.getElementById('ctrl-hq-rec')?.checked;
         
-        const types = [
-            'video/mp4;codecs=hvc1', 
-            'video/mp4;codecs=avc1', 
-            'video/mp4',
-            'video/webm;codecs=vp9',
-            'video/webm'
-        ];
-        
-        let selectedType = types.find(t => MediaRecorder.isTypeSupported(t)) || 'video/webm';
-        
         let options = {
-            mimeType: selectedType,
-            // STABLE BITRATE LIMIT (12Mbps) to prevent encoder hang
-            videoBitsPerSecond: hqMode ? 12000000 : 5000000 
+            mimeType: 'video/webm;codecs=vp9',
+            videoBitsPerSecond: hqMode ? 20000000 : 5000000 // 20Mbps for HQ, 5Mbps for standard
         };
+        
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options.mimeType = 'video/webm';
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) options.mimeType = 'video/mp4'; // iOS Support
+        }
         
         recordedChunks = [];
         mediaRecorder = new MediaRecorder(stream, options);
@@ -1460,12 +1470,11 @@ WE ARE COSMIC</textarea>
         
         mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
         mediaRecorder.onstop = () => {
-            let blob = new Blob(recordedChunks, { type: selectedType });
+            let mimeType = options.mimeType;
+            let blob = new Blob(recordedChunks, { type: mimeType });
             recordedChunks = [];
             let url = URL.createObjectURL(blob);
-            let ext = selectedType.includes('mp4') ? 'mp4' : 'webm';
-            let a = document.createElement('a'); a.style.display = 'none'; a.href = url;
-            a.download = `cosmic_${hqMode?'4K_':''}${Date.now()}.${ext}`;
+            let a = document.createElement('a'); a.style.display = 'none'; a.href = url; a.download = `cosmic_${hqMode?'HQ_':''}${Date.now()}.${mimeType.includes('mp4')?'mp4':'webm'}`;
             document.body.appendChild(a); a.click();
             setTimeout(() => { if (recBtn) recBtn.classList.remove('recording-active'); window.URL.revokeObjectURL(url); a.remove(); }, 100);
         };
