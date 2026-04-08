@@ -825,7 +825,7 @@ WE ARE COSMIC</textarea>
     function initBackgroundVideo() {
         if (video) { video.pause(); video.remove(); }
         video = document.createElement('video');
-        video.src = './choi.mp4';
+        video.src = './choi_insta.mp4';
         video.autoplay = true; video.loop = true; video.muted = true; video.playsInline = true;
         
         video.addEventListener('canplay', () => {
@@ -836,6 +836,11 @@ WE ARE COSMIC</textarea>
             applyZone1(0.35);
             contrastPow = 1.2;
             isPlaying = true;
+            // Immediate 12px grid for background
+            CELL_SIZE = 12;
+            targetCellSize = 12;
+            hasPlayedIntro = true;
+            isIntro = false;
             video.play().catch(e => console.warn("Background autoplay blocked", e));
             if (!document.getElementById('ui-layer').dataset.loopstarted) {
                 document.getElementById('ui-layer').dataset.loopstarted = 'true';
@@ -1081,14 +1086,20 @@ WE ARE COSMIC</textarea>
         catch(e) { requestAnimationFrame(renderLoop); return; }
         let pixels = imageData.data;
         if (isOriginalTheme && video && video.readyState >= 2) {
-            ctx.filter = 'brightness(0.5)';
+            ctx.save();
+            ctx.filter = 'brightness(0.6)';
             let vR = video.videoWidth / video.videoHeight;
-            let cR = cols / rows;
+            let screenR = canvas.width / canvas.height;
             let dW, dH, dX, dY;
-            if (cR > vR) { dW = canvas.width; dH = canvas.width / vR; dX = 0; dY = (canvas.height - dH) / 2; }
-            else { dH = canvas.height; dW = canvas.height * vR; dY = 0; dX = (canvas.width - dW) / 2; }
+            if (screenR > vR) {
+                dW = canvas.width; dH = canvas.width / vR;
+                dX = 0; dY = (canvas.height - dH) / 2;
+            } else {
+                dH = canvas.height; dW = canvas.height * vR;
+                dY = 0; dX = (canvas.width - dW) / 2;
+            }
             ctx.drawImage(video, dX, dY, dW, dH);
-            ctx.filter = 'none';
+            ctx.restore();
         } else {
             ctx.fillStyle = bgColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1169,14 +1180,18 @@ WE ARE COSMIC</textarea>
                     }
                 }
                 else if (v < 0.72) {
-                    ctx.fillStyle = colorZ2; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+                    if (!isOriginalTheme) {
+                        ctx.fillStyle = colorZ2; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+                    }
                     ctx.save(); ctx.beginPath(); ctx.rect(x, y, CELL_SIZE, CELL_SIZE); ctx.clip();
                     let char = mosaicMode ? activeSymbols[((Math.floor(i) * 6271 + Math.floor(j) * 3181 + Math.floor(globalFrame/90) * 7919) % activeSymbols.length + activeSymbols.length) % activeSymbols.length] : TEXT_FLOW[((Math.floor(i) + Math.floor(j) * 17) % TEXT_FLOW.length + TEXT_FLOW.length) % TEXT_FLOW.length];
                     ctx.fillStyle = /[a-zA-Z]/.test(char) ? colorText : colorSymbol;
                     ctx.fillText(char, cx, vy); ctx.restore();
                 }
                 else {
-                    ctx.fillStyle = colorZ3; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+                    if (!isOriginalTheme) {
+                        ctx.fillStyle = colorZ3; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+                    }
                     ctx.save(); ctx.beginPath(); ctx.rect(x, y, CELL_SIZE, CELL_SIZE); ctx.clip();
                     ctx.fillStyle = colorSymbol;
                     ctx.fillText(activeSymbols[((Math.floor(i) * 5381 + Math.floor(j) * 2749 + Math.floor(globalFrame/90) * 7919) % activeSymbols.length + activeSymbols.length) % activeSymbols.length], cx, vy);
@@ -1488,10 +1503,12 @@ WE ARE COSMIC</textarea>
         whisperWorker.onmessage = (e) => {
             let msg = e.data;
             if (msg.status === 'ready') {
-                showAIToast("⏳ TRANSCRIBING AUDIO...");
+                showAIToast("⏳ AI SYNC: TRANSCRIBING...");
                 whisperWorker.postMessage({ type: 'transcribe', audio: audioArray });
             } else if (msg.status === 'progress') {
-                if(msg.progress && msg.progress.progress) showAIToast(`⏳ AI DOWNLOADING: ${Math.round(msg.progress.progress)}%`);
+                if(msg.progress && msg.progress.progress) showAIToast(`⏳ AI SYNC: ${Math.round(msg.progress.progress)}%`);
+            } else if (msg.status === 'transcribing') {
+                showAIToast("⏳ AI SYNC: FINALIZING...");
             } else if (msg.status === 'complete') {
                 window.videoTranscripts = msg.result.chunks || [];
                 showAIToast("✅ AI SYNC COMPLETE");
