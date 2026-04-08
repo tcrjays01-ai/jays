@@ -935,9 +935,8 @@ WE ARE COSMIC</textarea>
         btn.innerText = 'CONNECTING...';
         updatePhaseUI(0.30);
         applyZone1(0.35);
-        contrastPow = 2.0;
-        const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-        const facingMode = isMobile ? 'environment' : 'user';
+        const contrastPow = 2.0;
+        const facingMode = 'user'; // Default to selfie mode for better portrait experience
         navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: false })
             .then(stream => {
                 if (video) { video.pause(); video.srcObject = null; video.remove(); }
