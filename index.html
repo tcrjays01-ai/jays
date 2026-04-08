@@ -442,21 +442,32 @@
             #settings-toggle { display: none !important; }
         }
 
-        #unit-slider::-webkit-slider-thumb {
+        #unit-slider::-webkit-slider-thumb, .ctrl-section input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 3px;
-            height: 18px;
-            background: #2a2a3a;
-            border-radius: 1px;
+            width: 8px; /* Larger for touch */
+            height: 24px;
+            background: var(--md-primary);
+            border-radius: 4px;
+            cursor: ew-resize;
+            box-shadow: 0 0 10px rgba(0,0,255,0.2);
+        }
+        #unit-slider::-moz-range-thumb, .ctrl-section input[type="range"]::-moz-range-thumb {
+            width: 8px;
+            height: 24px;
+            background: var(--md-primary);
+            border: none;
+            border-radius: 4px;
             cursor: ew-resize;
         }
-        #unit-slider::-moz-range-thumb {
-            width: 3px;
-            height: 18px;
-            background: #2a2a3a;
-            border: none;
-            border-radius: 1px;
-            cursor: ew-resize;
+        .ctrl-section input[type="range"] {
+            height: 32px; /* Thicker track area for hit-box */
+            touch-action: none; /* Critical: prevent panel scrolling while dragging */
+        }
+        @media (max-width: 767px) {
+            .ctrl-section input[type="range"]::-webkit-slider-thumb {
+                width: 14px; /* Even larger for mobile fingers */
+                height: 32px;
+            }
         }
         </style>
 </head>
@@ -937,7 +948,8 @@ WE ARE COSMIC</textarea>
         applyZone1(0.35);
         const contrastPow = 2.0;
         const facingMode = 'user'; // Default to selfie mode for better portrait experience
-        navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: false })
+        // Enable audio true so STT can work in camera mode
+        navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: true })
             .then(stream => {
                 if (video) { video.pause(); video.srcObject = null; video.remove(); }
                 video = document.createElement('video');
