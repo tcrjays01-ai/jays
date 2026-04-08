@@ -456,7 +456,7 @@
         <input type="file" id="videoUpload" accept="video/mp4,video/webm,video/*">
         <div id="ui-btns" style="display:flex;flex-direction:column;gap:10px;align-items:stretch;width:100%;">
             <button onclick="document.getElementById('videoUpload').click()">SELECT VIDEO</button>
-            <button id="ai-extract-btn" style="display:none; background:var(--md-primary); border-color:var(--md-primary); color:var(--md-on-primary);" onclick="startVideoAI()">🤖 AI VIDEO SYNC</button>
+            <button id="ai-extract-btn" class="premium-ctrl-btn" style="display:none; background:var(--md-primary); border-color:var(--md-primary); color:var(--md-on-primary);" onclick="startVideoAI()">🤖 AI VIDEO INFO EXTRACT (BETA)</button>
             <button onclick="tryLocalVideo()">PLAY CHOI</button>
             <button onclick="startCameraSource()">CAM</button>
         </div>
@@ -497,16 +497,14 @@
                 border-radius:40px; transition:0.3s;
                 box-shadow: inset 1px 1.5px 1px rgba(255,255,255,0.1), 0 4px 10px rgba(0,0,0,0.2);
             ">BLACK</button>
-        </div>
-
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span class="ctrl-label" style="margin:0;">TEXT</span>
-            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:10px; font-weight:700; color:var(--md-primary);">
-                <input type="checkbox" id="stt-toggle" onchange="toggleSTT(this.checked)" style="width:14px; height:14px; accent-color:var(--md-primary);">
-                🎙️ STT MIC
-            </label>
-        </div>
-        <div class="ctrl-section">
+        </div>        <div class="ctrl-section">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span class="ctrl-label" style="margin:0;">TEXT</span>
+                <label style="display:flex; align-items:center; gap:4px; cursor:pointer; font-size:10px; font-weight:700; color:var(--md-primary); background:var(--md-surface); padding:4px 8px; border-radius:4px; border:1px solid var(--md-outline);">
+                    <input type="checkbox" id="stt-toggle" onchange="toggleSTT(this.checked)" style="margin:0; width:12px; height:12px; accent-color:var(--md-primary);">
+                    🎙️ STT MIC
+                </label>
+            </div>
             <textarea id="ctrl-text" rows="3" placeholder="단어를 줄바꿈으로 입력" onchange="applyText(this.value)">WE ARE NOT RAY
 WE ARE COSMIC</textarea>
         </div>
