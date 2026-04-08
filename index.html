@@ -1053,7 +1053,7 @@ WE ARE COSMIC</textarea>
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.filter = 'none';
         ctx.globalCompositeOperation = 'source-over';
-        CELL_SIZE = Math.max(8, Math.min(150, CELL_SIZE));
+        CELL_SIZE = Math.max(10, Math.min(150, CELL_SIZE));
         if (Math.abs(lastGridCellSize - CELL_SIZE) > 0.5) {
             lastGridCellSize = CELL_SIZE;
             calcGrid();
@@ -1144,11 +1144,10 @@ WE ARE COSMIC</textarea>
                 if (darkness <= darknessThreshold) {
                     if (dotLife[cellIdx] > 0.01) {
                         ctx.globalAlpha = dotLife[cellIdx] * 0.9;
-                        ctx.font = `400 ${Math.round(CELL_SIZE * 0.45 * dotLife[cellIdx])}px JetBrains Mono`;
                         ctx.fillStyle = colorSymbol;
-                        ctx.fillText('·', cx, vy);
+                        let s = Math.max(1, CELL_SIZE * 0.1 * dotLife[cellIdx]);
+                        ctx.fillRect(cx - s/2, vy - s/2, s, s);
                         ctx.globalAlpha = 1.0; 
-                        ctx.font = `400 ${fontSize}px '${currentFont}', 'Consolas', monospace`;
                     }
                     continue;
                 }
@@ -1413,7 +1412,7 @@ WE ARE COSMIC</textarea>
     })();
     function syncUnitUI(source) {
         let val = targetCellSize;
-        let displayVal = 1 + (val - 8) * (9 / 142);
+        let displayVal = 1 + (val - 10) * (9 / 140);
         let slider = document.getElementById('unit-slider');
         let numeric = document.getElementById('unit-numeric-input');
         if (slider && source !== 'slider') slider.value = displayVal.toFixed(1);
@@ -1422,7 +1421,7 @@ WE ARE COSMIC</textarea>
     function applyUnitScale(val, type) {
         let v = parseFloat(val) || 1;
         v = Math.max(1, Math.min(10, v));
-        targetCellSize = 8 + (v - 1) * (142 / 9);
+        targetCellSize = 10 + (v - 1) * (140 / 9);
         syncUnitUI(type);
     }
     (function() {
