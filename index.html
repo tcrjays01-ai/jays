@@ -1524,13 +1524,20 @@ WE ARE COSMIC</textarea>
     function startRecording() {
         const hqMode = document.getElementById('ctrl-hq-rec')?.checked;
         
-        // --- TRUE 4K FORCE RESIZE ---
+        // --- TRUE 4K ASPECT-RATIO AWARE RESIZE ---
         if (hqMode) {
             savedWidth = canvas.width;
             savedHeight = canvas.height;
-            canvas.width = 3840;
-            canvas.height = 2160;
-            // Force re-layout for 4K
+            let ratio = savedWidth / savedHeight;
+            
+            if (ratio >= 1) { // Landscape
+                canvas.width = 3840;
+                canvas.height = Math.round(3840 / ratio);
+            } else { // Portrait / Square
+                canvas.height = 3840;
+                canvas.width = Math.round(3840 * ratio);
+            }
+            // Force re-layout for new 4K dimensions
             lastGridCellSize = -1; 
         }
 
