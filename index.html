@@ -813,6 +813,7 @@ WE ARE COSMIC</textarea>
         document.getElementById('ctrl-col-z3').value = colorZ3;
         document.getElementById('ctrl-col-z4').value = colorZ4;
         document.getElementById('ctrl-col-txt').value = colorText;
+        document.body.style.background = bgColor;
         if (ctx) { ctx.fillStyle = bgColor; ctx.fillRect(0, 0, canvas.width, canvas.height); }
     }
 
@@ -869,12 +870,25 @@ WE ARE COSMIC</textarea>
         let screenW = window.innerWidth, screenH = window.innerHeight;
         let dpr = Math.min(window.devicePixelRatio || 1, 2);
         
-        canvas.width = screenW * dpr;
-        canvas.height = screenH * dpr;
-        canvas.style.width = screenW + 'px';
-        canvas.style.height = screenH + 'px';
-        canvas.style.left = '0px';
-        canvas.style.top = '0px';
+        if (isIntro) {
+            canvas.width = screenW * dpr;
+            canvas.height = screenH * dpr;
+            canvas.style.width = screenW + 'px';
+            canvas.style.height = screenH + 'px';
+            canvas.style.left = '0px';
+            canvas.style.top = '0px';
+        } else {
+            let srcW = currentVideoW, srcH = currentVideoH;
+            let scale = Math.min(screenW / srcW, screenH / srcH);
+            let displayW = Math.round(srcW * scale);
+            let displayH = Math.round(srcH * scale);
+            canvas.width = displayW * dpr;
+            canvas.height = displayH * dpr;
+            canvas.style.width = displayW + 'px';
+            canvas.style.height = displayH + 'px';
+            canvas.style.left = Math.round((screenW - displayW) / 2) + 'px';
+            canvas.style.top = Math.round((screenH - displayH) / 2) + 'px';
+        }
         
         calcGrid();
         if (window.positionZoneHandle) window.positionZoneHandle();
