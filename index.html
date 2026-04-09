@@ -812,7 +812,7 @@ WE ARE COSMIC</textarea>
     
     let currentFont = 'Pretendard Variable';
     let keyColor = '#0000FF';
-    let darknessThreshold = 0.08, contrastPow = 1.0;
+    let darknessThreshold = 0.01, contrastPow = 1.2;
     let lastGridCellSize = -1;
     let zone1Limit = 0.35;
     let bluePhase = 0.0;
@@ -1313,9 +1313,54 @@ WE ARE COSMIC</textarea>
                 let y = Math.floor(offsetY + j * CELL_SIZE);
                 let cx = x + CELL_SIZE / 2;
                 let cy = y + CELL_SIZE / 2;
-                let vy = cy + (CELL_SIZE * 0.06);
-                if (darkness > darknessThreshold) dotLife[cellIdx] = 1.0;
-                else dotLife[cellIdx] *= 0.85;
+                let v = cellHistory[cellIdx]; // Smoothed darkness
+                
+                // ARTISTIC MODES (MOSAIC 2 & WEDGE) - Render BEFORE threshold to ensure visibility
+                if (isNonTypoV2) {
+                    try {
+                        if (gradientMode) {
+                            ctx.fillStyle = getGradientColor(v);
+                        } else {
+                            ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
+                        }
+                        let barWidth = Math.min(CELL_SIZE, CELL_SIZE * v);
+                        if (barWidth > CELL_SIZE - 0.5) barWidth = CELL_SIZE;
+                        if (barWidth < CELL_SIZE) {
+                            ctx.fillStyle = isOriginalTheme ? '#000' : bgColor;
+                            ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                            if (gradientMode) {
+                                ctx.fillStyle = getGradientColor(v);
+                            } else {
+                                ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
+                            }
+                            ctx.fillRect(cx - barWidth/2, y, barWidth, CELL_SIZE);
+                        } else {
+                            ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                        }
+                    } catch(e) { console.error("M2 Error", e); }
+                    continue;
+                }
+                if (isNonTypoV3) {
+                    try {
+                        if (gradientMode) {
+                            ctx.fillStyle = getGradientColor(v);
+                        } else {
+                            ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
+                        }
+                        let bWidth = Math.min(CELL_SIZE, v * 2 * CELL_SIZE);
+                        let tWidth = Math.max(0, (v - 0.5) * 2 * CELL_SIZE);
+                        if (v > 0.98) { tWidth = bWidth = CELL_SIZE; }
+                        ctx.beginPath();
+                        ctx.moveTo(x, y); 
+                        ctx.lineTo(x + tWidth, y); 
+                        ctx.lineTo(x + bWidth, y + CELL_SIZE); 
+                        ctx.lineTo(x, y + CELL_SIZE); 
+                        ctx.closePath();
+                        ctx.fill();
+                    } catch(e) { console.error("M3 Error", e); }
+                    continue;
+                }
+
                 if (darkness <= darknessThreshold) {
                     if (dotLife[cellIdx] > 0.01) {
                         ctx.globalAlpha = dotLife[cellIdx] * 0.9;
@@ -1327,52 +1372,9 @@ WE ARE COSMIC</textarea>
                     continue;
                 }
                 let vLinear = Math.min(1.0, Math.max(0.0, (darkness - darknessThreshold) / (1.0 - darknessThreshold)));
-                let v = Math.pow(vLinear, contrastPow);
+                v = Math.pow(vLinear, contrastPow);
                 if (v > 0.92) v = 1.0; 
                 if (v < 0.02) v = 0.0;
-                let char = mosaicMode ? activeSymbols[((Math.floor(i) * 6271 + Math.floor(j) * 3181 + Math.floor(globalFrame/90) * 7919) % activeSymbols.length + activeSymbols.length) % activeSymbols.length] : TEXT_FLOW[((Math.floor(i) + Math.floor(j) * 17) % TEXT_FLOW.length + TEXT_FLOW.length) % TEXT_FLOW.length];
-                let symbolChar = activeSymbols[Math.floor(v * (activeSymbols.length - 1))];
-                
-                if (isNonTypoV2) {
-                    if (gradientMode) {
-                        ctx.fillStyle = getGradientColor(v);
-                    } else {
-                        ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
-                    }
-                    let barWidth = Math.min(CELL_SIZE, CELL_SIZE * v);
-                    if (barWidth > CELL_SIZE - 0.5) barWidth = CELL_SIZE;
-                    if (barWidth < CELL_SIZE) {
-                        ctx.fillStyle = isOriginalTheme ? '#000' : bgColor;
-                        ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-                        if (gradientMode) {
-                            ctx.fillStyle = getGradientColor(v);
-                        } else {
-                            ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
-                        }
-                        ctx.fillRect(cx - barWidth/2, y, barWidth, CELL_SIZE);
-                    } else {
-                        ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-                    }
-                    continue;
-                }
-                if (isNonTypoV3) {
-                    if (gradientMode) {
-                        ctx.fillStyle = getGradientColor(v);
-                    } else {
-                        ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
-                    }
-                    let bWidth = Math.min(CELL_SIZE, v * 2 * CELL_SIZE);
-                    let tWidth = Math.max(0, (v - 0.5) * 2 * CELL_SIZE);
-                    if (v > 0.98) { tWidth = bWidth = CELL_SIZE; }
-                    ctx.beginPath();
-                    ctx.moveTo(x, y); 
-                    ctx.lineTo(x + tWidth, y); 
-                    ctx.lineTo(x + bWidth, y + CELL_SIZE); 
-                    ctx.lineTo(x, y + CELL_SIZE); 
-                    ctx.closePath();
-                    ctx.fill();
-                    continue;
-                }
 
                 if (v >= 0.88) { 
                     ctx.fillStyle = colorZ4; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); 
@@ -2044,3 +2046,5 @@ WE ARE COSMIC</textarea>
 <!-- UI THEME SYNC RELEASE: 04/09/2026 13:06:28 - APPLYPALETTE UI SYNC ENABLED -->
 
 <!-- THE FINAL RENDER RESTORE: 04/09/2026 13:07:50 - ALL TYPOS REMOVED -->
+
+<!-- STRUCTURAL RESTORE RELEASE: 04/09/2026 13:12:23 - ARTISTIC MODES BEFORE THRESHOLD -->
