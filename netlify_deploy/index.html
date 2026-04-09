@@ -1422,7 +1422,7 @@ WE ARE COSMIC</textarea>
                 let targetDarkness = 1.0 - luma;
                 let cellIdx = j * cols + i;
                 if (cellHistory[cellIdx] === -1) cellHistory[cellIdx] = targetDarkness;
-                else cellHistory[cellIdx] = cellHistory[cellIdx] * 0.8 + targetDarkness * 0.2;
+                else cellHistory[cellIdx] = cellHistory[cellIdx] * 0.45 + targetDarkness * 0.55;
                 let darkness = cellHistory[cellIdx];
                 let x = offsetX + i * CELL_SIZE;
                 let y = offsetY + j * CELL_SIZE;
