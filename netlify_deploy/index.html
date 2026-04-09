@@ -1374,10 +1374,21 @@ WE ARE COSMIC</textarea>
                 }
                 let vLinear = Math.min(1.0, Math.max(0.0, (darkness - darknessThreshold) / (1.0 - darknessThreshold)));
                 v = Math.pow(vLinear, contrastPow);
-                if (v > 0.92) v = 1.0; 
+                if (v > 0.92) v = 1.0;
                 if (v < 0.02) v = 0.0;
 
-                if (v >= 0.88) { 
+                // Calculate char for this cell
+                let rowOffset = Math.floor(j) * 17;
+                let charIdx, char;
+                if (mosaicMode) {
+                    charIdx = (i * 3 + j * 7 + Math.floor(globalFrame / 90)) % activeSymbols.length;
+                    char = activeSymbols[charIdx];
+                } else {
+                    charIdx = (Math.floor(i) + rowOffset) % TEXT_FLOW.length;
+                    char = TEXT_FLOW[charIdx];
+                }
+
+                if (v >= 0.88) {
                     ctx.fillStyle = colorZ4; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); 
                 } else {
                     let dist = Math.abs(vLinear - bluePhase);
@@ -1390,6 +1401,8 @@ WE ARE COSMIC</textarea>
                         // RESTORE TEXT INSIDE COLOR ZONE - FORCE REGULAR 400 WEIGHT
                         ctx.fillStyle = (/[a-zA-Z]/.test(char) && !mosaicMode) ? `rgba(${rgbText[0]}, ${rgbText[1]}, ${rgbText[2]}, ${1.0 - intensity * 0.85})` : `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${1.0 - intensity * 0.85})`;
                         ctx.font = `400 ${CELL_SIZE * 1.0}px ${currentFont}`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
                         ctx.fillText(char, cx, vy);
                     } else {
                         ctx.fillStyle = (/[a-zA-Z]/.test(char) && !mosaicMode) ? colorText : colorSymbol;
