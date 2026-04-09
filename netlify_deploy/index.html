@@ -71,7 +71,7 @@
             border-radius: var(--md-shape-xl);
             padding: 56px 72px 52px;
             box-shadow: var(--md-elevation-3), inset 0 1px 0 rgba(255,255,255,0.85);
-            min-width: 400px;
+            min-width: auto; width: 90vw; max-width: 400px;
         }
         #ui-layer::before {
             content: '';
@@ -433,7 +433,7 @@
             border-radius: var(--md-shape-xl);
             padding: 56px 72px 52px;
             box-shadow: var(--md-elevation-3), inset 0 1px 0 rgba(255,255,255,0.85);
-            min-width: 400px;
+            min-width: auto; width: 90vw; max-width: 400px;
         }
             #ui-layer h2 { font-size: 20px; }
             #ui-layer p { font-size: 10px; margin-bottom: 28px; }
@@ -876,6 +876,9 @@ WE ARE COSMIC</textarea>
     let pinchDistance = -1;
     let mediaRecorder = null;
     let recordedChunks = [];
+    let renderLoopRunning = false; // guard against duplicate loops
+    // Cached DOM elements (set in init)
+    let _hudGrid, _hudFps, _hudHand, _ctrlContrast;
     let isIntro = false;
     let introStartTime = 0;
     let hasPlayedIntro = false;
@@ -976,6 +979,10 @@ WE ARE COSMIC</textarea>
     function init() {
         canvas = document.getElementById('ascii-canvas');
         ctx = canvas.getContext('2d');
+        _hudGrid = document.getElementById('hud-grid');
+        _hudFps = document.getElementById('hud-fps');
+        _hudHand = document.getElementById('hud-hand');
+        _ctrlContrast = document.getElementById('ctrl-contrast');
         resizeCanvas();
         let lastW = window.innerWidth, lastH = window.innerHeight, resizeTimeout, isHandlingResize = false;
         window.addEventListener('resize', () => { 
@@ -1023,10 +1030,7 @@ WE ARE COSMIC</textarea>
             hasPlayedIntro = true;
             isIntro = false;
             video.play().catch(e => console.warn("Background autoplay blocked", e));
-            if (!document.getElementById('ui-layer').dataset.loopstarted) {
-                document.getElementById('ui-layer').dataset.loopstarted = 'true';
-                requestAnimationFrame(renderLoop);
-            }
+            if (!renderLoopRunning) requestAnimationFrame(renderLoop);
         }, {once: true});
         video.load();
     }
@@ -1151,11 +1155,11 @@ WE ARE COSMIC</textarea>
                 isIntro = true;
                 introStartTime = performance.now() + 500;
                 isPlaying = true;
-                requestAnimationFrame(renderLoop);
+                if (!renderLoopRunning) requestAnimationFrame(renderLoop);
             }, {once: true});
         })
         .catch(err => {
-            btn.innerText = 'CAM';
+            if (btn) btn.innerText = 'CAM';
             if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
                 showPermissionGuide('camera');
             } else {
@@ -1281,8 +1285,13 @@ WE ARE COSMIC</textarea>
             introStartTime = performance.now() + 500;
             video.play().catch(err => console.warn("Auto-play blocked", err));
             isPlaying = true;
-            requestAnimationFrame(renderLoop);
+            if (!renderLoopRunning) requestAnimationFrame(renderLoop);
         }, {once: true});
+        video.onerror = () => {
+            console.warn('Video failed to load:', video.src);
+            let ui = document.getElementById('ui-layer');
+            if (ui) ui.style.display = '';
+        };
         video.load();
     }
 
@@ -1302,7 +1311,8 @@ WE ARE COSMIC</textarea>
     }
 
     function renderLoop() {
-        if (!isPlaying) return;
+        if (!isPlaying) { renderLoopRunning = false; return; }
+        renderLoopRunning = true;
         let now = performance.now();
         let targetFrameDelay = 42; // 24fps fixed
         if (isIntro) {
@@ -1379,8 +1389,7 @@ WE ARE COSMIC</textarea>
         let offsetY = (canvas.height - rows * CELL_SIZE) / 2;
         if (autoPhase) {
             bluePhase = (Math.sin(globalFrame * 0.04) * 0.5 + 0.5) * 0.85;
-            let slider = document.getElementById('ctrl-contrast');
-            if (slider && Math.abs(parseFloat(slider.value) - bluePhase) > 0.02) slider.value = bluePhase;
+            if (_ctrlContrast && Math.abs(parseFloat(_ctrlContrast.value) - bluePhase) > 0.02) _ctrlContrast.value = bluePhase;
         }
         // --- Per-frame cache (moved outside loop for performance) ---
         const fontStr = `400 ${CELL_SIZE}px ${currentFont}`;
@@ -1391,9 +1400,17 @@ WE ARE COSMIC</textarea>
         ctx.lineWidth = CELL_SIZE >= 30 ? 1 : 0.5;
         const drawBorder = CELL_SIZE >= 6;
         const cachedKeyRgb = hexToRgb(keyColor);
+        // Pre-compute gradient lerp RGB once per frame (avoids per-cell string→regex parse)
+        let cachedGradRgb;
+        if (gradientMode) {
+            cachedGradRgb = [
+                Math.round(gradientFrom[0] + (gradientTo[0] - gradientFrom[0]) * gradientT),
+                Math.round(gradientFrom[1] + (gradientTo[1] - gradientFrom[1]) * gradientT),
+                Math.round(gradientFrom[2] + (gradientTo[2] - gradientFrom[2]) * gradientT)
+            ];
+        }
         const halfCell = CELL_SIZE / 2;
         const vyOffset = CELL_SIZE * 0.06;
-        const smoothSpeed = isCamera ? 0.20 : 0.20;
         for (let j = 0; j < rows; j++) {
             for (let i = 0; i < cols; i++) {
                 let idx = (j * cols + i) * 4;
@@ -1497,10 +1514,8 @@ WE ARE COSMIC</textarea>
                     // Zone 1: Key color point — glowing blend
                     let intensity = Math.pow(1.0 - (dist / zone1Limit), 2.0);
                     let baseR, baseG, baseB;
-                    if (gradientMode) {
-                        let c = lerpColor(gradientFrom, gradientTo, gradientT);
-                        let m = c.match(/\d+/g);
-                        baseR = parseInt(m[0]); baseG = parseInt(m[1]); baseB = parseInt(m[2]);
+                    if (gradientMode && cachedGradRgb) {
+                        baseR = cachedGradRgb[0]; baseG = cachedGradRgb[1]; baseB = cachedGradRgb[2];
                     } else {
                         baseR = cachedKeyRgb[0]; baseG = cachedKeyRgb[1]; baseB = cachedKeyRgb[2];
                     }
@@ -1548,9 +1563,9 @@ WE ARE COSMIC</textarea>
         }
         globalFrame++; frameCounter++; now = performance.now();
         if (now - lastFpsTime > 500) { fpsDisplay = Math.round(frameCounter / ((now - lastFpsTime) / 1000)); frameCounter = 0; lastFpsTime = now; }
-        document.getElementById('hud-grid').textContent = `GRID ${cols}×${rows} (${Math.round(CELL_SIZE)}px)`;
-        document.getElementById('hud-fps').textContent = `${fpsDisplay} FPS`;
-        document.getElementById('hud-hand').textContent = pinchDistance >= 0 ? `PINCH: ${Math.round(pinchDistance)}px` : 'NO HAND';
+        if (_hudGrid) _hudGrid.textContent = `GRID ${cols}×${rows} (${Math.round(CELL_SIZE)}px)`;
+        if (_hudFps) _hudFps.textContent = `${fpsDisplay} FPS`;
+        if (_hudHand) _hudHand.textContent = pinchDistance >= 0 ? `PINCH: ${Math.round(pinchDistance)}px` : 'NO HAND';
         if (isExperienceMode && video && video.readyState >= 2) {
             if (window.videoTranscripts && window.videoTranscripts.length > 0) {
                 let ct = video.currentTime;
@@ -1637,6 +1652,7 @@ WE ARE COSMIC</textarea>
         syncUnitUI();
     }, { passive: false, capture: true });
     let initialPinchDist = null, initialCellSize = 150;
+    let lastTouchY = null;
     let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
     let dominantAxis = null; // 'x' for swipe, 'y' for zoom
 
@@ -1795,19 +1811,34 @@ WE ARE COSMIC</textarea>
         else { btn.style.setProperty('display', 'none', 'important'); }
     }
     function applyFont(val) { currentFont = val; }
-    function applyCharSet(val) { 
+    function applyCharSet(val) {
         isNonTypoV2 = (val === 'mosaic2');
         isNonTypoV3 = (val === 'mosaic3');
         if (val === 'mosaic2') {
             applyBg('#FD3000');
-            applyPalette('txt', '#000000');
+            applyPalette('z2', '#FD3000');
+            applyPalette('z3', '#800000');
             applyPalette('z4', '#000000');
-            // Background color is now part of the palette row
-            let bgInput = document.getElementById('ctrl-bg'); if (bgInput) bgInput.value = '#FD3000';
-            let txtInput = document.getElementById('ctrl-col-txt'); if (txtInput) txtInput.value = '#000000';
-            let z4Input = document.getElementById('ctrl-col-z4'); if (z4Input) z4Input.value = '#000000';
+            applyPalette('txt', '#000000');
+        } else if (val === 'mosaic3') {
+            applyBg('#FFFFFF');
+            applyPalette('z2', '#FFFFFF');
+            applyPalette('z3', '#808080');
+            applyPalette('z4', '#000000');
+            applyPalette('txt', '#000000');
+        } else {
+            // Restore defaults when switching back
+            if (isOriginalTheme) {
+                setTheme('original');
+            } else {
+                applyBg(bgColor === '#FD3000' ? '#FFFFFF' : bgColor);
+                applyPalette('z2', '#FFFFFF');
+                applyPalette('z3', '#808080');
+                applyPalette('z4', '#000000');
+                applyPalette('txt', '#000000');
+            }
         }
-        if (CHAR_SETS[val] || val === 'mosaic2' || val === 'mosaic3') { activeSymbols = CHAR_SETS[val] || CHAR_SETS.standard; mosaicMode = (val === 'mosaic'); } 
+        if (CHAR_SETS[val] || val === 'mosaic2' || val === 'mosaic3') { activeSymbols = CHAR_SETS[val] || CHAR_SETS.standard; mosaicMode = (val === 'mosaic'); }
     }
     function cycleSymbolSet(dir) {
         let select = document.getElementById('ctrl-charset');
@@ -1852,7 +1883,7 @@ WE ARE COSMIC</textarea>
         gradientFrom = hexToRgb(from); gradientTo = hexToRgb(to);
         document.getElementById('gradient-bar').style.background = `linear-gradient(to right, ${from}, ${to})`;
     }
-    function applyBg(val) { bgColor = val; document.getElementById('bg-hex').textContent = val.toUpperCase(); document.getElementById('ctrl-bg').value = val; }
+    function applyBg(val) { bgColor = val; let bh = document.getElementById('bg-hex'); if (bh) bh.textContent = val.toUpperCase(); let cb = document.getElementById('ctrl-bg'); if (cb) cb.value = val; }
     function applyPalette(target, val) {
         if (target === 'z2') { 
             colorZ2 = val; rgbZ2 = hexToRgb(val); 
