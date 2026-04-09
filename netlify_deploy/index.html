@@ -974,6 +974,9 @@ WE ARE COSMIC</textarea>
         video.autoplay = true; video.loop = true; video.muted = true; video.playsInline = true;
         
         video.addEventListener('canplay', () => {
+            // Set CELL_SIZE first so resizeCanvas uses the correct grid size
+            CELL_SIZE = 12;
+            targetCellSize = 12;
             if (video.videoWidth && video.videoHeight) {
                 resizeCanvas(video.videoWidth, video.videoHeight);
             }
@@ -981,9 +984,6 @@ WE ARE COSMIC</textarea>
             applyZone1(0.35);
             contrastPow = 1.2;
             isPlaying = true;
-            // Immediate 12px grid for background
-            CELL_SIZE = 12;
-            targetCellSize = 12;
             hasPlayedIntro = true;
             isIntro = false;
             video.play().catch(e => console.warn("Background autoplay blocked", e));
@@ -1387,29 +1387,68 @@ WE ARE COSMIC</textarea>
                     char = TEXT_FLOW[charIdx];
                 }
 
+                const fx = Math.floor(x), fy = Math.floor(y);
+                const fw = Math.ceil(CELL_SIZE), fh = Math.ceil(CELL_SIZE);
+                ctx.strokeStyle = isOriginalTheme ? '#FFFFFF' : '#000000';
+                ctx.lineWidth = CELL_SIZE >= 30 ? 1 : 0.5;
+                let dist = Math.abs(vLinear - bluePhase);
+
                 if (v >= 0.88) {
-                    ctx.fillStyle = colorZ4; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); 
-                } else {
-                    let dist = Math.abs(vLinear - bluePhase);
-                    if (dist < zone1Limit) {
-                        let intensity = Math.pow(1.0 - (dist / zone1Limit), 2.0);
-                        let rgb = hexToRgb(keyColor);
-                        ctx.fillStyle = `rgb(${Math.round(rgb[0] * intensity + rgbZ2[0] * (1 - intensity))}, ${Math.round(rgb[1] * intensity + rgbZ2[1] * (1 - intensity))}, ${Math.round(rgb[2] * intensity + rgbZ2[2] * (1 - intensity))})`;
-                        ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-                        
-                        // RESTORE TEXT INSIDE COLOR ZONE - FORCE REGULAR 400 WEIGHT
-                        ctx.fillStyle = (/[a-zA-Z]/.test(char) && !mosaicMode) ? `rgba(${rgbText[0]}, ${rgbText[1]}, ${rgbText[2]}, ${1.0 - intensity * 0.85})` : `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${1.0 - intensity * 0.85})`;
-                        ctx.font = `400 ${CELL_SIZE * 1.0}px ${currentFont}`;
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText(char, cx, vy);
+                    // Zone 4: Deep shadow — solid fill
+                    ctx.fillStyle = colorZ4;
+                    ctx.fillRect(fx, fy, fw, fh);
+                } else if (dist < zone1Limit) {
+                    // Zone 1: Key color point — glowing blend
+                    let intensity = Math.pow(1.0 - (dist / zone1Limit), 2.0);
+                    let baseR, baseG, baseB;
+                    if (gradientMode) {
+                        let c = lerpColor(gradientFrom, gradientTo, gradientT);
+                        let m = c.match(/\d+/g);
+                        baseR = parseInt(m[0]); baseG = parseInt(m[1]); baseB = parseInt(m[2]);
                     } else {
-                        ctx.fillStyle = (/[a-zA-Z]/.test(char) && !mosaicMode) ? colorText : colorSymbol;
+                        let rgb = hexToRgb(keyColor);
+                        baseR = rgb[0]; baseG = rgb[1]; baseB = rgb[2];
+                    }
+                    let fillR = Math.round(baseR * intensity + rgbZ2[0] * (1 - intensity));
+                    let fillG = Math.round(baseG * intensity + rgbZ2[1] * (1 - intensity));
+                    let fillB = Math.round(baseB * intensity + rgbZ2[2] * (1 - intensity));
+                    ctx.fillStyle = `rgb(${fillR}, ${fillG}, ${fillB})`;
+                    ctx.fillRect(fx, fy, fw, fh);
+                    if (intensity > 0.4 && (i * 11 + j * 17 + Math.floor(globalFrame / 60)) % 10 < 2) {
+                        ctx.fillStyle = `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${intensity})`;
+                        let symIdx = (i * 3 + j * 7 + Math.floor(globalFrame / 90)) % activeSymbols.length;
+                        ctx.fillText(activeSymbols[symIdx], cx, vy);
+                    } else {
+                        ctx.fillStyle = (/[a-zA-Z]/.test(char) && !mosaicMode)
+                            ? `rgba(${rgbText[0]}, ${rgbText[1]}, ${rgbText[2]}, ${1.0 - intensity * 0.85})`
+                            : `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${1.0 - intensity * 0.85})`;
                         ctx.font = `400 ${CELL_SIZE * 1.0}px ${currentFont}`;
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
                         ctx.fillText(char, cx, vy);
                     }
+                } else if (v < 0.72) {
+                    // Zone 2: Light/mid — white fill + border + typography
+                    ctx.fillStyle = colorZ2;
+                    ctx.fillRect(fx, fy, fw, fh);
+                    ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+                    ctx.fillStyle = (/[a-zA-Z]/.test(char) && !mosaicMode) ? colorText : colorSymbol;
+                    ctx.font = `400 ${CELL_SIZE * 1.0}px ${currentFont}`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(char, cx, vy);
+                } else {
+                    // Zone 3: Dark mid-tone — colorZ3 fill + border + ASCII symbols
+                    ctx.fillStyle = colorZ3;
+                    ctx.fillRect(fx, fy, fw, fh);
+                    ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+                    ctx.fillStyle = colorSymbol;
+                    ctx.font = `400 ${CELL_SIZE * 1.0}px ${currentFont}`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    let t3 = (v - 0.72) / 0.16;
+                    let sym3 = activeSymbols[clamp(Math.floor(t3 * activeSymbols.length), 0, activeSymbols.length - 1)];
+                    ctx.fillText(sym3, cx, vy);
                 }
             }
         }
@@ -1763,7 +1802,7 @@ WE ARE COSMIC</textarea>
         let [r,g,b] = hexToRgb(keyColor);
         let [h, s] = rgbToHsl(r, g, b);
         const tones = [[h, Math.min(s*0.25, 20), 97], [h, Math.min(s*0.4, 35), 88], [h, Math.min(s*0.5, 45), 75], [h, Math.min(s*0.5, 40), 20], [h, Math.min(s*0.3, 25), 10]];
-        let container = document.getElementById('bg-swatches'); container.innerHTML = '';
+        let container = document.getElementById('bg-swatches'); if (!container) return; container.innerHTML = '';
         tones.forEach(([th, ts, tl]) => {
             let hex = hslToHex(th, ts, tl);
             let sw = document.createElement('div');
@@ -2029,10 +2068,8 @@ WE ARE COSMIC</textarea>
             let z1 = document.getElementById('ctrl-zone1'); if (z1) z1.value = 0.15;
             let gctrl = document.getElementById('gradient-controls'); if (gctrl) gctrl.style.display = 'block';
 
-            let res = await fetch('./experience.mp4?v=' + Date.now());
-            let blob = await res.blob();
-            let file = new File([blob], 'experience.mp4', {type: 'video/mp4'});
-            loadVideo(file);
+            // Use direct src instead of fetch to avoid Cloudflare size limits
+            loadVideo('experience.mp4');
         } catch (e) {
             alert("EXPERIENCE VIDEO FAILED TO LOAD");
             if (btn) btn.innerText = "EXPERIENCE";
@@ -2063,3 +2100,4 @@ WE ARE COSMIC</textarea>
 <!-- STRUCTURAL RESTORE RELEASE: 04/09/2026 13:12:23 - ARTISTIC MODES BEFORE THRESHOLD -->
 
 <!-- THE REAL FINAL RESTORE: 04/09/2026 14:35:11 - vy IS BACK -->
+                                                                                                      
