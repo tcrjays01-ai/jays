@@ -876,6 +876,7 @@ WE ARE COSMIC</textarea>
     let pinchDistance = -1;
     let mediaRecorder = null;
     let recordedChunks = [];
+    let recStartTime = 0, recTimerInterval = null;
     let renderLoopRunning = false; // guard against duplicate loops
     // Cached DOM elements (set in init)
     let _hudGrid, _hudFps, _hudHand, _ctrlContrast;
@@ -1429,7 +1430,11 @@ WE ARE COSMIC</textarea>
                 let cy = y + halfCell;
                 let vy = cy + vyOffset;
                 let v = darkness;
-                
+
+                // dotLife fade effect (subtle dot trails for background cells)
+                if (darkness > darknessThreshold) dotLife[cellIdx] = 1.0;
+                else dotLife[cellIdx] *= 0.85;
+
                 // ARTISTIC MODES (MOSAIC 2 & WEDGE) - Render BEFORE threshold to ensure visibility
                 if (isNonTypoV2) {
                     let _fx = Math.floor(x), _fy = Math.floor(y), _fw = Math.ceil(CELL_SIZE)+1, _fh = Math.ceil(CELL_SIZE)+1;
@@ -1498,9 +1503,15 @@ WE ARE COSMIC</textarea>
                 const fw = Math.ceil(CELL_SIZE) + 1, fh = Math.ceil(CELL_SIZE) + 1;
                 let dist = Math.abs(vLinear - bluePhase);
 
-                if (v >= 0.88) {
+                if (v >= 0.90) {
                     // Zone 4: Deep shadow — solid fill
                     ctx.fillStyle = colorZ4;
+                    ctx.fillRect(fx, fy, fw, fh);
+                } else if (v >= 0.85) {
+                    // Zone 4→3 smooth transition
+                    let blend = (v - 0.85) / 0.05;
+                    let bR = hexToRgb(colorZ3), bZ = hexToRgb(colorZ4);
+                    ctx.fillStyle = `rgb(${Math.round(bR[0]*(1-blend)+bZ[0]*blend)},${Math.round(bR[1]*(1-blend)+bZ[1]*blend)},${Math.round(bR[2]*(1-blend)+bZ[2]*blend)})`;
                     ctx.fillRect(fx, fy, fw, fh);
                 } else if (dist < zone1Limit) {
                     // Zone 1: Key color point — glowing blend
@@ -1531,17 +1542,25 @@ WE ARE COSMIC</textarea>
                     ctx.fillStyle = colorZ2;
                     ctx.fillRect(fx, fy, fw, fh);
                     if (drawBorder) ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+                    // Depth: scale font by darkness (0.82~1.0)
+                    let depthScale = 0.82 + v * 0.25;
+                    ctx.font = `400 ${CELL_SIZE * depthScale}px ${currentFont}`;
                     ctx.fillStyle = (/[a-zA-Z]/.test(char) && !mosaicMode) ? colorText : colorSymbol;
                     ctx.fillText(char, cx, vy);
+                    ctx.font = fontStr; // restore
                 } else {
                     // Zone 3: Dark mid-tone — colorZ3 fill + border + ASCII symbols
                     ctx.fillStyle = colorZ3;
                     ctx.fillRect(fx, fy, fw, fh);
                     if (drawBorder) ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+                    // Depth: larger font in darker zone
+                    let depthScale = 0.9 + v * 0.15;
+                    ctx.font = `700 ${CELL_SIZE * depthScale}px ${currentFont}`;
                     ctx.fillStyle = colorSymbol;
                     let t3 = (v - 0.72) / 0.16;
                     let sym3 = activeSymbols[clamp(Math.floor(t3 * activeSymbols.length), 0, activeSymbols.length - 1)];
                     ctx.fillText(sym3, cx, vy);
+                    ctx.font = fontStr; // restore
                 }
             }
         }
@@ -1788,9 +1807,23 @@ WE ARE COSMIC</textarea>
             setTimeout(() => { if (recBtn) recBtn.classList.remove('recording-active'); window.URL.revokeObjectURL(url); a.remove(); }, 100);
         };
         mediaRecorder.start();
-        let btn = document.getElementById('record-btn'); btn.textContent = '⏺ REC (CLICK TO SAVE)'; btn.classList.add('active');
+        recStartTime = Date.now();
+        let btn = document.getElementById('record-btn');
+        btn.classList.add('active');
+        recTimerInterval = setInterval(() => {
+            let elapsed = Math.floor((Date.now() - recStartTime) / 1000);
+            let m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+            let s = String(elapsed % 60).padStart(2, '0');
+            if (btn) btn.textContent = `⏺ ${m}:${s}`;
+        }, 1000);
+        btn.textContent = '⏺ 00:00';
     }
-    function stopRecording() { if(mediaRecorder) mediaRecorder.stop(); let btn = document.getElementById('record-btn'); btn.textContent = '⏺ REC VIDEO'; btn.classList.remove('active'); }
+    function stopRecording() {
+        if (recTimerInterval) { clearInterval(recTimerInterval); recTimerInterval = null; }
+        if (mediaRecorder) mediaRecorder.stop();
+        let btn = document.getElementById('record-btn');
+        if (btn) { btn.textContent = '⏺ REC'; btn.classList.remove('active'); }
+    }
 
     function toggleSettings() {
         let panel = document.getElementById('settings-panel');
