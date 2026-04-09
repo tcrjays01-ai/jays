@@ -1754,10 +1754,10 @@ WE ARE COSMIC</textarea>
         document.documentElement.style.setProperty('--on-accent-container', val);
         updateBgSwatches();
     }
-    function applyZone1(val) { zone1Limit = parseFloat(val); document.getElementById('zone1-val').textContent = Math.round(val * 100) + '%'; let slider = document.getElementById('ctrl-zone1'); if (slider) slider.value = val; }
-    function applyContrast(val) { updatePhaseUI(val); if (autoPhase) { document.getElementById('ctrl-auto-phase').checked = false; autoPhase = false; } }
-    function applyAutoPhase(checked) { autoPhase = checked; if (!checked) { bluePhase = basePhase; document.getElementById('ctrl-contrast').value = basePhase; } }
-    function applyGradient(checked) { gradientMode = checked; document.getElementById('ctrl-color').disabled = checked; document.getElementById('color-hex').style.opacity = checked ? '0.3' : '1'; document.getElementById('gradient-controls').style.display = checked ? 'block' : 'none'; }
+    function applyZone1(val) { zone1Limit = parseFloat(val); let z1v = document.getElementById('zone1-val'); if (z1v) z1v.textContent = Math.round(val * 100) + '%'; let slider = document.getElementById('ctrl-zone1'); if (slider) slider.value = val; }
+    function applyContrast(val) { updatePhaseUI(val); if (autoPhase) { let cap = document.getElementById('ctrl-auto-phase'); if (cap) cap.checked = false; autoPhase = false; } }
+    function applyAutoPhase(checked) { autoPhase = checked; if (!checked) { bluePhase = basePhase; let cc = document.getElementById('ctrl-contrast'); if (cc) cc.value = basePhase; } }
+    function applyGradient(checked) { gradientMode = checked; let cc = document.getElementById('ctrl-color'); if (cc) cc.disabled = checked; let ch = document.getElementById('color-hex'); if (ch) ch.style.opacity = checked ? '0.3' : '1'; let gc = document.getElementById('gradient-controls'); if (gc) gc.style.display = checked ? 'block' : 'none'; }
     function applyGradientColors() {
         let from = document.getElementById('ctrl-grad-from').value;
         let to = document.getElementById('ctrl-grad-to').value;
