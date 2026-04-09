@@ -699,6 +699,14 @@ WE ARE COSMIC</textarea>
             </div>
         </div>
 
+        <div class="ctrl-section">
+            <span class="ctrl-label">Motion Trail</span>
+            <div class="ctrl-inline">
+                <input type="range" id="ctrl-trail" min="0" max="100" step="1" value="75" oninput="applyTrail(this.value)" style="flex:1;">
+                <span class="ctrl-val" id="trail-val">75%</span>
+            </div>
+        </div>
+
         <hr class="ctrl-divider">
 
         <div class="ctrl-section">
@@ -849,6 +857,7 @@ WE ARE COSMIC</textarea>
     let currentFont = 'Pretendard Variable';
     let keyColor = '#0000FF';
     let darknessThreshold = 0.12, contrastPow = 2.0;
+    let trailSpeed = 0.75;
     let lastGridCellSize = -1;
     let zone1Limit = 0.35;
     let bluePhase = 0.0;
@@ -1412,6 +1421,9 @@ WE ARE COSMIC</textarea>
         }
         const halfCell = CELL_SIZE / 2;
         const vyOffset = CELL_SIZE * 0.06;
+        const skipText = CELL_SIZE < 3;
+        const cachedZ3Rgb = hexToRgb(colorZ3);
+        const cachedZ4Rgb = hexToRgb(colorZ4);
         for (let j = 0; j < rows; j++) {
             for (let i = 0; i < cols; i++) {
                 let idx = (j * cols + i) * 4;
@@ -1422,7 +1434,7 @@ WE ARE COSMIC</textarea>
                 let targetDarkness = 1.0 - luma;
                 let cellIdx = j * cols + i;
                 if (cellHistory[cellIdx] === -1) cellHistory[cellIdx] = targetDarkness;
-                else cellHistory[cellIdx] = cellHistory[cellIdx] * 0.45 + targetDarkness * 0.55;
+                else cellHistory[cellIdx] = cellHistory[cellIdx] * (1 - trailSpeed) + targetDarkness * trailSpeed;
                 let darkness = cellHistory[cellIdx];
                 let x = offsetX + i * CELL_SIZE;
                 let y = offsetY + j * CELL_SIZE;
@@ -1510,8 +1522,7 @@ WE ARE COSMIC</textarea>
                 } else if (v >= 0.85) {
                     // Zone 4→3 smooth transition
                     let blend = (v - 0.85) / 0.05;
-                    let bR = hexToRgb(colorZ3), bZ = hexToRgb(colorZ4);
-                    ctx.fillStyle = `rgb(${Math.round(bR[0]*(1-blend)+bZ[0]*blend)},${Math.round(bR[1]*(1-blend)+bZ[1]*blend)},${Math.round(bR[2]*(1-blend)+bZ[2]*blend)})`;
+                    ctx.fillStyle = `rgb(${Math.round(cachedZ3Rgb[0]*(1-blend)+cachedZ4Rgb[0]*blend)},${Math.round(cachedZ3Rgb[1]*(1-blend)+cachedZ4Rgb[1]*blend)},${Math.round(cachedZ3Rgb[2]*(1-blend)+cachedZ4Rgb[2]*blend)})`;
                     ctx.fillRect(fx, fy, fw, fh);
                 } else if (dist < zone1Limit) {
                     // Zone 1: Key color point — glowing blend
@@ -1527,6 +1538,7 @@ WE ARE COSMIC</textarea>
                     let fillB = Math.round(baseB * intensity + rgbZ2[2] * (1 - intensity));
                     ctx.fillStyle = `rgb(${fillR}, ${fillG}, ${fillB})`;
                     ctx.fillRect(fx, fy, fw, fh);
+                    if (!skipText) {
                     if (intensity > 0.4 && (i * 11 + j * 17 + Math.floor(globalFrame / 60)) % 10 < 2) {
                         ctx.fillStyle = `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${intensity})`;
                         let symIdx = (i * 3 + j * 7 + Math.floor(globalFrame / 90)) % activeSymbols.length;
@@ -1537,30 +1549,33 @@ WE ARE COSMIC</textarea>
                             : `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${1.0 - intensity * 0.85})`;
                         ctx.fillText(char, cx, vy);
                     }
+                    }
                 } else if (v < 0.72) {
                     // Zone 2: Light/mid — white fill + border + typography
                     ctx.fillStyle = colorZ2;
                     ctx.fillRect(fx, fy, fw, fh);
+                    if (!skipText) {
                     if (drawBorder) ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
-                    // Depth: scale font by darkness (0.82~1.0)
                     let depthScale = 0.82 + v * 0.25;
                     ctx.font = `400 ${CELL_SIZE * depthScale}px ${currentFont}`;
                     ctx.fillStyle = (/[a-zA-Z]/.test(char) && !mosaicMode) ? colorText : colorSymbol;
                     ctx.fillText(char, cx, vy);
-                    ctx.font = fontStr; // restore
+                    ctx.font = fontStr;
+                    }
                 } else {
                     // Zone 3: Dark mid-tone — colorZ3 fill + border + ASCII symbols
                     ctx.fillStyle = colorZ3;
                     ctx.fillRect(fx, fy, fw, fh);
+                    if (!skipText) {
                     if (drawBorder) ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
-                    // Depth: larger font in darker zone
                     let depthScale = 0.9 + v * 0.15;
                     ctx.font = `700 ${CELL_SIZE * depthScale}px ${currentFont}`;
                     ctx.fillStyle = colorSymbol;
                     let t3 = (v - 0.72) / 0.16;
                     let sym3 = activeSymbols[clamp(Math.floor(t3 * activeSymbols.length), 0, activeSymbols.length - 1)];
                     ctx.fillText(sym3, cx, vy);
-                    ctx.font = fontStr; // restore
+                    ctx.font = fontStr;
+                    }
                 }
             }
         }
@@ -1897,6 +1912,7 @@ WE ARE COSMIC</textarea>
     }
     function applyZone1(val) { zone1Limit = parseFloat(val); let z1v = document.getElementById('zone1-val'); if (z1v) z1v.textContent = Math.round(val * 100) + '%'; let slider = document.getElementById('ctrl-zone1'); if (slider) slider.value = val; }
     function applyContrast(val) { updatePhaseUI(val); if (autoPhase) { let cap = document.getElementById('ctrl-auto-phase'); if (cap) cap.checked = false; autoPhase = false; } }
+    function applyTrail(val) { trailSpeed = parseInt(val) / 100; let tv = document.getElementById('trail-val'); if (tv) tv.textContent = val + '%'; }
     function applyAutoPhase(checked) { autoPhase = checked; if (!checked) { bluePhase = basePhase; let cc = document.getElementById('ctrl-contrast'); if (cc) cc.value = basePhase; } }
     function applyGradient(checked) { gradientMode = checked; let cc = document.getElementById('ctrl-color'); if (cc) cc.disabled = checked; let ch = document.getElementById('color-hex'); if (ch) ch.style.opacity = checked ? '0.3' : '1'; let gc = document.getElementById('gradient-controls'); if (gc) gc.style.display = checked ? 'block' : 'none'; }
     function applyGradientColors() {
