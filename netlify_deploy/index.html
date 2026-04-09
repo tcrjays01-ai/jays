@@ -943,14 +943,19 @@ WE ARE COSMIC</textarea>
         canvas = document.getElementById('ascii-canvas');
         ctx = canvas.getContext('2d');
         resizeCanvas();
-        let lastW = window.innerWidth, lastH = window.innerHeight, resizeTimeout;
+        let lastW = window.innerWidth, lastH = window.innerHeight, resizeTimeout, isHandlingResize = false;
         window.addEventListener('resize', () => { 
+            if (isHandlingResize) return;
             if (window.innerWidth === lastW && window.innerHeight === lastH) return;
             lastW = window.innerWidth; lastH = window.innerHeight;
             const hqMode = document.getElementById('ctrl-hq-rec-bar')?.checked;
             if (mediaRecorder && mediaRecorder.state === 'recording' && hqMode) return;
             clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(() => { resizeCanvas(); }, 150);
+            resizeTimeout = setTimeout(() => { 
+                isHandlingResize = true;
+                resizeCanvas(); 
+                isHandlingResize = false;
+            }, 150);
         });
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1453,10 +1458,12 @@ WE ARE COSMIC</textarea>
         else if (e.key === '-' || e.key === '_') { targetCellSize = Math.max(8, targetCellSize - 5); syncUnitUI(); }
     });
     window.addEventListener('wheel', (e) => {
-        if (Math.abs(e.deltaY) < 1) return;
-        targetCellSize = Math.max(8, Math.min(150, targetCellSize - (e.deltaY > 0 ? 5 : -5)));
+        if (e.ctrlKey) return;
+        e.preventDefault();
+        let delta = e.deltaY > 0 ? -5 : 5;
+        targetCellSize = Math.max(8, Math.min(150, targetCellSize + delta));
         syncUnitUI();
-    }, { passive: true });
+    }, { passive: false });
     let initialPinchDist = null, initialCellSize = 150;
     let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
     let dominantAxis = null; // 'x' for swipe, 'y' for zoom
