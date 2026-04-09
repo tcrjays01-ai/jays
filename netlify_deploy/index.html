@@ -1304,10 +1304,7 @@ WE ARE COSMIC</textarea>
     function renderLoop() {
         if (!isPlaying) return;
         let now = performance.now();
-        const cellCount = cols * rows;
-        const isRecording = mediaRecorder && mediaRecorder.state === 'recording';
-        const isHQRec = isRecording && document.getElementById('ctrl-hq-rec-bar')?.checked;
-        let targetFrameDelay = isHQRec ? 33 : cellCount > 8000 ? 33 : cellCount > 4000 ? 24 : 16;
+        let targetFrameDelay = 42; // 24fps fixed
         if (isIntro) {
             let elapsed = now - introStartTime;
             const INTRO_LEN = 3000;
