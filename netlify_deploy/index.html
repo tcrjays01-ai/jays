@@ -1571,7 +1571,7 @@ WE ARE COSMIC</textarea>
                     if (!skipText) {
                     if (drawBorder) ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
                     let depthScale = 0.9 + v * 0.15;
-                    ctx.font = `700 ${CELL_SIZE * depthScale}px ${currentFont}`;
+                    ctx.font = `400 ${CELL_SIZE * depthScale}px ${currentFont}`;
                     ctx.fillStyle = colorSymbol;
                     let t3 = (v - 0.72) / 0.16;
                     let sym3 = activeSymbols[clamp(Math.floor(t3 * activeSymbols.length), 0, activeSymbols.length - 1)];
