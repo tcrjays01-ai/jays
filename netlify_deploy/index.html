@@ -1334,7 +1334,7 @@ WE ARE COSMIC</textarea>
                 let symbolChar = activeSymbols[Math.floor(v * (activeSymbols.length - 1))];
                 
                 if (isNonTypoV2) {
-                    if (useGradient) {
+                    if (gradientMode) {
                         ctx.fillStyle = getGradientColor(v);
                     } else {
                         ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
@@ -1344,7 +1344,7 @@ WE ARE COSMIC</textarea>
                     if (barWidth < CELL_SIZE) {
                         ctx.fillStyle = isOriginalTheme ? '#000' : bgColor;
                         ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-                        if (useGradient) {
+                        if (gradientMode) {
                             ctx.fillStyle = getGradientColor(v);
                         } else {
                             ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
@@ -1356,7 +1356,7 @@ WE ARE COSMIC</textarea>
                     continue;
                 }
                 if (isNonTypoV3) {
-                    if (useGradient) {
+                    if (gradientMode) {
                         ctx.fillStyle = getGradientColor(v);
                     } else {
                         ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
@@ -2042,3 +2042,5 @@ WE ARE COSMIC</textarea>
 <!-- FINAL STABLE RELEASE: 04/09/2026 13:05:07 - VARIABLE FIX & SAFETY ENABLED -->
 
 <!-- UI THEME SYNC RELEASE: 04/09/2026 13:06:28 - APPLYPALETTE UI SYNC ENABLED -->
+
+<!-- THE FINAL RENDER RESTORE: 04/09/2026 13:07:50 - ALL TYPOS REMOVED -->
