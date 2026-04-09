@@ -1198,6 +1198,17 @@ WE ARE COSMIC</textarea>
         video.load();
     }
 
+    function getGradientColor(v) {
+        if (!useGradient) return isOriginalTheme ? '#FFFFFF' : colorZ4;
+        // Darkness-based interpolation between keyColor and colorZ4
+        let c1 = hexToRgb(keyColor);
+        let c2 = hexToRgb(colorZ4);
+        let r = Math.round(c1[0] * (1 - v) + c2[0] * v);
+        let g = Math.round(c1[1] * (1 - v) + c2[1] * v);
+        let b = Math.round(c1[2] * (1 - v) + c2[2] * v);
+        return `rgb(${r},${g},${b})`;
+    }
+
     function renderLoop() {
         if (!isPlaying) return;
         let now = performance.now();
@@ -2005,3 +2016,5 @@ WE ARE COSMIC</textarea>
 <!-- VERSION 5.0.1 - REFRESH CONFIRMED -->
 
 <!-- GRADIENT FIX RELEASE: 04/09/2026 12:51:59 - MOSAIC 2 & WEDGE GRADIENT ENABLED -->
+
+<!-- EMERGENCY RENDER RESTORE: 04/09/2026 13:02:17 - GRADIENT ENGINE DEFINED -->
