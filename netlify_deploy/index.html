@@ -1305,7 +1305,9 @@ WE ARE COSMIC</textarea>
         if (!isPlaying) return;
         let now = performance.now();
         const cellCount = cols * rows;
-        let targetFrameDelay = cellCount > 8000 ? 33 : cellCount > 4000 ? 24 : 16;
+        const isRecording = mediaRecorder && mediaRecorder.state === 'recording';
+        const isHQRec = isRecording && document.getElementById('ctrl-hq-rec-bar')?.checked;
+        let targetFrameDelay = isHQRec ? 33 : cellCount > 8000 ? 33 : cellCount > 4000 ? 24 : 16;
         if (isIntro) {
             let elapsed = now - introStartTime;
             const INTRO_LEN = 3000;
@@ -1742,20 +1744,20 @@ WE ARE COSMIC</textarea>
             lastGridCellSize = -1; 
         }
 
-        let stream = canvas.captureStream(60);
-        let selectedType = 'video/mp4;codecs=avc1'; 
+        const captureFps = hqMode ? 30 : 60;
+        let stream = canvas.captureStream(captureFps);
+        let selectedType = 'video/mp4;codecs=avc1';
         if (!MediaRecorder.isTypeSupported(selectedType)) {
-            selectedType = 'video/mp4'; 
+            selectedType = 'video/mp4';
             if (!MediaRecorder.isTypeSupported(selectedType)) {
-                selectedType = 'video/webm;codecs=vp9'; 
+                selectedType = 'video/webm;codecs=vp9';
                 if (!MediaRecorder.isTypeSupported(selectedType)) selectedType = 'video/webm';
             }
         }
 
         let options = {
             mimeType: selectedType,
-            // 60Mbps for Pro-Grade 4K Clarity
-            videoBitsPerSecond: hqMode ? 60000000 : 10000000 
+            videoBitsPerSecond: hqMode ? 25000000 : 10000000  // 4K: 25Mbps (충분한 화질), HD: 10Mbps
         };
         
         recordedChunks = [];
