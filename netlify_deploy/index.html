@@ -1712,11 +1712,26 @@ WE ARE COSMIC</textarea>
     }
     function applyBg(val) { bgColor = val; document.getElementById('bg-hex').textContent = val.toUpperCase(); document.getElementById('ctrl-bg').value = val; }
     function applyPalette(target, val) {
-        if (target === 'z2') { colorZ2 = val; rgbZ2 = hexToRgb(val); }
-        else if (target === 'z3') colorZ3 = val;
-        else if (target === 'z4') colorZ4 = val;
-        else if (target === 'txt') { colorText = val; rgbText = hexToRgb(val); }
-        else if (target === 'sym') { colorSymbol = val; rgbSymbol = hexToRgb(val); }
+        if (target === 'z2') { 
+            colorZ2 = val; rgbZ2 = hexToRgb(val); 
+            let el = document.getElementById('ctrl-col-z2'); if (el) el.value = val;
+        }
+        else if (target === 'z3') { 
+            colorZ3 = val; 
+            let el = document.getElementById('ctrl-col-z3'); if (el) el.value = val;
+        }
+        else if (target === 'z4') { 
+            colorZ4 = val; 
+            let el = document.getElementById('ctrl-col-z4'); if (el) el.value = val;
+        }
+        else if (target === 'txt') { 
+            colorText = val; rgbText = hexToRgb(val); 
+            let el = document.getElementById('ctrl-col-txt'); if (el) el.value = val;
+        }
+        else if (target === 'sym') { 
+            colorSymbol = val; rgbSymbol = hexToRgb(val); 
+            let el = document.getElementById('color-hex'); if (el) { el.textContent = val.toUpperCase(); el.style.color = val; }
+        }
     }
     function hslToHex(h, s, l) {
         h /= 360; s /= 100; l /= 100;
@@ -2025,3 +2040,5 @@ WE ARE COSMIC</textarea>
 <!-- EMERGENCY RENDER RESTORE: 04/09/2026 13:02:17 - GRADIENT ENGINE DEFINED -->
 
 <!-- FINAL STABLE RELEASE: 04/09/2026 13:05:07 - VARIABLE FIX & SAFETY ENABLED -->
+
+<!-- UI THEME SYNC RELEASE: 04/09/2026 13:06:28 - APPLYPALETTE UI SYNC ENABLED -->
