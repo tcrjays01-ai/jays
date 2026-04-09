@@ -779,6 +779,40 @@ WE ARE COSMIC</textarea>
                     oninput="applyUnitScale(this.value, 'slider')">
             </div>
 
+            <!-- Camera Controls -->
+            <div id="cam-controls" style="display:none; flex-direction:column; gap:6px;">
+                <span class="ctrl-label" style="margin-bottom:2px;">CAMERA</span>
+                <div style="display:flex; gap:6px;">
+                    <button id="btn-portrait" onclick="togglePortraitMode()"
+                        title="인물 모드 (배경 제거)"
+                        style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+                               padding:8px 4px; border-radius:8px; border:1.5px solid var(--md-outline);
+                               background:var(--md-surface); cursor:pointer; font-size:18px; line-height:1;
+                               transition: all 0.15s;">
+                        <span>🧍</span>
+                        <span style="font-size:7px; font-weight:700; color:var(--md-primary); letter-spacing:0.5px;">PORTRAIT</span>
+                    </button>
+                    <button id="btn-selfie" onclick="switchCamera('user')"
+                        title="셀카 모드 (전면 카메라)"
+                        style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+                               padding:8px 4px; border-radius:8px; border:1.5px solid var(--md-outline);
+                               background:var(--md-surface); cursor:pointer; font-size:18px; line-height:1;
+                               transition: all 0.15s;">
+                        <span>🤳</span>
+                        <span style="font-size:7px; font-weight:700; color:var(--md-primary); letter-spacing:0.5px;">SELFIE</span>
+                    </button>
+                    <button id="btn-capture" onclick="switchCamera('environment')"
+                        title="촬영 모드 (후면 카메라)"
+                        style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+                               padding:8px 4px; border-radius:8px; border:1.5px solid var(--md-outline);
+                               background:var(--md-surface); cursor:pointer; font-size:18px; line-height:1;
+                               transition: all 0.15s;">
+                        <span>📸</span>
+                        <span style="font-size:7px; font-weight:700; color:var(--md-primary); letter-spacing:0.5px;">CAPTURE</span>
+                    </button>
+                </div>
+            </div>
+
         </div>
 
         </div>
@@ -798,6 +832,8 @@ WE ARE COSMIC</textarea>
 
     let video = null;
     let isCamera = false;
+    let portraitMode = false;
+    let currentFacingMode = 'user';
     let selfieSegmentation = null;
     let canvas, ctx;
     let offCanvas, offCtx;
@@ -1097,6 +1133,13 @@ WE ARE COSMIC</textarea>
                     let mobileBar = document.getElementById('mobile-top-btns'); if (mobileBar) mobileBar.style.display = 'flex';
                 }
                 isCamera = true;
+                portraitMode = false;
+                currentFacingMode = 'user';
+                let camCtrl = document.getElementById('cam-controls');
+                if (camCtrl) camCtrl.style.display = 'flex';
+                // selfie active by default
+                let btnS = document.getElementById('btn-selfie');
+                if (btnS) { btnS.style.background = 'var(--md-primary)'; btnS.style.borderColor = 'var(--md-primary)'; btnS.querySelector('span:last-child').style.color = '#fff'; }
                 initSegmentation();
                 video.play();
                 document.body.classList.add('touch-show');
@@ -1123,8 +1166,52 @@ WE ARE COSMIC</textarea>
         });
     }
 
+    function togglePortraitMode() {
+        portraitMode = !portraitMode;
+        let btn = document.getElementById('btn-portrait');
+        if (portraitMode) {
+            segMask = false;
+            if (!selfieSegmentation) initSegmentation();
+            btn.style.background = 'var(--md-primary)';
+            btn.style.borderColor = 'var(--md-primary)';
+            btn.querySelector('span:last-child').style.color = '#fff';
+        } else {
+            segMask = false;
+            btn.style.background = 'var(--md-surface)';
+            btn.style.borderColor = 'var(--md-outline)';
+            btn.querySelector('span:last-child').style.color = 'var(--md-primary)';
+        }
+    }
+
+    function switchCamera(facingMode) {
+        if (!isCamera) return;
+        currentFacingMode = facingMode;
+        let btnS = document.getElementById('btn-selfie');
+        let btnC = document.getElementById('btn-capture');
+        btnS.style.background = facingMode === 'user' ? 'var(--md-primary)' : 'var(--md-surface)';
+        btnS.style.borderColor = facingMode === 'user' ? 'var(--md-primary)' : 'var(--md-outline)';
+        btnS.querySelector('span:last-child').style.color = facingMode === 'user' ? '#fff' : 'var(--md-primary)';
+        btnC.style.background = facingMode === 'environment' ? 'var(--md-primary)' : 'var(--md-surface)';
+        btnC.style.borderColor = facingMode === 'environment' ? 'var(--md-primary)' : 'var(--md-outline)';
+        btnC.querySelector('span:last-child').style.color = facingMode === 'environment' ? '#fff' : 'var(--md-primary)';
+        if (video && video.srcObject) {
+            video.srcObject.getTracks().forEach(t => t.stop());
+        }
+        navigator.mediaDevices.getUserMedia({ video: { facingMode }, audio: false })
+        .then(stream => {
+            video.srcObject = stream;
+            video.play();
+        })
+        .catch(err => console.warn('Camera switch failed:', err));
+    }
+
     function returnToMenu() {
         isExperienceMode = false;
+        isCamera = false;
+        portraitMode = false;
+        segMask = false;
+        let camCtrl = document.getElementById('cam-controls');
+        if (camCtrl) camCtrl.style.display = 'none';
         let _mb2 = document.getElementById('mobile-top-btns'); if(_mb2) _mb2.style.display='none';
         if (webcamActive) stopWebcam();
         if (video) { video.pause(); video.srcObject = null; video.removeAttribute('src'); }
@@ -1252,7 +1339,7 @@ WE ARE COSMIC</textarea>
             offCtx.fillStyle = isOriginalTheme ? '#000' : '#FFF';
             offCtx.fillRect(0, 0, cols, rows);
             offCtx.drawImage(video, dX, dY, dW, dH);
-            if (isCamera && selfieSegmentation) {
+            if (isCamera && portraitMode && selfieSegmentation) {
                 if (!isSegmenting && video.readyState >= 2) {
                     isSegmenting = true;
                     selfieSegmentation.send({ image: video }).catch(err => { isSegmenting = false; });
