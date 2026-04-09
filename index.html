@@ -451,7 +451,7 @@
             #mobile-top-btns { display: none !important; }
         }
         @media (max-width: 767px) {
-            #settings-toggle { display: none !important; }
+            #settings-toggle { z-index: 10000; }
         }
 
         /* PERMISSION GUIDE MODAL */
@@ -675,7 +675,7 @@ WE ARE COSMIC</textarea>
                 <option value="chaos">CHAOS (GLITCH SYMBOLS)</option>
                 <option value="mosaic">MOSAIC (NON-TYPO)</option>
                 <option value="mosaic2">MOSAIC 2 (VERTICAL BAR)</option>
-                <option value="mosaic3">GEOMETRIC WEDGE (기하학 웨지)</option>
+                <option value="mosaic3">WEDGE (기하학 웨지)</option>
             </select>
         </div>
 
@@ -732,16 +732,21 @@ WE ARE COSMIC</textarea>
             <span class="ctrl-label">Detailed Palette</span>
             <div class="ctrl-inline" style="flex-wrap:nowrap; gap:6px; justify-content: space-between;">
                 <div style="display:flex; flex-direction:column; align-items:center;">
+                    <input type="color" id="ctrl-bg" value="#ffffff" oninput="applyBg(this.value)" style="border:1px solid var(--accent-primary) !important;">
+                    <span style="font-size:6.5px; letter-spacing:1px; opacity:0.8; font-weight:700; color:var(--accent-primary); text-transform:uppercase;">BG</span>
+                </div>
+                <div style="width:1px; height:18px; background:rgba(0,0,0,0.1); margin:0 1px;"></div>
+                <div style="display:flex; flex-direction:column; align-items:center;">
                     <input type="color" id="ctrl-col-z2" value="#ffffff" oninput="applyPalette('z2', this.value)">
-                    <span style="font-size:6px; letter-spacing:2px; opacity:0.3; text-transform:uppercase;">Light</span>
+                    <span style="font-size:6px; letter-spacing:1px; opacity:0.3; text-transform:uppercase;">Light</span>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:center;">
                     <input type="color" id="ctrl-col-z3" value="#808080" oninput="applyPalette('z3', this.value)">
-                    <span style="font-size:6px; letter-spacing:2px; opacity:0.3; text-transform:uppercase;">Mid</span>
+                    <span style="font-size:6px; letter-spacing:1px; opacity:0.3; text-transform:uppercase;">Mid</span>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:center;">
                     <input type="color" id="ctrl-col-z4" value="#000000" oninput="applyPalette('z4', this.value)">
-                    <span style="font-size:6px; letter-spacing:2px; opacity:0.3; text-transform:uppercase;">Deep</span>
+                    <span style="font-size:6px; letter-spacing:1px; opacity:0.3; text-transform:uppercase;">Deep</span>
                 </div>
                 <div style="width:1px; height:18px; background:rgba(0,0,0,0.1); margin:0 1px;"></div>
                 <div style="display:flex; flex-direction:column; align-items:center;">
@@ -780,14 +785,6 @@ WE ARE COSMIC</textarea>
 
         <hr class="ctrl-divider">
 
-        <div class="ctrl-section">
-            <span class="ctrl-label">Background Color</span>
-            <div class="ctrl-inline" style="margin-bottom:6px;">
-                <input type="color" id="ctrl-bg" value="#ffffff" oninput="applyBg(this.value)">
-                <span id="bg-hex">#FFFFFF</span>
-            </div>
-            <div id="bg-swatches" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
-        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.min.js"></script>
@@ -1006,10 +1003,8 @@ WE ARE COSMIC</textarea>
         let dpr = Math.min(window.devicePixelRatio || 1, 1.5);
         let screenW = window.innerWidth, screenH = window.innerHeight;
         
-        // DECOUPLING: Only change canvas.width if it's a window resize or forced.
-        // This prevents flickering during animations where CELL_SIZE changes.
+        // DECOUPLING logic to eliminate flickering
         if (isIntro && !forcePhysical) {
-            // During intro, just let CSS handle the visual fit
             canvas.style.width = screenW + 'px';
             canvas.style.height = screenH + 'px';
             canvas.style.left = '0px';
@@ -1025,14 +1020,13 @@ WE ARE COSMIC</textarea>
             let rawDW = srcW * scale;
             let rawDH = srcH * scale;
 
-            // SNAP resolution logic - only update physical if forced or not animating
             let colsCount = Math.floor((rawDW * dpr) / CELL_SIZE);
             let rowsCount = Math.floor((rawDH * dpr) / CELL_SIZE);
             
             let finalW = (colsCount * CELL_SIZE) / dpr;
             let finalH = (rowsCount * CELL_SIZE) / dpr;
 
-            if (forcePhysical || Math.abs(canvas.width - colsCount * CELL_SIZE) > 100) {
+            if (forcePhysical || Math.abs(canvas.width - colsCount * CELL_SIZE) > 50) {
                 canvas.width = colsCount * CELL_SIZE;
                 canvas.height = rowsCount * CELL_SIZE;
             }
@@ -1637,6 +1631,7 @@ WE ARE COSMIC</textarea>
             applyBg('#FD3000');
             applyPalette('txt', '#000000');
             applyPalette('z4', '#000000');
+            // Background color is now part of the palette row
             let bgInput = document.getElementById('ctrl-bg'); if (bgInput) bgInput.value = '#FD3000';
             let txtInput = document.getElementById('ctrl-col-txt'); if (txtInput) txtInput.value = '#000000';
             let z4Input = document.getElementById('ctrl-col-z4'); if (z4Input) z4Input.value = '#000000';
@@ -1992,3 +1987,5 @@ WE ARE COSMIC</textarea>
 </html>
 
 <!-- FORCE CACHE CLEAR: 04/09/2026 12:43:42 -->
+
+<!-- INTEGRATED FIX RELEASE: 04/09/2026 12:47:35 - SETTINGS RECOVERY & PALETTE SYNC -->
