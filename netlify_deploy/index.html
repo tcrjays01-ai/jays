@@ -927,12 +927,12 @@ WE ARE COSMIC</textarea>
             .premium-ctrl-btn:hover { color: ${bgColor} !important; }
         `;
         
-        document.getElementById('ctrl-bg').value = bgColor;
-        document.getElementById('bg-hex').textContent = bgColor.toUpperCase();
-        document.getElementById('ctrl-col-z2').value = colorZ2;
-        document.getElementById('ctrl-col-z3').value = colorZ3;
-        document.getElementById('ctrl-col-z4').value = colorZ4;
-        document.getElementById('ctrl-col-txt').value = colorText;
+        let _cbg = document.getElementById('ctrl-bg'); if (_cbg) _cbg.value = bgColor;
+        let _bgh = document.getElementById('bg-hex'); if (_bgh) _bgh.textContent = bgColor.toUpperCase();
+        let _cz2 = document.getElementById('ctrl-col-z2'); if (_cz2) _cz2.value = colorZ2;
+        let _cz3 = document.getElementById('ctrl-col-z3'); if (_cz3) _cz3.value = colorZ3;
+        let _cz4 = document.getElementById('ctrl-col-z4'); if (_cz4) _cz4.value = colorZ4;
+        let _ctxt = document.getElementById('ctrl-col-txt'); if (_ctxt) _ctxt.value = colorText;
         document.body.style.background = '#000000';
         if (ctx) { ctx.fillStyle = bgColor; ctx.fillRect(0, 0, canvas.width, canvas.height); }
     }
@@ -1745,8 +1745,7 @@ WE ARE COSMIC</textarea>
     }
     function applyColor(val) {
         keyColor = val;
-        document.getElementById('color-hex').textContent = val.toUpperCase();
-        document.getElementById('color-hex').style.color = val;
+        let _chx = document.getElementById('color-hex'); if (_chx) { _chx.textContent = val.toUpperCase(); _chx.style.color = val; }
         let [r,g,b] = hexToRgb(val);
         let [h,s,l] = rgbToHsl(r,g,b);
         document.documentElement.style.setProperty('--accent-primary', val);
