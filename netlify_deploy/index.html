@@ -1217,7 +1217,8 @@ WE ARE COSMIC</textarea>
     function renderLoop() {
         if (!isPlaying) return;
         let now = performance.now();
-        let targetFrameDelay = 16;
+        const cellCount = cols * rows;
+        let targetFrameDelay = cellCount > 8000 ? 33 : cellCount > 4000 ? 24 : 16;
         if (isIntro) {
             let elapsed = now - introStartTime;
             const INTRO_LEN = 3000;
@@ -1295,6 +1296,18 @@ WE ARE COSMIC</textarea>
             let slider = document.getElementById('ctrl-contrast');
             if (slider && Math.abs(parseFloat(slider.value) - bluePhase) > 0.02) slider.value = bluePhase;
         }
+        // --- Per-frame cache (moved outside loop for performance) ---
+        const fontStr = `400 ${CELL_SIZE}px ${currentFont}`;
+        ctx.font = fontStr;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.strokeStyle = isOriginalTheme ? '#FFFFFF' : '#000000';
+        ctx.lineWidth = CELL_SIZE >= 30 ? 1 : 0.5;
+        const drawBorder = CELL_SIZE >= 6;
+        const cachedKeyRgb = hexToRgb(keyColor);
+        const halfCell = CELL_SIZE / 2;
+        const vyOffset = CELL_SIZE * 0.06;
+        const smoothSpeed = isCamera ? 0.20 : 0.20;
         for (let j = 0; j < rows; j++) {
             for (let i = 0; i < cols; i++) {
                 let idx = (j * cols + i) * 4;
@@ -1304,16 +1317,15 @@ WE ARE COSMIC</textarea>
                 if (isCamera && !isBackground) { luma = (luma - 0.35) * 1.4 + 0.35; luma = Math.max(0.001, Math.min(0.999, luma)); }
                 let targetDarkness = 1.0 - luma;
                 let cellIdx = j * cols + i;
-                let smoothSpeed = isCamera ? 0.20 : 0.20;
                 if (cellHistory[cellIdx] === -1) cellHistory[cellIdx] = targetDarkness;
-                else cellHistory[cellIdx] = cellHistory[cellIdx] * (1 - smoothSpeed) + targetDarkness * smoothSpeed;
+                else cellHistory[cellIdx] = cellHistory[cellIdx] * 0.8 + targetDarkness * 0.2;
                 let darkness = cellHistory[cellIdx];
                 let x = offsetX + i * CELL_SIZE;
                 let y = offsetY + j * CELL_SIZE;
-                let cx = x + CELL_SIZE / 2;
-                let cy = y + CELL_SIZE / 2;
-                let vy = cy + (CELL_SIZE * 0.06);
-                let v = cellHistory[cellIdx]; // Smoothed darkness
+                let cx = x + halfCell;
+                let cy = y + halfCell;
+                let vy = cy + vyOffset;
+                let v = darkness;
                 
                 // ARTISTIC MODES (MOSAIC 2 & WEDGE) - Render BEFORE threshold to ensure visibility
                 if (isNonTypoV2) {
@@ -1389,8 +1401,6 @@ WE ARE COSMIC</textarea>
 
                 const fx = Math.floor(x), fy = Math.floor(y);
                 const fw = Math.ceil(CELL_SIZE), fh = Math.ceil(CELL_SIZE);
-                ctx.strokeStyle = isOriginalTheme ? '#FFFFFF' : '#000000';
-                ctx.lineWidth = CELL_SIZE >= 30 ? 1 : 0.5;
                 let dist = Math.abs(vLinear - bluePhase);
 
                 if (v >= 0.88) {
@@ -1406,8 +1416,7 @@ WE ARE COSMIC</textarea>
                         let m = c.match(/\d+/g);
                         baseR = parseInt(m[0]); baseG = parseInt(m[1]); baseB = parseInt(m[2]);
                     } else {
-                        let rgb = hexToRgb(keyColor);
-                        baseR = rgb[0]; baseG = rgb[1]; baseB = rgb[2];
+                        baseR = cachedKeyRgb[0]; baseG = cachedKeyRgb[1]; baseB = cachedKeyRgb[2];
                     }
                     let fillR = Math.round(baseR * intensity + rgbZ2[0] * (1 - intensity));
                     let fillG = Math.round(baseG * intensity + rgbZ2[1] * (1 - intensity));
@@ -1431,21 +1440,15 @@ WE ARE COSMIC</textarea>
                     // Zone 2: Light/mid — white fill + border + typography
                     ctx.fillStyle = colorZ2;
                     ctx.fillRect(fx, fy, fw, fh);
-                    ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+                    if (drawBorder) ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
                     ctx.fillStyle = (/[a-zA-Z]/.test(char) && !mosaicMode) ? colorText : colorSymbol;
-                    ctx.font = `400 ${CELL_SIZE * 1.0}px ${currentFont}`;
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
                     ctx.fillText(char, cx, vy);
                 } else {
                     // Zone 3: Dark mid-tone — colorZ3 fill + border + ASCII symbols
                     ctx.fillStyle = colorZ3;
                     ctx.fillRect(fx, fy, fw, fh);
-                    ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+                    if (drawBorder) ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
                     ctx.fillStyle = colorSymbol;
-                    ctx.font = `400 ${CELL_SIZE * 1.0}px ${currentFont}`;
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
                     let t3 = (v - 0.72) / 0.16;
                     let sym3 = activeSymbols[clamp(Math.floor(t3 * activeSymbols.length), 0, activeSymbols.length - 1)];
                     ctx.fillText(sym3, cx, vy);
