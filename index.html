@@ -805,7 +805,7 @@ WE ARE COSMIC</textarea>
     let canvas, ctx;
     let offCanvas, offCtx;
     let cols = 0, rows = 0;
-    let savedWidth = 0, savedHeight = 0; // For HQ restore
+    let savedWidth = 0, savedHeight = 0, savedTargetCellSize = 0; // For HQ restore
     let isPlaying = false;
     let segMask = false;
     let isSegmenting = false;
@@ -1521,19 +1521,28 @@ WE ARE COSMIC</textarea>
     function startRecording() {
         const hqMode = document.getElementById('ctrl-hq-rec-bar')?.checked;
         
-        // --- TRUE 4K ASPECT-RATIO AWARE RESIZE ---
+        // --- TRUE 4K ASPECT-RATIO AWARE RESIZE & DENSITY LOCK ---
         if (hqMode) {
             savedWidth = canvas.width;
             savedHeight = canvas.height;
+            savedTargetCellSize = targetCellSize;
             let ratio = savedWidth / savedHeight;
+            let targetWidth = 3840;
+            let targetHeight = Math.round(3840 / ratio);
             
-            if (ratio >= 1) { // Landscape
-                canvas.width = 3840;
-                canvas.height = Math.round(3840 / ratio);
-            } else { // Portrait / Square
-                canvas.height = 3840;
-                canvas.width = Math.round(3840 * ratio);
+            if (ratio < 1) { // Portrait / Square
+                targetHeight = 3840;
+                targetWidth = Math.round(3840 * ratio);
             }
+            
+            let scaleFactor = targetWidth / savedWidth;
+            
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            
+            // Scale cell size to maintain EXACT visual composition & prevent lag
+            targetCellSize = savedTargetCellSize * scaleFactor;
+            
             // Force re-layout for new 4K dimensions
             lastGridCellSize = -1; 
         }
@@ -1565,7 +1574,9 @@ WE ARE COSMIC</textarea>
             if (hqMode) {
                 canvas.width = savedWidth;
                 canvas.height = savedHeight;
+                targetCellSize = savedTargetCellSize;
                 lastGridCellSize = -1;
+                syncUnitUI(); // Sync UI slider/number back to normal
             }
 
             let blob = new Blob(recordedChunks, { type: selectedType });
