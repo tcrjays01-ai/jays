@@ -1344,6 +1344,8 @@ WE ARE COSMIC</textarea>
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.filter = 'none';
         ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = isOriginalTheme ? '#000000' : bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         CELL_SIZE = Math.max(10, Math.min(150, CELL_SIZE));
         if (Math.abs(lastGridCellSize - CELL_SIZE) > 0.5) {
             lastGridCellSize = CELL_SIZE;
@@ -1351,7 +1353,7 @@ WE ARE COSMIC</textarea>
         }
         if (video && video.readyState >= 2 && !video.seeking) {
             let vW = video.videoWidth, vH = video.videoHeight;
-            let vScale = isIntro ? Math.max(cols / vW, rows / vH) : Math.min(cols / vW, rows / vH);
+            let vScale = Math.max(cols / vW, rows / vH);
             let dW = vW * vScale, dH = vH * vScale;
             let dX = (cols - dW) / 2, dY = (rows - dH) / 2;
             
@@ -1389,7 +1391,7 @@ WE ARE COSMIC</textarea>
             ctx.save();
             ctx.filter = 'brightness(0.6)';
             let vW = video.videoWidth, vH = video.videoHeight;
-            let vScale = isIntro ? Math.max(canvas.width / vW, canvas.height / vH) : Math.min(canvas.width / vW, canvas.height / vH);
+            let vScale = Math.max(canvas.width / vW, canvas.height / vH);
             let dW = vW * vScale, dH = vH * vScale;
             let dX = (canvas.width - dW) / 2, dY = (canvas.height - dH) / 2;
             ctx.drawImage(video, dX, dY, dW, dH);
