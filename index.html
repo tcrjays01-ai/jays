@@ -1318,13 +1318,21 @@ WE ARE COSMIC</textarea>
                 let symbolChar = activeSymbols[Math.floor(v * (activeSymbols.length - 1))];
                 
                 if (isNonTypoV2) {
-                    ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
+                    if (useGradient) {
+                        ctx.fillStyle = getGradientColor(v);
+                    } else {
+                        ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
+                    }
                     let barWidth = Math.min(CELL_SIZE, CELL_SIZE * v);
                     if (barWidth > CELL_SIZE - 0.5) barWidth = CELL_SIZE;
                     if (barWidth < CELL_SIZE) {
                         ctx.fillStyle = isOriginalTheme ? '#000' : bgColor;
                         ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-                        ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
+                        if (useGradient) {
+                            ctx.fillStyle = getGradientColor(v);
+                        } else {
+                            ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
+                        }
                         ctx.fillRect(cx - barWidth/2, y, barWidth, CELL_SIZE);
                     } else {
                         ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
@@ -1332,7 +1340,11 @@ WE ARE COSMIC</textarea>
                     continue;
                 }
                 if (isNonTypoV3) {
-                    ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
+                    if (useGradient) {
+                        ctx.fillStyle = getGradientColor(v);
+                    } else {
+                        ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
+                    }
                     let bWidth = Math.min(CELL_SIZE, v * 2 * CELL_SIZE);
                     let tWidth = Math.max(0, (v - 0.5) * 2 * CELL_SIZE);
                     if (v > 0.98) { tWidth = bWidth = CELL_SIZE; }
@@ -1991,3 +2003,5 @@ WE ARE COSMIC</textarea>
 <!-- INTEGRATED FIX RELEASE: 04/09/2026 12:47:35 - SETTINGS RECOVERY & PALETTE SYNC -->
 
 <!-- VERSION 5.0.1 - REFRESH CONFIRMED -->
+
+<!-- GRADIENT FIX RELEASE: 04/09/2026 12:51:59 - MOSAIC 2 & WEDGE GRADIENT ENABLED -->
