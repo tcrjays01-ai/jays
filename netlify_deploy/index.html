@@ -812,7 +812,7 @@ WE ARE COSMIC</textarea>
     
     let currentFont = 'Pretendard Variable';
     let keyColor = '#0000FF';
-    let darknessThreshold = 0.01, contrastPow = 1.2;
+    let darknessThreshold = 0.12, contrastPow = 2.0;
     let lastGridCellSize = -1;
     let zone1Limit = 0.35;
     let bluePhase = 0.0;
@@ -1304,13 +1304,12 @@ WE ARE COSMIC</textarea>
                 if (isCamera && !isBackground) { luma = (luma - 0.35) * 1.4 + 0.35; luma = Math.max(0.001, Math.min(0.999, luma)); }
                 let targetDarkness = 1.0 - luma;
                 let cellIdx = j * cols + i;
-                let smoothSpeed = isCamera ? 0.20 : 0.60;
-                if (targetDarkness === 0.0) cellHistory[cellIdx] = 0.0;
-                else if (cellHistory[cellIdx] === -1) cellHistory[cellIdx] = targetDarkness;
+                let smoothSpeed = isCamera ? 0.20 : 0.20;
+                if (cellHistory[cellIdx] === -1) cellHistory[cellIdx] = targetDarkness;
                 else cellHistory[cellIdx] = cellHistory[cellIdx] * (1 - smoothSpeed) + targetDarkness * smoothSpeed;
                 let darkness = cellHistory[cellIdx];
-                let x = Math.floor(offsetX + i * CELL_SIZE);
-                let y = Math.floor(offsetY + j * CELL_SIZE);
+                let x = offsetX + i * CELL_SIZE;
+                let y = offsetY + j * CELL_SIZE;
                 let cx = x + CELL_SIZE / 2;
                 let cy = y + CELL_SIZE / 2;
                 let vy = cy + (CELL_SIZE * 0.06);
