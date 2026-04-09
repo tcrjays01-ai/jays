@@ -892,26 +892,26 @@ WE ARE COSMIC</textarea>
         let btnW = document.getElementById('btn-white');
         let btnB = document.getElementById('btn-black');
         let btns = document.querySelectorAll('.premium-ctrl-btn');
-        
+
         if (mode === 'black') {
             isOriginalTheme = false;
             let ochk = document.getElementById('ctrl-original-chk'); if(ochk) ochk.checked = false;
-            btnB.style.background = '#000'; btnB.style.color = '#FFF';
-            btnW.style.background = '#FFF'; btnW.style.color = '#000';
+            if (btnB) { btnB.style.background = '#000'; btnB.style.color = '#FFF'; }
+            if (btnW) { btnW.style.background = '#FFF'; btnW.style.color = '#000'; }
             bgColor = '#000000'; colorZ2 = '#000000'; colorZ3 = '#606060'; colorZ4 = '#FFFFFF'; colorText = '#FFFFFF';
             btns.forEach(b => { b.style.borderColor = '#FFF'; b.style.color = '#FFF'; });
         } else if (mode === 'white') {
             isOriginalTheme = false;
             let ochk = document.getElementById('ctrl-original-chk'); if(ochk) ochk.checked = false;
-            btnW.style.background = '#000'; btnW.style.color = '#FFF';
-            btnB.style.background = '#FFF'; btnB.style.color = '#000';
+            if (btnW) { btnW.style.background = '#000'; btnW.style.color = '#FFF'; }
+            if (btnB) { btnB.style.background = '#FFF'; btnB.style.color = '#000'; }
             bgColor = '#FFFFFF'; colorZ2 = '#FFFFFF'; colorZ3 = '#808080'; colorZ4 = '#000000'; colorText = '#000000';
             btns.forEach(b => { b.style.borderColor = '#000'; b.style.color = '#000'; });
         } else if (mode === 'original') {
             isOriginalTheme = true;
             let ochk = document.getElementById('ctrl-original-chk'); if(ochk) ochk.checked = true;
-            btnW.style.background = '#FFF'; btnW.style.color = '#000';
-            btnB.style.background = '#FFF'; btnB.style.color = '#000';
+            if (btnW) { btnW.style.background = '#FFF'; btnW.style.color = '#000'; }
+            if (btnB) { btnB.style.background = '#FFF'; btnB.style.color = '#000'; }
             colorText = '#FFFFFF';
             btns.forEach(b => { b.style.borderColor = '#FFF'; b.style.color = '#FFF'; });
         }
@@ -2071,7 +2071,8 @@ WE ARE COSMIC</textarea>
             // Use direct src instead of fetch to avoid Cloudflare size limits
             loadVideo('experience.mp4');
         } catch (e) {
-            alert("EXPERIENCE VIDEO FAILED TO LOAD");
+            console.error("EXPERIENCE ERROR:", e);
+            alert("EXPERIENCE VIDEO FAILED TO LOAD: " + e.message);
             if (btn) btn.innerText = "EXPERIENCE";
         }
     }
