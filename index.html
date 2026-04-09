@@ -675,7 +675,7 @@ WE ARE COSMIC</textarea>
                 <option value="chaos">CHAOS (GLITCH SYMBOLS)</option>
                 <option value="mosaic">MOSAIC (NON-TYPO)</option>
                 <option value="mosaic2">MOSAIC 2 (VERTICAL BAR)</option>
-                <option value="mosaic3">★ NEW: GEOMETRIC SLANT (기하학 웨지) ★</option>
+                <option value="mosaic3">GEOMETRIC WEDGE (기하학 웨지)</option>
             </select>
         </div>
 
@@ -953,9 +953,9 @@ WE ARE COSMIC</textarea>
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(() => { 
                 isHandlingResize = true;
-                resizeCanvas(); 
+                resizeCanvas(0, 0, true); // True to force physical resize ONLY on window change
                 isHandlingResize = false;
-            }, 150);
+            }, 100);
         });
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1001,34 +1001,41 @@ WE ARE COSMIC</textarea>
     const CANVAS_H = 1350;
     let currentVideoW = CANVAS_W, currentVideoH = CANVAS_H;
 
-    function resizeCanvas(vw, vh) {
+    function resizeCanvas(vw, vh, forcePhysical = false) {
         if (vw && vh) { currentVideoW = vw; currentVideoH = vh; }
-        // STABLE PREVIEW: Cap DPR at 1.5 for mobile to prevent memory/GPU overload
         let dpr = Math.min(window.devicePixelRatio || 1, 1.5);
         let screenW = window.innerWidth, screenH = window.innerHeight;
         
-        if (isIntro) {
-            canvas.width = screenW * dpr;
-            canvas.height = screenH * dpr;
+        // DECOUPLING: Only change canvas.width if it's a window resize or forced.
+        // This prevents flickering during animations where CELL_SIZE changes.
+        if (isIntro && !forcePhysical) {
+            // During intro, just let CSS handle the visual fit
             canvas.style.width = screenW + 'px';
             canvas.style.height = screenH + 'px';
             canvas.style.left = '0px';
             canvas.style.top = '0px';
+        } else if (isIntro) {
+            canvas.width = screenW * dpr;
+            canvas.height = screenH * dpr;
+            canvas.style.width = screenW + 'px';
+            canvas.style.height = screenH + 'px';
         } else {
             let srcW = currentVideoW, srcH = currentVideoH;
             let scale = Math.min(screenW / srcW, screenH / srcH);
             let rawDW = srcW * scale;
             let rawDH = srcH * scale;
 
-            // SNAP 캔버스 크기를 CELL_SIZE의 배수로 강제 고정하여 '칼상태' 해상도 구현
+            // SNAP resolution logic - only update physical if forced or not animating
             let colsCount = Math.floor((rawDW * dpr) / CELL_SIZE);
             let rowsCount = Math.floor((rawDH * dpr) / CELL_SIZE);
             
             let finalW = (colsCount * CELL_SIZE) / dpr;
             let finalH = (rowsCount * CELL_SIZE) / dpr;
 
-            canvas.width = colsCount * CELL_SIZE;
-            canvas.height = rowsCount * CELL_SIZE;
+            if (forcePhysical || Math.abs(canvas.width - colsCount * CELL_SIZE) > 100) {
+                canvas.width = colsCount * CELL_SIZE;
+                canvas.height = rowsCount * CELL_SIZE;
+            }
             canvas.style.width = finalW + 'px';
             canvas.style.height = finalH + 'px';
             canvas.style.left = Math.round((screenW - finalW) / 2) + 'px';
@@ -1463,7 +1470,7 @@ WE ARE COSMIC</textarea>
         let delta = e.deltaY > 0 ? -5 : 5;
         targetCellSize = Math.max(8, Math.min(150, targetCellSize + delta));
         syncUnitUI();
-    }, { passive: false });
+    }, { passive: false, capture: true });
     let initialPinchDist = null, initialCellSize = 150;
     let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
     let dominantAxis = null; // 'x' for swipe, 'y' for zoom
@@ -1626,6 +1633,14 @@ WE ARE COSMIC</textarea>
     function applyCharSet(val) { 
         isNonTypoV2 = (val === 'mosaic2');
         isNonTypoV3 = (val === 'mosaic3');
+        if (val === 'mosaic2') {
+            applyBg('#FD3000');
+            applyPalette('txt', '#000000');
+            applyPalette('z4', '#000000');
+            let bgInput = document.getElementById('ctrl-bg'); if (bgInput) bgInput.value = '#FD3000';
+            let txtInput = document.getElementById('ctrl-col-txt'); if (txtInput) txtInput.value = '#000000';
+            let z4Input = document.getElementById('ctrl-col-z4'); if (z4Input) z4Input.value = '#000000';
+        }
         if (CHAR_SETS[val] || val === 'mosaic2' || val === 'mosaic3') { activeSymbols = CHAR_SETS[val] || CHAR_SETS.standard; mosaicMode = (val === 'mosaic'); } 
     }
     function cycleSymbolSet(dir) {
