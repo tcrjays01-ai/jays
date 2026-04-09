@@ -1313,6 +1313,7 @@ WE ARE COSMIC</textarea>
                 let y = Math.floor(offsetY + j * CELL_SIZE);
                 let cx = x + CELL_SIZE / 2;
                 let cy = y + CELL_SIZE / 2;
+                let vy = cy + (CELL_SIZE * 0.06);
                 let v = cellHistory[cellIdx]; // Smoothed darkness
                 
                 // ARTISTIC MODES (MOSAIC 2 & WEDGE) - Render BEFORE threshold to ensure visibility
@@ -2048,3 +2049,5 @@ WE ARE COSMIC</textarea>
 <!-- THE FINAL RENDER RESTORE: 04/09/2026 13:07:50 - ALL TYPOS REMOVED -->
 
 <!-- STRUCTURAL RESTORE RELEASE: 04/09/2026 13:12:23 - ARTISTIC MODES BEFORE THRESHOLD -->
+
+<!-- THE REAL FINAL RESTORE: 04/09/2026 14:35:11 - vy IS BACK -->
