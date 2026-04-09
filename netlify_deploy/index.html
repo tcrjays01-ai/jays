@@ -1432,27 +1432,19 @@ WE ARE COSMIC</textarea>
                 
                 // ARTISTIC MODES (MOSAIC 2 & WEDGE) - Render BEFORE threshold to ensure visibility
                 if (isNonTypoV2) {
-                    try {
-                        if (gradientMode) {
-                            ctx.fillStyle = getGradientColor(v);
-                        } else {
-                            ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
-                        }
-                        let barWidth = Math.min(CELL_SIZE, CELL_SIZE * v);
-                        if (barWidth > CELL_SIZE - 0.5) barWidth = CELL_SIZE;
-                        if (barWidth < CELL_SIZE) {
-                            ctx.fillStyle = isOriginalTheme ? '#000' : bgColor;
-                            ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-                            if (gradientMode) {
-                                ctx.fillStyle = getGradientColor(v);
-                            } else {
-                                ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
-                            }
-                            ctx.fillRect(cx - barWidth/2, y, barWidth, CELL_SIZE);
-                        } else {
-                            ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-                        }
-                    } catch(e) { console.error("M2 Error", e); }
+                    let _fx = Math.floor(x), _fy = Math.floor(y), _fw = Math.ceil(CELL_SIZE)+1, _fh = Math.ceil(CELL_SIZE)+1;
+                    if (gradientMode) ctx.fillStyle = getGradientColor(v);
+                    else ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
+                    let barWidth = Math.min(CELL_SIZE, CELL_SIZE * v);
+                    if (barWidth > CELL_SIZE - 0.5) barWidth = CELL_SIZE;
+                    if (barWidth < CELL_SIZE) {
+                        ctx.fillStyle = isOriginalTheme ? '#000' : bgColor;
+                        ctx.fillRect(_fx, _fy, _fw, _fh);
+                        ctx.fillStyle = gradientMode ? getGradientColor(v) : (isOriginalTheme ? '#FFFFFF' : colorZ4);
+                        ctx.fillRect(cx - barWidth/2, _fy, barWidth, _fh);
+                    } else {
+                        ctx.fillRect(_fx, _fy, _fw, _fh);
+                    }
                     continue;
                 }
                 if (isNonTypoV3) {
@@ -1503,7 +1495,7 @@ WE ARE COSMIC</textarea>
                 }
 
                 const fx = Math.floor(x), fy = Math.floor(y);
-                const fw = Math.ceil(CELL_SIZE), fh = Math.ceil(CELL_SIZE);
+                const fw = Math.ceil(CELL_SIZE) + 1, fh = Math.ceil(CELL_SIZE) + 1;
                 let dist = Math.abs(vLinear - bluePhase);
 
                 if (v >= 0.88) {
@@ -1532,9 +1524,6 @@ WE ARE COSMIC</textarea>
                         ctx.fillStyle = (/[a-zA-Z]/.test(char) && !mosaicMode)
                             ? `rgba(${rgbText[0]}, ${rgbText[1]}, ${rgbText[2]}, ${1.0 - intensity * 0.85})`
                             : `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${1.0 - intensity * 0.85})`;
-                        ctx.font = `400 ${CELL_SIZE * 1.0}px ${currentFont}`;
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
                         ctx.fillText(char, cx, vy);
                     }
                 } else if (v < 0.72) {
