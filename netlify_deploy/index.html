@@ -675,8 +675,12 @@ WE ARE COSMIC</textarea>
                 <option value="chaos">CHAOS (GLITCH SYMBOLS)</option>
                 <option value="mosaic">MOSAIC (NON-TYPO)</option>
                 <option value="mosaic2">MOSAIC 2 (VERTICAL BAR)</option>
-                <option value="mosaic3">WEDGE (기하학 웨지)</option>
+                <option value="mosaic3">WEDGE (GEOMETRIC WEDGE)</option>
             </select>
+        </div>
+        <div class="ctrl-section">
+            <span class="ctrl-label">CHARACTERS</span>
+            <input type="text" id="ctrl-symbols" value="+×÷=Δ○↘■✦▚░" oninput="applyCustomSymbols(this.value)" style="width:100%;background:#111;color:#fff;border:1px solid #333;padding:4px 6px;font-size:13px;border-radius:4px;font-family:monospace;">
         </div>
 
         <hr class="ctrl-divider">
@@ -894,7 +898,7 @@ WE ARE COSMIC</textarea>
     let hasPlayedIntro = false;
     let isOriginalTheme = false;
     let isExperienceMode = false;
-    let isNonTypoV2 = false, isNonTypoV3 = false;
+    let isNonTypoV2 = false, isNonTypoV3 = false, isGeometric = false;
     const SYMBOL_MODES = ['standard', 'botanical', 'matrix', 'geometric', 'chaos', 'mosaic', 'mosaic2', 'mosaic3'];
     let lastHandX = -1, handVelocity = 0, lastSwipeTime = 0;
     
@@ -904,7 +908,7 @@ WE ARE COSMIC</textarea>
         standard: ['+', '×', '÷', '=', 'Δ', '○', '↘', '■', '✦', '▚', '░'],
         botanical: ['✿', '❁', '❃', '❀', '✾', '☘', '🌿', '🌱', '🍃', '🌸', '🌼'],
         matrix: ['0', '1', '▰', '▱', '◧', '◨', '◩', '◪', '▣', '▤', '▥'],
-        geometric: ['●', '○', '■', '□', '▲', '△', '▼', '▽', '◆', '◇', '◈'],
+        geometric: ['●', '○', '■', '□', '+', '✕', '≡', '▬', '◉', '⊕', '•'],
         chaos: ['!', '?', '#', '$', '&', '*', '@', '⊕', '⊗', '☣', '☢'],
         mosaic: ['◎', '×', '□', '○', '✤', '+', '·', '◈', '◇', ':', '\\', '▣']
     };
@@ -1449,6 +1453,38 @@ WE ARE COSMIC</textarea>
                 if (darkness > darknessThreshold) dotLife[cellIdx] = 1.0;
                 else dotLife[cellIdx] *= 0.85;
 
+                // GEOMETRIC MODE - uses actual video pixel colors
+                if (isGeometric) {
+                    let _fx = Math.floor(x), _fy = Math.floor(y), _fw = Math.ceil(CELL_SIZE)+1, _fh = Math.ceil(CELL_SIZE)+1;
+                    let pixColor = `rgb(${r},${g},${b})`;
+                    if (v < 0.08) { continue; }
+                    if (v >= 0.75) {
+                        // Dense: large filled shape
+                        ctx.fillStyle = pixColor;
+                        if ((i + j) % 3 === 0) { ctx.fillRect(_fx, _fy, _fw, _fh); }
+                        else { ctx.beginPath(); ctx.arc(cx, cy, halfCell * 0.95, 0, 6.2832); ctx.fill(); }
+                    } else if (v >= 0.45) {
+                        // Mid: medium symbols with pixel color
+                        ctx.fillStyle = pixColor;
+                        let symPick = (i * 3 + j * 5 + Math.floor(globalFrame / 90)) % 5;
+                        if (symPick < 2) {
+                            ctx.beginPath(); ctx.arc(cx, cy, halfCell * (0.5 + v * 0.4), 0, 6.2832); ctx.fill();
+                        } else if (symPick < 4) {
+                            let bw = CELL_SIZE * 0.7; let bh = CELL_SIZE * 0.2;
+                            for (let li = 0; li < 3; li++) ctx.fillRect(cx - bw/2, y + CELL_SIZE * 0.2 + li * (bh + 1), bw, bh);
+                        } else {
+                            let s = CELL_SIZE * 0.3;
+                            ctx.fillRect(cx - s/2, _fy, s, _fh);
+                            ctx.fillRect(_fx, cy - s/2, _fw, s);
+                        }
+                    } else {
+                        // Light: small dot
+                        ctx.fillStyle = pixColor;
+                        let dotR = halfCell * v * 1.8;
+                        if (dotR > 0.5) { ctx.beginPath(); ctx.arc(cx, cy, dotR, 0, 6.2832); ctx.fill(); }
+                    }
+                    continue;
+                }
                 // ARTISTIC MODES (MOSAIC 2 & WEDGE) - Render BEFORE threshold to ensure visibility
                 if (isNonTypoV2) {
                     let _fx = Math.floor(x), _fy = Math.floor(y), _fw = Math.ceil(CELL_SIZE)+1, _fh = Math.ceil(CELL_SIZE)+1;
@@ -1853,7 +1889,10 @@ WE ARE COSMIC</textarea>
     function applyCharSet(val) {
         isNonTypoV2 = (val === 'mosaic2');
         isNonTypoV3 = (val === 'mosaic3');
-        if (val === 'mosaic') {
+        isGeometric = (val === 'geometric');
+        if (val === 'geometric') {
+            applyBg('#000000');
+        } else if (val === 'mosaic') {
             applyBg('#000000');
             applyPalette('z2', '#000000');
             applyPalette('z3', '#000000');
@@ -1888,6 +1927,11 @@ WE ARE COSMIC</textarea>
             }
         }
         if (CHAR_SETS[val] || val === 'mosaic2' || val === 'mosaic3') { activeSymbols = CHAR_SETS[val] || CHAR_SETS.standard; mosaicMode = (val === 'mosaic'); }
+        let si = document.getElementById('ctrl-symbols'); if (si) si.value = activeSymbols.join('');
+    }
+    function applyCustomSymbols(val) {
+        if (!val || val.length === 0) return;
+        activeSymbols = Array.from(val);
     }
     function cycleSymbolSet(dir) {
         let select = document.getElementById('ctrl-charset');
