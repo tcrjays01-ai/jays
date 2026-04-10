@@ -1216,215 +1216,171 @@ WE ARE COSMIC</textarea>
 
     function renderLoop() {
         if (!isPlaying) return;
-        let now = performance.now();
-        let targetFrameDelay = 16;
-        if (isIntro) {
-            let elapsed = now - introStartTime;
-            const INTRO_LEN = 3000;
-            if (elapsed < 0) { CELL_SIZE = 150; targetFrameDelay = 125; }
-            else if (elapsed <= INTRO_LEN) {
-                let t = elapsed / INTRO_LEN;
-                let ease = 1 - Math.pow(1 - t, 3);
-                CELL_SIZE = 150 + (12 - 150) * ease;
-                targetFrameDelay = 125 + (42 - 125) * t;
-            } else { isIntro = false; targetCellSize = 12; }
-        } else {
-            if (Math.abs(CELL_SIZE - targetCellSize) > 0.1) CELL_SIZE = CELL_SIZE * 0.90 + targetCellSize * 0.10;
-            else CELL_SIZE = targetCellSize;
-        }
-        if (now - lastRenderTime < targetFrameDelay) { requestAnimationFrame(renderLoop); return; }
-        lastRenderTime = now;
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.filter = 'none';
-        ctx.globalCompositeOperation = 'source-over';
-        CELL_SIZE = Math.max(10, Math.min(150, CELL_SIZE));
-        if (Math.abs(lastGridCellSize - CELL_SIZE) > 0.5) {
-            lastGridCellSize = CELL_SIZE;
-            calcGrid();
-        }
-        if (video && video.readyState >= 2 && !video.seeking) {
-            let vW = video.videoWidth, vH = video.videoHeight;
-            let vScale = isIntro ? Math.max(cols / vW, rows / vH) : Math.min(cols / vW, rows / vH);
-            let dW = vW * vScale, dH = vH * vScale;
-            let dX = (cols - dW) / 2, dY = (rows - dH) / 2;
-            
-            offCtx.fillStyle = isOriginalTheme ? '#000' : '#FFF';
-            offCtx.fillRect(0, 0, cols, rows);
-            offCtx.drawImage(video, dX, dY, dW, dH);
-            if (isCamera && selfieSegmentation) {
-                if (!isSegmenting && video.readyState >= 2) {
-                    isSegmenting = true;
-                    selfieSegmentation.send({ image: video }).catch(err => { isSegmenting = false; });
-                }
-                if (segMask) {
-                    offCtx.globalCompositeOperation = 'destination-in';
-                    offCtx.filter = 'blur(6px)';
-                    offCtx.drawImage(segCanvas, dX, dY, dW, dH);
-                    offCtx.filter = 'none';
-                    offCtx.globalCompositeOperation = 'destination-over';
-                    offCtx.fillStyle = '#FFFFFF';
-                    offCtx.fillRect(0, 0, cols, rows);
-                    offCtx.globalCompositeOperation = 'source-over';
-                }
+        try {
+            let now = performance.now();
+            let targetFrameDelay = 16;
+            if (isIntro) {
+                let elapsed = now - introStartTime;
+                const INTRO_LEN = 3000;
+                if (elapsed < 0) { CELL_SIZE = 150; targetFrameDelay = 125; }
+                else if (elapsed <= INTRO_LEN) {
+                    let t = elapsed / INTRO_LEN;
+                    let ease = 1 - Math.pow(1 - t, 3);
+                    CELL_SIZE = 150 + (12 - 150) * ease;
+                    targetFrameDelay = 125 + (42 - 125) * t;
+                } else { isIntro = false; targetCellSize = 12; }
+            } else {
+                if (Math.abs(CELL_SIZE - targetCellSize) > 0.1) CELL_SIZE = CELL_SIZE * 0.90 + targetCellSize * 0.10;
+                else CELL_SIZE = targetCellSize;
             }
-        } else {
-            offCtx.fillStyle = isOriginalTheme ? '#000' : '#FFF';
-            offCtx.fillRect(0, 0, cols, rows);
-        }
-        let imageData;
-        try { imageData = offCtx.getImageData(0, 0, cols, rows); }
-        catch(e) { requestAnimationFrame(renderLoop); return; }
-        let pixels = imageData.data;
-        ctx.fillStyle = isOriginalTheme ? '#000000' : bgColor;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+            if (now - lastRenderTime < targetFrameDelay) { requestAnimationFrame(renderLoop); return; }
+            lastRenderTime = now;
 
-        if (isOriginalTheme && video && video.readyState >= 2) {
-            ctx.save();
-            ctx.filter = 'brightness(0.6)';
-            let vW = video.videoWidth, vH = video.videoHeight;
-            let vScale = isIntro ? Math.max(canvas.width / vW, canvas.height / vH) : Math.min(canvas.width / vW, canvas.height / vH);
-            let dW = vW * vScale, dH = vH * vScale;
-            let dX = (canvas.width - dW) / 2, dY = (canvas.height - dH) / 2;
-            ctx.drawImage(video, dX, dY, dW, dH);
-            ctx.restore();
-        }
-        let offsetX = (canvas.width - cols * CELL_SIZE) / 2;
-        let offsetY = (canvas.height - rows * CELL_SIZE) / 2;
-        if (autoPhase) {
-            bluePhase = (Math.sin(globalFrame * 0.04) * 0.5 + 0.5) * 0.85;
-            let slider = document.getElementById('ctrl-contrast');
-            if (slider && Math.abs(parseFloat(slider.value) - bluePhase) > 0.02) slider.value = bluePhase;
-        }
-        for (let j = 0; j < rows; j++) {
-            for (let i = 0; i < cols; i++) {
-                let idx = (j * cols + i) * 4;
-                let r = pixels[idx], g = pixels[idx+1], b = pixels[idx+2];
-                let luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
-                let isBackground = (isCamera && luma > 0.98);
-                if (isCamera && !isBackground) { luma = (luma - 0.35) * 1.4 + 0.35; luma = Math.max(0.001, Math.min(0.999, luma)); }
-                let targetDarkness = 1.0 - luma;
-                let cellIdx = j * cols + i;
-                let smoothSpeed = isCamera ? 0.20 : 0.60;
-                if (targetDarkness === 0.0) cellHistory[cellIdx] = 0.0;
-                else if (cellHistory[cellIdx] === -1) cellHistory[cellIdx] = targetDarkness;
-                else cellHistory[cellIdx] = cellHistory[cellIdx] * (1 - smoothSpeed) + targetDarkness * smoothSpeed;
-                let darkness = cellHistory[cellIdx];
-                let x = Math.floor(offsetX + i * CELL_SIZE);
-                let y = Math.floor(offsetY + j * CELL_SIZE);
-                let cx = x + CELL_SIZE / 2;
-                let cy = y + CELL_SIZE / 2;
-                let vy = cy + (CELL_SIZE * 0.06);
-                let v = cellHistory[cellIdx]; // Smoothed darkness
-                
-                // ARTISTIC MODES (MOSAIC 2 & WEDGE) - Render BEFORE threshold to ensure visibility
-                if (isNonTypoV2) {
-                    try {
-                        if (gradientMode) {
-                            ctx.fillStyle = getGradientColor(v);
-                        } else {
-                            ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
-                        }
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            CELL_SIZE = Math.max(10, Math.min(150, CELL_SIZE));
+            
+            if (Math.abs(lastGridCellSize - CELL_SIZE) > 0.5) {
+                lastGridCellSize = CELL_SIZE;
+                calcGrid();
+            }
+
+            if (video && video.readyState >= 2 && !video.seeking) {
+                let vW = video.videoWidth, vH = video.videoHeight;
+                let vScale = isIntro ? Math.max(cols / vW, rows / vH) : Math.min(cols / vW, rows / vH);
+                let dW = vW * vScale, dH = vH * vScale;
+                let dX = (cols - dW) / 2, dY = (rows - dH) / 2;
+                offCtx.fillStyle = isOriginalTheme ? '#000' : '#FFF';
+                offCtx.fillRect(0, 0, cols, rows);
+                offCtx.drawImage(video, dX, dY, dW, dH);
+            } else {
+                offCtx.fillStyle = isOriginalTheme ? '#000' : '#FFF';
+                offCtx.fillRect(0, 0, cols, rows);
+            }
+
+            let imageData;
+            try { imageData = offCtx.getImageData(0, 0, cols, rows); }
+            catch(err) { requestAnimationFrame(renderLoop); return; }
+            let pixels = imageData.data;
+
+            ctx.fillStyle = isOriginalTheme ? '#000000' : bgColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (isOriginalTheme && video && video.readyState >= 2) {
+                ctx.save();
+                ctx.filter = 'brightness(0.6)';
+                let vW = video.videoWidth, vH = video.videoHeight;
+                let vScale = isIntro ? Math.max(canvas.width / vW, canvas.height / vH) : Math.min(canvas.width / vW, canvas.height / vH);
+                let dW = vW * vScale, dH = vH * vScale;
+                let dX = (canvas.width - dW) / 2, dY = (canvas.height - dH) / 2;
+                ctx.drawImage(video, dX, dY, dW, dH);
+                ctx.restore();
+            }
+
+            let offsetX = (canvas.width - cols * CELL_SIZE) / 2;
+            let offsetY = (canvas.height - rows * CELL_SIZE) / 2;
+            if (autoPhase) {
+                bluePhase = (Math.sin(globalFrame * 0.04) * 0.5 + 0.5) * 0.85;
+                let slider = document.getElementById('ctrl-contrast');
+                if (slider) slider.value = bluePhase;
+            }
+
+            for (let j = 0; j < rows; j++) {
+                for (let i = 0; i < cols; i++) {
+                    let idx = (j * cols + i) * 4;
+                    let luma = (0.299 * pixels[idx] + 0.587 * pixels[idx+1] + 0.114 * pixels[idx+2]) / 255.0;
+                    let targetDarkness = 1.0 - luma;
+                    let cellIdx = j * cols + i;
+                    
+                    if (cellHistory[cellIdx] === -1) cellHistory[cellIdx] = targetDarkness;
+                    cellHistory[cellIdx] = cellHistory[cellIdx] * 0.8 + targetDarkness * 0.2;
+                    let darkness = cellHistory[cellIdx];
+
+                    let x = offsetX + i * CELL_SIZE;
+                    let y = offsetY + j * CELL_SIZE;
+                    let cx = x + CELL_SIZE / 2, cy = y + CELL_SIZE / 2;
+                    let vy = cy + (CELL_SIZE * 0.06);
+
+                    if (darkness > darknessThreshold) dotLife[cellIdx] = 1.0;
+                    else dotLife[cellIdx] *= 0.85;
+
+                    // Rendering Modes
+                    if (isNonTypoV2) {
+                        let v = darkness;
+                        if (gradientMode) ctx.fillStyle = getGradientColor(v);
+                        else ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
                         let barWidth = Math.min(CELL_SIZE, CELL_SIZE * v);
-                        if (barWidth > CELL_SIZE - 0.5) barWidth = CELL_SIZE;
                         if (barWidth < CELL_SIZE) {
                             ctx.fillStyle = isOriginalTheme ? '#000' : bgColor;
                             ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-                            if (gradientMode) {
-                                ctx.fillStyle = getGradientColor(v);
-                            } else {
-                                ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
-                            }
+                            ctx.fillStyle = gradientMode ? getGradientColor(v) : (isOriginalTheme ? '#FFFFFF' : colorZ4);
                             ctx.fillRect(cx - barWidth/2, y, barWidth, CELL_SIZE);
                         } else {
                             ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
                         }
-                    } catch(e) { console.error("M2 Error", e); }
-                    continue;
-                }
-                if (isNonTypoV3) {
-                    try {
-                        if (gradientMode) {
-                            ctx.fillStyle = getGradientColor(v);
-                        } else {
-                            ctx.fillStyle = isOriginalTheme ? '#FFFFFF' : colorZ4;
-                        }
-                        let bWidth = Math.min(CELL_SIZE, v * 2 * CELL_SIZE);
-                        let tWidth = Math.max(0, (v - 0.5) * 2 * CELL_SIZE);
-                        if (v > 0.98) { tWidth = bWidth = CELL_SIZE; }
+                    } else if (isNonTypoV3) {
+                        let v = darkness;
+                        ctx.fillStyle = gradientMode ? getGradientColor(v) : (isOriginalTheme ? '#FFFFFF' : colorZ4);
+                        let bW = Math.min(CELL_SIZE, v * 2 * CELL_SIZE);
+                        let tW = Math.max(0, (v - 0.5) * 2 * CELL_SIZE);
                         ctx.beginPath();
-                        ctx.moveTo(x, y); 
-                        ctx.lineTo(x + tWidth, y); 
-                        ctx.lineTo(x + bWidth, y + CELL_SIZE); 
-                        ctx.lineTo(x, y + CELL_SIZE); 
-                        ctx.closePath();
-                        ctx.fill();
-                    } catch(e) { console.error("M3 Error", e); }
-                    continue;
-                }
-
-                if (darkness <= darknessThreshold) {
-                    if (dotLife[cellIdx] > 0.01) {
-                        ctx.globalAlpha = dotLife[cellIdx] * 0.9;
-                        ctx.fillStyle = colorSymbol;
-                        let s = Math.max(1, CELL_SIZE * 0.1 * dotLife[cellIdx]);
-                        ctx.fillRect(cx - s/2, vy - s/2, s, s);
-                        ctx.globalAlpha = 1.0; 
-                    }
-                    continue;
-                }
-                let vLinear = Math.min(1.0, Math.max(0.0, (darkness - darknessThreshold) / (1.0 - darknessThreshold)));
-                v = Math.pow(vLinear, contrastPow);
-                if (v > 0.92) v = 1.0; 
-                if (v < 0.02) v = 0.0;
-
-                if (v >= 0.88) { 
-                    ctx.fillStyle = colorZ4; ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE); 
-                } else {
-                    let dist = Math.abs(vLinear - bluePhase);
-                    if (dist < zone1Limit) {
-                        let intensity = Math.pow(1.0 - (dist / zone1Limit), 2.0);
-                        let rgb = hexToRgb(keyColor);
-                        ctx.fillStyle = `rgb(${Math.round(rgb[0] * intensity + rgbZ2[0] * (1 - intensity))}, ${Math.round(rgb[1] * intensity + rgbZ2[1] * (1 - intensity))}, ${Math.round(rgb[2] * intensity + rgbZ2[2] * (1 - intensity))})`;
-                        ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-                        
-                        // RESTORE TEXT INSIDE COLOR ZONE - FORCE REGULAR 400 WEIGHT
-                        ctx.fillStyle = (/[a-zA-Z]/.test(char) && !mosaicMode) ? `rgba(${rgbText[0]}, ${rgbText[1]}, ${rgbText[2]}, ${1.0 - intensity * 0.85})` : `rgba(${rgbSymbol[0]}, ${rgbSymbol[1]}, ${rgbSymbol[2]}, ${1.0 - intensity * 0.85})`;
-                        ctx.font = `400 ${CELL_SIZE * 1.0}px ${currentFont}`;
-                        ctx.fillText(char, cx, vy);
+                        ctx.moveTo(x, y); ctx.lineTo(x + tW, y); ctx.lineTo(x + bW, y + CELL_SIZE); ctx.lineTo(x, y + CELL_SIZE);
+                        ctx.closePath(); ctx.fill();
                     } else {
-                        ctx.fillStyle = (/[a-zA-Z]/.test(char) && !mosaicMode) ? colorText : colorSymbol;
-                        ctx.font = `400 ${CELL_SIZE * 1.0}px ${currentFont}`;
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText(char, cx, vy);
+                        // Standard / Mosaic
+                        if (darkness <= darknessThreshold) {
+                            if (dotLife[cellIdx] > 0.01) {
+                                ctx.globalAlpha = dotLife[cellIdx] * 0.9;
+                                ctx.fillStyle = colorSymbol;
+                                let s = Math.max(1, CELL_SIZE * 0.1 * dotLife[cellIdx]);
+                                ctx.fillRect(cx-s/2, vy-s/2, s, s);
+                                ctx.globalAlpha = 1.0;
+                            }
+                        } else {
+                            let vLinear = (darkness - darknessThreshold) / (1.0 - darknessThreshold);
+                            let v = Math.pow(Math.max(0, vLinear), contrastPow);
+                            let char = mosaicMode ? activeSymbols[((Math.floor(i) * 6271 + Math.floor(j) * 3181 + Math.floor(globalFrame/90) * 7919) % activeSymbols.length + activeSymbols.length) % activeSymbols.length] : TEXT_FLOW[((Math.floor(i) + Math.floor(j) * 17) % TEXT_FLOW.length + TEXT_FLOW.length) % TEXT_FLOW.length];
+                            
+                            let dist = Math.abs(vLinear - bluePhase);
+                            if (dist < zone1Limit) {
+                                let intensity = Math.pow(1.0 - (dist / zone1Limit), 2.0);
+                                let baseRgb = hexToRgb(keyColor);
+                                ctx.fillStyle = `rgb(${Math.round(baseRgb[0]*intensity + rgbZ2[0]*(1-intensity))},${Math.round(baseRgb[1]*intensity + rgbZ2[1]*(1-intensity))},${Math.round(baseRgb[2]*intensity + rgbZ2[2]*(1-intensity))})`;
+                                ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                                ctx.fillStyle = `rgba(${rgbText[0]},${rgbText[1]},${rgbText[2]},${1.0 - intensity * 0.85})`;
+                            } else {
+                                ctx.fillStyle = (/[a-zA-Z]/.test(char) && !mosaicMode) ? colorText : colorSymbol;
+                            }
+                            ctx.font = `400 ${CELL_SIZE}px ${currentFont}`;
+                            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                            ctx.fillText(char, cx, vy);
+                        }
                     }
                 }
             }
-        }
-        if (gradientMode) {
-            gradientT += 0.008 * gradientDir;
-            if (gradientT >= 1) { gradientT = 1; gradientDir = -1; }
-            else if (gradientT <= 0) { gradientT = 0; gradientDir = 1; }
-        }
-        globalFrame++; frameCounter++; now = performance.now();
-        if (now - lastFpsTime > 500) { fpsDisplay = Math.round(frameCounter / ((now - lastFpsTime) / 1000)); frameCounter = 0; lastFpsTime = now; }
-        document.getElementById('hud-grid').textContent = `GRID ${cols}×${rows} (${Math.round(CELL_SIZE)}px)`;
-        document.getElementById('hud-fps').textContent = `${fpsDisplay} FPS`;
-        document.getElementById('hud-hand').textContent = pinchDistance >= 0 ? `PINCH: ${Math.round(pinchDistance)}px` : 'NO HAND';
-        if (isExperienceMode && video && video.readyState >= 2) {
-            if (window.videoTranscripts && window.videoTranscripts.length > 0) {
+
+            if (gradientMode) {
+                gradientT += 0.008 * gradientDir;
+                if (gradientT >= 1) { gradientT = 1; gradientDir = -1; }
+                else if (gradientT <= 0) { gradientT = 0; gradientDir = 1; }
+            }
+            globalFrame++; frameCounter++;
+            let nowFps = performance.now();
+            if (nowFps - lastFpsTime > 500) { fpsDisplay = Math.round(frameCounter / ((nowFps - lastFpsTime) / 1000)); frameCounter = 0; lastFpsTime = nowFps; }
+            let hg = document.getElementById('hud-grid'); if(hg) hg.textContent = `GRID ${cols}×${rows} (${Math.round(CELL_SIZE)}px)`;
+            let hf = document.getElementById('hud-fps'); if(hf) hf.textContent = `${fpsDisplay} FPS`;
+            
+            // AI Sync
+            if (isExperienceMode && video && video.readyState >= 2 && window.videoTranscripts?.length > 0) {
                 let ct = video.currentTime;
-                let chunk = window.videoTranscripts.find(c => ct >= (c.timestamp[0] || 0) && ct <= (c.timestamp[1] || 9999));
+                let chunk = window.videoTranscripts.find(c => ct >= (c.timestamp[0]||0) && ct <= (c.timestamp[1]||9999));
                 if (chunk && chunk.text) {
                     let unit = chunk.text.trim().toUpperCase() + "        ";
                     if (TEXT_FLOW !== unit + unit + unit) {
                         TEXT_FLOW = unit + unit + unit;
-                        let textInput = document.getElementById("ctrl-text");
-                        if (textInput) textInput.value = chunk.text.trim().toUpperCase();
                     }
                 }
             }
-        }
+        } catch(e) { console.error("RenderLoop Error:", e); }
         requestAnimationFrame(renderLoop);
     }
 
