@@ -1435,7 +1435,7 @@ WE ARE COSMIC</textarea>
                 if (isCamera && !isBackground) { luma = (luma - 0.35) * 1.4 + 0.35; luma = Math.max(0.001, Math.min(0.999, luma)); }
                 let targetDarkness = 1.0 - luma;
                 let cellIdx = j * cols + i;
-                if (cellHistory[cellIdx] === -1) cellHistory[cellIdx] = targetDarkness;
+                if (cellHistory[cellIdx] === -1 || Math.abs(cellHistory[cellIdx] - targetDarkness) > 0.45) cellHistory[cellIdx] = targetDarkness;
                 else cellHistory[cellIdx] = cellHistory[cellIdx] * (1 - trailSpeed) + targetDarkness * trailSpeed;
                 let darkness = cellHistory[cellIdx];
                 let x = offsetX + i * CELL_SIZE;
