@@ -1914,17 +1914,14 @@ WE ARE COSMIC</textarea>
             applyPalette('txt', '#000000');
         } else {
             // Restore defaults when switching back
-            if (isOriginalTheme) {
-                setTheme('original');
-            } else {
-                applyBg((bgColor === '#FD3000' || bgColor === '#000000') ? '#FFFFFF' : bgColor);
-                applyPalette('z2', '#FFFFFF');
-                applyPalette('z3', '#808080');
-                applyPalette('z4', '#000000');
-                applyPalette('txt', '#000000');
-                applyPalette('sym', '#0000FF');
-                applyColor('#0000FF');
-            }
+            applyBg((bgColor === '#FD3000' || bgColor === '#000000') ? '#FFFFFF' : bgColor);
+            applyPalette('z2', '#FFFFFF');
+            applyPalette('z3', '#808080');
+            applyPalette('z4', '#000000');
+            applyPalette('txt', isOriginalTheme ? '#FFFFFF' : '#000000');
+            applyPalette('sym', '#0000FF');
+            applyColor('#0000FF');
+            if (isOriginalTheme) setTheme('original');
         }
         if (CHAR_SETS[val] || val === 'mosaic2' || val === 'mosaic3') { activeSymbols = CHAR_SETS[val] || CHAR_SETS.standard; mosaicMode = (val === 'mosaic'); }
         let si = document.getElementById('ctrl-symbols'); if (si) si.value = activeSymbols.join('');
