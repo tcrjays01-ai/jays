@@ -906,7 +906,7 @@ WE ARE COSMIC</textarea>
         matrix: ['0', '1', '▰', '▱', '◧', '◨', '◩', '◪', '▣', '▤', '▥'],
         geometric: ['●', '○', '■', '□', '▲', '△', '▼', '▽', '◆', '◇', '◈'],
         chaos: ['!', '?', '#', '$', '&', '*', '@', '⊕', '⊗', '☣', '☢'],
-        mosaic: ['●', '○', '+', '⊕', '■', '□', '▬', '◉', '▪', '◆', '⊞', '⊡']
+        mosaic: ['◎', '×', '□', '○', '✤', '+', '·', '◈', '◇', ':', '\\', '▣']
     };
     let activeSymbols = CHAR_SETS.standard;
     let mosaicMode = false;
@@ -1853,7 +1853,15 @@ WE ARE COSMIC</textarea>
     function applyCharSet(val) {
         isNonTypoV2 = (val === 'mosaic2');
         isNonTypoV3 = (val === 'mosaic3');
-        if (val === 'mosaic2') {
+        if (val === 'mosaic') {
+            applyBg('#000000');
+            applyPalette('z2', '#000000');
+            applyPalette('z3', '#000000');
+            applyPalette('z4', '#C8FF00');
+            applyPalette('txt', '#C8FF00');
+            applyPalette('sym', '#C8FF00');
+            applyColor('#C8FF00');
+        } else if (val === 'mosaic2') {
             applyBg('#FD3000');
             applyPalette('z2', '#FD3000');
             applyPalette('z3', '#800000');
@@ -1870,11 +1878,13 @@ WE ARE COSMIC</textarea>
             if (isOriginalTheme) {
                 setTheme('original');
             } else {
-                applyBg(bgColor === '#FD3000' ? '#FFFFFF' : bgColor);
+                applyBg((bgColor === '#FD3000' || bgColor === '#000000') ? '#FFFFFF' : bgColor);
                 applyPalette('z2', '#FFFFFF');
                 applyPalette('z3', '#808080');
                 applyPalette('z4', '#000000');
                 applyPalette('txt', '#000000');
+                applyPalette('sym', '#0000FF');
+                applyColor('#0000FF');
             }
         }
         if (CHAR_SETS[val] || val === 'mosaic2' || val === 'mosaic3') { activeSymbols = CHAR_SETS[val] || CHAR_SETS.standard; mosaicMode = (val === 'mosaic'); }
