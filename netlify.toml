@@ -1,0 +1,7 @@
+[build]
+  publish = "netlify_deploy"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "no-cache"
